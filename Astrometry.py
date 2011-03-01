@@ -67,18 +67,24 @@ class Astrometry():
         #            raOut[i] = raIn.value
         #            decOut[i] = decIn.value
 
+        # Generate Julian epoch from MJD
+        slalib.slaEpj.argtypes = [ctypes.c_double]
+        slalib.slaEpj.restype = ctypes.c_double
+        julianEpoch = slalib.slaEpj(MJD)
+#        print julianEpoch
+
         # Define rotation matrix and ctypes pointer
         rmat = numpy.array([[0.,0.,0.],[0.,0.,0.],[0.,0.,0.]])
         rmat_ptr = numpy.ctypeslib.ndpointer(dtype=float, ndim=2, shape=(3,3))
 
         # Determine the precession and nutation
         slalib.slaPrenut.argtypes = [ctypes.c_double,ctypes.c_double, rmat_ptr]
-        slalib.slaPrenut(EP0, MJD, rmat)
+        slalib.slaPrenut(EP0, julianEpoch, rmat)
 
-#        self.slalib.slaPrec.argtypes = [ctypes.c_double,ctypes.c_double, rmat_ptr]
-#        Date = 1994.89266306
-#        self.slalib.slaPrec(EP0, Date, rmat)
-
+        # precession only
+        #slalib.slaPrec.argtypes = [ctypes.c_double,ctypes.c_double, rmat_ptr]
+        #slalib.slaPrec(EP0, julianEpoch, rmat)
+        
         # Apply rotation matrix
         xyz = self.sphericalToCartesian(ra,dec)
         xyz =  numpy.dot(rmat,xyz)
