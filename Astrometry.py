@@ -161,7 +161,7 @@ class Astrometry():
 
         return raOut,decOut
 
-    def applyMeanObservedPlace(self, ra, dec, MJD = 2015.):
+    def applyMeanObservedPlace(self, ra, dec, MJD = 2015., includeRefraction = True,  altAzHr=False, wavelength=5000.):
         """Calculate the Mean Observed Place
 
         Optimized to use slalib aoppa routines
@@ -174,48 +174,106 @@ class Astrometry():
                                          ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
                                          ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
                                          ctypes.c_double, obsPrms_ptr]
+        slalib.slaAoppa_nr.argtypes= [ ctypes.c_double, ctypes.c_double, ctypes.c_double,
+                                         ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
+                                         ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
+                                         ctypes.c_double, obsPrms_ptr]
 
-        wavelength = 5000.
-        #
         # TODO NEED UT1 - UTC to be kept as a function of date.
+        # Requires a look up of the IERS tables (-0.9<dut1<0.9)
         # Assume dut = 0.3 (seconds)
         dut = 0.3
-        slalib.slaAoppa(MJD, dut,
-                        self.site.parameters["longitude"],
-                        self.site.parameters["latitude"],
-                        self.site.parameters["height"],
-                        self.site.parameters["xPolar"],
-                        self.site.parameters["yPolar"],
-                        self.site.parameters["meanTemperature"],
-                        self.site.parameters["meanPressure"],
-                        self.site.parameters["meanHumidity"],
-                        wavelength ,
-                        self.site.parameters["lapseRate"],
-                        obsPrms)
-                             
+
+
+        if (includeRefraction == True):
+            slalib.slaAoppa(MJD, dut,
+                            self.site.parameters["longitude"],
+                            self.site.parameters["latitude"],
+                            self.site.parameters["height"],
+                            self.site.parameters["xPolar"],
+                            self.site.parameters["yPolar"],
+                            self.site.parameters["meanTemperature"],
+                            self.site.parameters["meanPressure"],
+                            self.site.parameters["meanHumidity"],
+                            wavelength ,
+                            self.site.parameters["lapseRate"],
+                            obsPrms)
+        else:
+            slalib.slaAoppa_nr(MJD, dut,
+                            self.site.parameters["longitude"],
+                            self.site.parameters["latitude"],
+                            self.site.parameters["height"],
+                            self.site.parameters["xPolar"],
+                            self.site.parameters["yPolar"],
+                            self.site.parameters["meanTemperature"],
+                            self.site.parameters["meanPressure"],
+                            self.site.parameters["meanHumidity"],
+                            wavelength ,
+                            self.site.parameters["lapseRate"],
+                            obsPrms)
+
 
         # slaaopqk to apply to sources self.slalib.slaAopqk.argtypes=
         slalib.slaAopqk.argtypes= [ctypes.c_double, ctypes.c_double, obsPrms_ptr, ctypes.POINTER(ctypes.c_double),
                                    ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
                                    ctypes.POINTER(ctypes.c_double),
                                    ctypes.POINTER(ctypes.c_double)]
+        slalib.slaAopqk_nr.argtypes= [ctypes.c_double, ctypes.c_double, obsPrms_ptr, ctypes.POINTER(ctypes.c_double),
+                                   ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double),
+                                   ctypes.POINTER(ctypes.c_double),
+                                   ctypes.POINTER(ctypes.c_double)]
+
+
+        slalib.slaDe2h.argtypes= [ctypes.c_double, ctypes.c_double, ctypes.c_double,
+                                  ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
 
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
-
+        if (altAzHr == True):
+            alt = numpy.zeros(len(ra))
+            az = numpy.zeros(len(ra))
+            
         _raOut = ctypes.c_double(0.)
         _decOut = ctypes.c_double(0.)
         azimuth = ctypes.c_double(0.)
         zenith = ctypes.c_double(0.)
         hourAngle = ctypes.c_double(0.)
-        for i,raVal in enumerate(ra):
-            slalib.slaAopqk(ra[i], dec[i], obsPrms, azimuth, zenith, hourAngle, _decOut, _raOut)            
-            raOut[i] = _raOut.value
-            decOut[i] = _decOut.value
-            
-        return raOut,decOut
+        _azimuth = ctypes.c_double(0.)
+        _elevation = ctypes.c_double(0.)
+        if (includeRefraction == True):
+            for i,raVal in enumerate(ra):
+                slalib.slaAopqk(ra[i], dec[i], obsPrms, azimuth, zenith, hourAngle, _decOut, _raOut)            
+                raOut[i] = _raOut.value
+                decOut[i] = _decOut.value
+                if (altAzHr == True):
+                    slalib.slaDe2h(hourAngle, decOut[i],  self.site.parameters["latitude"], _azimuth, _elevation)
+                    alt[i] = _elevation.value
+                    az[i] = _azimuth.value                    
+        else:
+            for i,raVal in enumerate(ra):
+                slalib.slaAopqk_nr(ra[i], dec[i], obsPrms, azimuth, zenith, hourAngle, _decOut, _raOut)            
+                raOut[i] = _raOut.value
+                decOut[i] = _decOut.value
+                if (altAzHr == True):
+                    slalib.slaDe2h(hourAngle, decOut[i],  self.site.parameters["latitude"], _azimuth, _elevation)
+                    alt[i] = _elevation.value
+                    az[i] = _azimuth.value
 
-    def applyApparentToTrim(self, ra, dec, MJD = 2015.):
+        #testing values
+        #_azimuth = ctypes.c_double(0.)
+        #_elevation = ctypes.c_double(0.)
+        #print 360. + azimuth.value/0.017453293, zenith.value/0.017453293
+
+        
+        #print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.site.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
+
+        if (altAzHr == False):
+            return raOut,decOut
+        else:
+            return raOut,decOut, alt, az
+
+
+    def applyApparentToTrim(self, ra, dec, MJD = 2015., altAzHr=False):
         """ Generate TRIM coordinates
 
         From the observed coordinates generate the position of the
@@ -234,9 +292,11 @@ class Astrometry():
                                          ctypes.c_double, ctypes.c_double, ctypes.c_double, ctypes.c_double,
                                          ctypes.c_double, obsPrms_ptr]
 
+        # wavelength is not used in this version as there is no refraction
         wavelength = 5000.
-        #
+
         # TODO NEED UT1 - UTC to be kept as a function of date.
+        # Requires a look up of the IERS tables (-0.9<dut1<0.9)
         # Assume dut = 0.3 (seconds)
         dut = 0.3
         slalib.slaAoppa_nr(MJD, dut,
@@ -259,11 +319,16 @@ class Astrometry():
                                    ctypes.POINTER(ctypes.c_double),
                                    ctypes.POINTER(ctypes.c_double)]
 
+        slalib.slaDe2h.argtypes= [ctypes.c_double, ctypes.c_double, ctypes.c_double,
+                                  ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
+
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
 
         _raOut = ctypes.c_double(0.)
         _decOut = ctypes.c_double(0.)
+        _azimuth = ctypes.c_double(0.)
+        _elevation = ctypes.c_double(0.)
         azimuth = ctypes.c_double(0.)
         zenith = ctypes.c_double(0.)
         hourAngle = ctypes.c_double(0.)
@@ -271,8 +336,17 @@ class Astrometry():
             slalib.slaAopqk_nr(ra[i], dec[i], obsPrms, azimuth, zenith, hourAngle, _decOut, _raOut)            
             raOut[i] = _raOut.value
             decOut[i] = _decOut.value
-            
-        return raOut,decOut
+            if (altAzHr == True):
+                slalib.slaDe2h(hourAngle, dec[i],  self.site.parameters["latitude"], _azimuth, _elevation)
+#                print azimuth, hourAngle, dec[i], self.site.parameters["latitude"],_azimuth, _elevation
+
+
+#        print azimuth.value/0.017453293, zenith.value/0.017453293
+#        print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.site.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
+        if (altAzHr == False):
+            return raOut,decOut
+        else:
+            return raOut,decOut, _elevation.value, _azimuth.value, 
 
 
 
