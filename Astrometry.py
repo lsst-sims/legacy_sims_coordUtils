@@ -130,8 +130,42 @@ class Astrometry():
             
         return raOut,decOut
 
+
+    def equatorialToGalactic(self, ra, dec):
+        '''Convert RA,Dec (J2000) to Galactic Coordinates'''
+        slalib.slaEqgal.argtypes = [ctypes.c_double, ctypes.c_double,
+                                 ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
+        gLong = numpy.zeros(len(ra))
+        gLat = numpy.zeros(len(ra))
+        _gLong = ctypes.c_double(0.)
+        _gLat = ctypes.c_double(0.)
+
+        for i,raVal in enumerate(ra):
+            slalib.slaEqgal(ra[i], dec[i], _gLong, _gLat)
+            gLong[i] = _gLong.value
+            gLat[i] = _gLat.value
+
+        return gLong, gLat
+
+    def galacticToEquatorial(self, gLong, gLat):
+        '''Convert Galactic Coordinates to RA, dec (J2000)'''
+        slalib.slaGaleq.argtypes = [ctypes.c_double, ctypes.c_double,
+                                 ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)] 
+        ra = numpy.zeros(len(gLong))
+        dec = numpy.zeros(len(gLong))
+        _ra = ctypes.c_double(0.)
+        _dec = ctypes.c_double(0.)
+
+        for i,raVal in enumerate(ra):
+            slalib.slaGaleq(gLong[i], gLat[i], _ra, _dec)
+            ra[i] = _ra.value
+            dec[i] = _dec.value
+
+
+        return ra, dec
+
     def applyMeanApparentPlace(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, Epoch0=2000.0, MJD=2015.0):
-        """Calulate the Mean Apparent Place given an Ra and Dec
+        """Calculate the Mean Apparent Place given an Ra and Dec
 
         Optimized to use slalib mappa routines
         Recomputers precession and nutation
