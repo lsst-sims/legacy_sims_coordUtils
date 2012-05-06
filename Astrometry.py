@@ -25,6 +25,16 @@ class Astrometry():
 
         return longitude, latitude
 
+    def angularSeparation(self, long1, lat1, long2, lat2):
+        ''' Given two spherical points in radians, calculate the angular
+        separation between them.
+        '''
+        slalib.slaDsep.argtypes = [ctypes.c_double, ctypes.c_double,\
+                ctypes.c_double, ctypes.c_double]
+        slalib.slaDsep.restype = ctypes.c_double
+        D = slalib.slaDsep (long1, lat1, long2, lat2)
+        return D
+
 
     def rotationMatrixFromVectors(self, v1, v2):
         ''' Given two vectors v1,v2 calculate the rotation matrix for v1->v2 using the axis-angle approach'''
@@ -425,3 +435,26 @@ class Astrometry():
         slalib.slaRefco(zenithDistance, tanzCoeff, tan3zCoeff, refractedZenith)
         
         return refractedZenith
+
+    def calcLast(self, mjd, long):
+        slalib.slaGmsta.argtypes = [ctypes.c_double, ctypes.c_double]
+        slalib.slaGmsta.restype = ctypes.c_double
+        D = slalib.slaGmsta(mjd, 0.)
+	D += long
+	D = D%(2.*math.pi)
+	return D
+        
+    def equatorialToHorizontal(self, ra, dec, mjd):
+        _azimuth = ctypes.c_double(0.)
+        _elevation = ctypes.c_double(0.)
+	hourAngle = self.calcLast(mjd, self.site.parameters["longitude"]) - ra
+        slalib.slaDe2h.argtypes= [ctypes.c_double, ctypes.c_double, ctypes.c_double,
+                                  ctypes.POINTER(ctypes.c_double), ctypes.POINTER(ctypes.c_double)]
+        slalib.slaDe2h(hourAngle, dec,  self.site.parameters["latitude"], _azimuth, _elevation)
+	return _elevation.value, _azimuth.value
+
+    def paralacticAngle(self, az, dec):
+	#This returns the paralactic angle between the zenith and the pole that is up.  
+	#I need to check this, but this should be +ve in the East and -ve in the West if Az is measured from North through East.
+        sinpa = math.sin(az)*math.cos(self.site.parameters["latitude"])/math.cos(dec)
+        return math.asin(sinpa)
