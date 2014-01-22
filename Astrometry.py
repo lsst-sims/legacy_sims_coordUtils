@@ -99,6 +99,9 @@ class Astrometry():
         
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec 
         (radians/year), parallax (arcsec), v_rad (km/sec), EP0 (Julian years)
+        
+        The function pal.pm does not work properly if the parallax is below
+        0.00045 arcseconds
         """
 
         EPSILON = 1.e-10
