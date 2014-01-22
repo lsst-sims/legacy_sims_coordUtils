@@ -349,20 +349,20 @@ class Astrometry():
 
     def calcLast(self, mjd, long):
         D = pal.gmsta(mjd, 0.)
-	D += long
-	D = D%(2.*math.pi)
-	return D
+        D += long
+        D = D%(2.*math.pi)
+        return D
         
     def equatorialToHorizontal(self, ra, dec, mjd):
-	hourAngle = self.calcLast(mjd, self.site.parameters["longitude"]) - ra
+        hourAngle = self.calcLast(mjd, self.site.parameters["longitude"]) - ra
 
         _de2hOutput=pal.de2h(hourAngle, dec,  self.site.parameters["latitude"])
         
         #return (altitude, azimuth)
-	return _de2hOutput[1], _de2hOutput[0]
+        return _de2hOutput[1], _de2hOutput[0]
 
     def paralacticAngle(self, az, dec):
-	#This returns the paralactic angle between the zenith and the pole that is up.  
-	#I need to check this, but this should be +ve in the East and -ve in the West if Az is measured from North through East.
+        #This returns the paralactic angle between the zenith and the pole that is up.  
+        #I need to check this, but this should be +ve in the East and -ve in the West if Az is measured from North through East.
         sinpa = math.sin(az)*math.cos(self.site.parameters["latitude"])/math.cos(dec)
         return math.asin(sinpa)
