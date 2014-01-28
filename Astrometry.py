@@ -11,6 +11,9 @@ from lsst.sims.catalogs.measures.astrometry.Site import Site
 class Astrometry(Site):
     """Collection of astrometry routines that operate on numpy arrays"""
     
+    def __init__(self):
+        self.site=Site()
+    
     def sphericalToCartesian(self, longitude, latitude):
         cosDec = numpy.cos(latitude) 
         return numpy.array([numpy.cos(longitude)*cosDec, 
@@ -194,29 +197,29 @@ class Astrometry(Site):
 
         if (includeRefraction == True):
             obsPrms=pal.aoppa(MJD, dut,
-                            self.parameters["longitude"],
-                            self.parameters["latitude"],
-                            self.parameters["height"],
-                            self.parameters["xPolar"],
-                            self.parameters["yPolar"],
-                            self.parameters["meanTemperature"],
-                            self.parameters["meanPressure"],
-                            self.parameters["meanHumidity"],
+                            self.site.parameters["longitude"],
+                            self.site.parameters["latitude"],
+                            self.site.parameters["height"],
+                            self.site.parameters["xPolar"],
+                            self.site.parameters["yPolar"],
+                            self.site.parameters["meanTemperature"],
+                            self.site.parameters["meanPressure"],
+                            self.site.parameters["meanHumidity"],
                             wavelength ,
-                            self.parameters["lapseRate"])
+                            self.site.parameters["lapseRate"])
         else:
             #we can discard refraction by setting pressure and humidity to zero
             obsPrms=pal.aoppa_nr(MJD, dut,
-                            self.parameters["longitude"],
-                            self.parameters["latitude"],
-                            self.parameters["height"],
-                            self.parameters["xPolar"],
-                            self.parameters["yPolar"],
-                            self.parameters["meanTemperature"],
+                            self.site.parameters["longitude"],
+                            self.site.parameters["latitude"],
+                            self.site.parameters["height"],
+                            self.site.parameters["xPolar"],
+                            self.site.parameters["yPolar"],
+                            self.site.parameters["meanTemperature"],
                             0.0,
                             0.0,
                             wavelength ,
-                            self.parameters["lapseRate"])
+                            self.site.parameters["lapseRate"])
 
 
         # slaaopqk to apply to sources 
@@ -235,7 +238,7 @@ class Astrometry(Site):
             raOut[i] = _aopqkOutput[4]
             decOut[i] = _aopqkOutput[3]
             if (altAzHr == True):
-                _de2hOutput=pal.de2h(hourAngle, decOut[i],  self.parameters["latitude"])
+                _de2hOutput=pal.de2h(hourAngle, decOut[i],  self.site.parameters["latitude"])
                 alt[i] = _de2hOutput[1]
                 az[i] = _de2hOutput[0]                   
 
@@ -246,7 +249,7 @@ class Astrometry(Site):
         #print 360. + azimuth.value/0.017453293, zenith.value/0.017453293
 
         
-        #print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
+        #print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.site.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
 
         if (altAzHr == False):
             return raOut,decOut
@@ -279,16 +282,16 @@ class Astrometry(Site):
         #as above, we deactivate refraction by artificially setting
         #pressure and humidity to zero
         obsPrms=pal.aoppa(MJD, dut,
-                        self.parameters["longitude"],
-                        self.parameters["latitude"],
-                        self.parameters["height"],
-                        self.parameters["xPolar"],
-                        self.parameters["yPolar"],
-                        self.parameters["meanTemperature"],
+                        self.site.parameters["longitude"],
+                        self.site.parameters["latitude"],
+                        self.site.parameters["height"],
+                        self.site.parameters["xPolar"],
+                        self.site.parameters["yPolar"],
+                        self.site.parameters["meanTemperature"],
                         0.0,
                         0.0,
                         wavelength ,
-                        self.parameters["lapseRate"])
+                        self.site.parameters["lapseRate"])
                              
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
@@ -301,14 +304,14 @@ class Astrometry(Site):
             decOut[i]=_aopqkOutput[3]
             raOut[i]=_aopqkOutput[4]         
             if (altAzHr == True):
-                _de2hOutput=pal.de2h(hourAngle, dec[i],  self.parameters["latitude"])
+                _de2hOutput=pal.de2h(hourAngle, dec[i],  self.site.parameters["latitude"])
                 _azimuth=_de2hOutput[0]
                 _elevation=_de2hOutput[1]
-#                print azimuth, hourAngle, dec[i], self.parameters["latitude"],_azimuth, _elevation
+#                print azimuth, hourAngle, dec[i], self.site.parameters["latitude"],_azimuth, _elevation
 
 
 #        print azimuth.value/0.017453293, zenith.value/0.017453293
-#        print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
+#        print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.site.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
         if (altAzHr == False):
             return raOut,decOut
         else:
@@ -327,13 +330,13 @@ class Astrometry(Site):
 
         wavelength = 5000.
         precison = 1.e-10
-        _refcoOutput=pal.refco(self.parameters["height"],
-                        self.parameters["meanTemperature"],
-                        self.parameters["meanPressure"],
-                        self.parameters["meanHumidity"],
+        _refcoOutput=pal.refco(self.site.parameters["height"],
+                        self.site.parameters["meanTemperature"],
+                        self.site.parameters["meanPressure"],
+                        self.site.parameters["meanHumidity"],
                         wavelength ,
-                        self.parameters["latitude"],
-                        self.parameters["lapseRate"],
+                        self.site.parameters["latitude"],
+                        self.site.parameters["lapseRate"],
                         precision)
    
         return _refcoOutput[0], _refcoOutput[1]
@@ -356,9 +359,9 @@ class Astrometry(Site):
         return D
         
     def equatorialToHorizontal(self, ra, dec, mjd):
-        hourAngle = self.calcLast(mjd, self.parameters["longitude"]) - ra
+        hourAngle = self.calcLast(mjd, self.site.parameters["longitude"]) - ra
 
-        _de2hOutput=pal.de2h(hourAngle, dec,  self.parameters["latitude"])
+        _de2hOutput=pal.de2h(hourAngle, dec,  self.site.parameters["latitude"])
         
         #return (altitude, azimuth)
         return _de2hOutput[1], _de2hOutput[0]
@@ -366,5 +369,5 @@ class Astrometry(Site):
     def paralacticAngle(self, az, dec):
         #This returns the paralactic angle between the zenith and the pole that is up.  
         #I need to check this, but this should be +ve in the East and -ve in the West if Az is measured from North through East.
-        sinpa = math.sin(az)*math.cos(self.parameters["latitude"])/math.cos(dec)
+        sinpa = math.sin(az)*math.cos(self.site.parameters["latitude"])/math.cos(dec)
         return math.asin(sinpa)
