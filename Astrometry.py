@@ -3,7 +3,7 @@ import ctypes
 import math
 import palpy as pal
 
-import from lsst.sims.catalogs.measures.astrometry Site
+from lsst.sims.catalogs.measures.astrometry import Site
 
 #slalib = numpy.ctypeslib.load_library("slalsst.so")
 #slalib = ctypes.CDLL("slalsst.so")
