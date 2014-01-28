@@ -115,7 +115,7 @@ class Astrometry(Site):
         decOut = numpy.zeros(len(ra))
 
         # Generate Julian epoch from MJD
-        julianEpoch = pal.epj(self.metadata.parameters['Opsim_expmjd'])
+        julianEpoch = pal.epj(self.obs_metadata.metadata['Opsim_expmjd'][0])
 
         #Define proper motion interface
         
@@ -209,7 +209,7 @@ class Astrometry(Site):
                             self.site.parameters["lapseRate"])
         else:
             #we can discard refraction by setting pressure and humidity to zero
-            obsPrms=pal.aoppa_nr(MJD, dut,
+            obsPrms=pal.aoppa(MJD, dut,
                             self.site.parameters["longitude"],
                             self.site.parameters["latitude"],
                             self.site.parameters["height"],
@@ -319,7 +319,7 @@ class Astrometry(Site):
 
 
 
-    def refractionCoefficients():
+    def refractionCoefficients(self):
         """ Calculate the refraction using PAL's refco routine
 
         This calculates the refraction at 2 angles and derives a tanz and tan^3z coefficient for subsequent quick
@@ -329,7 +329,7 @@ class Astrometry(Site):
         """
 
         wavelength = 5000.
-        precison = 1.e-10
+        precision = 1.e-10
         _refcoOutput=pal.refco(self.site.parameters["height"],
                         self.site.parameters["meanTemperature"],
                         self.site.parameters["meanPressure"],
@@ -341,7 +341,7 @@ class Astrometry(Site):
    
         return _refcoOutput[0], _refcoOutput[1]
 
-    def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
+    def applyRefraction(self,zenithDistance, tanzCoeff, tan3zCoeff):
         """ Calculted refracted Zenith Distance
         
         uses the quick PAL refco routine which approximates the refractin calculation
