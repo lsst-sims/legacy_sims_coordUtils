@@ -5,13 +5,17 @@ import palpy as pal
 
 from lsst.sims.catalogs.measures.astrometry.Site import Site
 
-#slalib = numpy.ctypeslib.load_library("slalsst.so")
-#slalib = ctypes.CDLL("slalsst.so")
-
 class Astrometry(Site):
     """Collection of astrometry routines that operate on numpy arrays"""
     
     def __init__(self):
+        
+	"""
+	Site is a mixin that contains information about the observatory
+	location.
+	
+	It can be found in /lsst/sims/catalogs/measures/astrometry/Site.py
+	"""
         self.site=Site()
     
     def sphericalToCartesian(self, longitude, latitude):
@@ -63,9 +67,9 @@ class Astrometry(Site):
         
         Assumes FK5 as the coordinate system
         units:  ra_in (radians), dec_in (radians)
-
-        This uses the Fricke IAU 1976 model for J2000 precession
-        This uses the IAU 1980 nutation model
+        
+	The precession-nutation matrix is calculated by the pal.prenut method
+	which uses the IAU 2006A/2000 model
         """
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
