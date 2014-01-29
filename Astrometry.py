@@ -25,7 +25,7 @@ class Astrometry(Site):
 
         longitude = numpy.arctan2( xyz[:][1], xyz[:][0])
         latitude = numpy.arcsin( xyz[:][2] / rad)
-
+        
         # if rad == 0
         #latitude = numpy.zeros(len( xyz[0][:])
 
