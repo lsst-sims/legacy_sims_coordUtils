@@ -123,8 +123,6 @@ class Astrometry(Site):
 
         # Generate Julian epoch from MJD
         julianEpoch = pal.epj(self.obs_metadata.metadata['Opsim_expmjd'][0])
-
-        #Define proper motion interface
         
         for i,raVal in enumerate(ra):
             if ((math.fabs(pm_ra[i]) > EPSILON) or (math.fabs(pm_dec[i]) > EPSILON)):
@@ -348,13 +346,12 @@ class Astrometry(Site):
    
         return _refcoOutput[0], _refcoOutput[1]
 
-    def applyRefraction(self,zenithDistance, tanzCoeff, tan3zCoeff):
+    def applyRefraction(self, zenithDistance, tanzCoeff, tan3zCoeff):
         """ Calculted refracted Zenith Distance
         
         uses the quick PAL refco routine which approximates the refractin calculation
         """
-
-        refractedZenith = 0.0
+        
         refractedZenith=pal.refz(zenithDistance, tanzCoeff, tan3zCoeff)
         
         return refractedZenith
