@@ -10,12 +10,12 @@ class Astrometry(Site):
     
     def __init__(self):
         
-	"""
-	Site is a mixin that contains information about the observatory
-	location.
-	
-	It can be found in /lsst/sims/catalogs/measures/astrometry/Site.py
-	"""
+        """
+        Site is a mixin that contains information about the observatory
+        location.
+
+        It can be found in /lsst/sims/catalogs/measures/astrometry/Site.py
+        """
         self.site=Site()
     
     def sphericalToCartesian(self, longitude, latitude):
@@ -68,8 +68,8 @@ class Astrometry(Site):
         Assumes FK5 as the coordinate system
         units:  ra_in (radians), dec_in (radians)
         
-	The precession-nutation matrix is calculated by the pal.prenut method
-	which uses the IAU 2006A/2000 model
+        The precession-nutation matrix is calculated by the pal.prenut method
+        which uses the IAU 2006A/2000 model
         """
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
