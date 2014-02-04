@@ -100,7 +100,11 @@ class Astrometry(object):
         The function pal.pm does not work properly if the parallax is below
         0.00045 arcseconds
         """
-
+        
+        for i in range(len(parallax)):
+            if parallax[i] < 0.00045:
+                raise ValueError('You have passed a parallax less than 0.00045 arc seconds to applyProperMotion; that will not work')
+        
         EPSILON = 1.e-10
 
         raOut = numpy.zeros(len(ra))
@@ -315,7 +319,7 @@ class Astrometry(object):
         This calculates the refraction at 2 angles and derives a tanz and tan^3z coefficient for subsequent quick
         calculations. Good for zenith distances < 76 degrees
 
-        Call PAL refz to apply coefficients
+        One should call PAL refz to apply the coefficients calculated here
         """
 
         wavelength = 5000.
