@@ -8,7 +8,7 @@ from lsst.sims.catalogs.measures.astrometry.Site import Site
 class Astrometry(Site):
     """Collection of astrometry routines that operate on numpy arrays"""
     
-    def __init__(self):
+    def __init__(self, site=None):
         
         """
         Site is a mixin that contains information about the observatory
@@ -16,8 +16,11 @@ class Astrometry(Site):
 
         It can be found in /lsst/sims/catalogs/measures/astrometry/Site.py
         """
-        self.site=Site()
-    
+        if site == None:
+            self.site=Site()
+        else:
+            self.site=site
+        
     def sphericalToCartesian(self, longitude, latitude):
         cosDec = numpy.cos(latitude) 
         return numpy.array([numpy.cos(longitude)*cosDec, 

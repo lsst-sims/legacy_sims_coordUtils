@@ -14,7 +14,8 @@ class Site (object):
     def __init__(self, longitude=-1.2320792, latitude=-0.517781017, height=2650, \
                  xPolar=0, yPolar=0, meanTemperature=284.655, meanPressure=749.3, \
                  meanHumidity=0.4, lapseRate=0.0065):
-
+        
+        print "calling Site __init__"
         self.longitude=longitude
         self.latitude=latitude
         self.height=height
