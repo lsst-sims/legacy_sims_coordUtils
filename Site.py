@@ -11,8 +11,17 @@
 
 class Site (object):
     """ Class  describes the defintions of types of InstanceClasses"""
-    def __init__(self):
-        self.parameters = {"longitude":-1.2320792, "latitude" :
-            -0.517781017, "height" : 2650, "xPolar" : 0., "yPolar" : 0.,
-            "meanTemperature" : 284.655, "meanPressure" : 749.3,
-            "meanHumidity" : 0.40, "lapseRate" : 0.0065}
+    def __init__(self, longitude=-1.2320792, latitude=-0.517781017, height=2650, \
+                 xPolar=0, yPolar=0, meanTemperature=284.655, meanPressure=749.3, \
+                 meanHumidity=0.4, lapseRate=0.0065):
+
+        self.longitude=longitude
+        self.latitude=latitude
+        self.height=height
+        self.xPolar=xPolar
+        self.yPolar=yPolar
+        self.meanTemperature=meanTemperature
+        self.meanPressure=meanPressure
+        self.meanHumidity=meanHumidity
+        self.lapseRate=lapseRate
+
