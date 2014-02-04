@@ -15,7 +15,6 @@ class Site (object):
                  xPolar=0, yPolar=0, meanTemperature=284.655, meanPressure=749.3, \
                  meanHumidity=0.4, lapseRate=0.0065):
         
-        print "calling Site __init__"
         self.longitude=longitude
         self.latitude=latitude
         self.height=height

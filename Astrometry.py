@@ -3,23 +3,8 @@ import ctypes
 import math
 import palpy as pal
 
-from lsst.sims.catalogs.measures.astrometry.Site import Site
-
-class Astrometry(Site):
+class Astrometry(object):
     """Collection of astrometry routines that operate on numpy arrays"""
-    
-    def __init__(self, site=None):
-        
-        """
-        Site is a mixin that contains information about the observatory
-        location.
-
-        It can be found in /lsst/sims/catalogs/measures/astrometry/Site.py
-        """
-        if site == None:
-            self.site=Site()
-        else:
-            self.site=site
         
     def sphericalToCartesian(self, longitude, latitude):
         cosDec = numpy.cos(latitude) 
