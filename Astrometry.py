@@ -89,7 +89,7 @@ class Astrometry(object):
         
         for i in range(len(parallax)):
             if parallax[i] < 0.00045:
-                raise ValueError('You have passed a parallax less than 0.00045 arc seconds to applyProperMotion; that will not work')
+                parallax[i]=0.00045 #so that pal.Pm returns meaningful values
         
         EPSILON = 1.e-10
 
