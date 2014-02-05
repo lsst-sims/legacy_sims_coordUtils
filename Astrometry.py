@@ -17,9 +17,6 @@ class Astrometry(object):
 
         longitude = numpy.arctan2( xyz[:][1], xyz[:][0])
         latitude = numpy.arcsin( xyz[:][2] / rad)
-        
-        # if rad == 0
-        #latitude = numpy.zeros(len( xyz[0][:])
 
         return longitude, latitude
 
@@ -29,7 +26,6 @@ class Astrometry(object):
         '''
         D = pal.dsep (long1, lat1, long2, lat2)
         return D
-
 
     def rotationMatrixFromVectors(self, v1, v2):
         ''' Given two vectors v1,v2 calculate the rotation matrix for v1->v2 using the axis-angle approach'''
@@ -61,16 +57,6 @@ class Astrometry(object):
         """
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
-        
-        #        self.slalib.slaPreces.argtypes = [ctypes.c_char_p, ctypes.c_double,
-        #                                     ctypes.c_double, ctypes.POINTER(ctypes.c_double),
-        #                                     ctypes.POINTER(ctypes.c_double)]
-        #        for i,raVal in enumerate(ra):
-        #            raIn = ctypes.c_double(ra[i])
-        #            decIn = ctypes.c_double(dec[i])
-        #            self.slalib.slaPreces("FK5", EP0, EP1, ctypes.pointer(raIn),ctypes.pointer(decIn))
-        #            raOut[i] = raIn.value
-        #            decOut[i] = decIn.value
 
         # Generate Julian epoch from MJD
         julianEpoch = pal.epj(MJD)
@@ -131,7 +117,6 @@ class Astrometry(object):
         gLong = numpy.zeros(len(ra))
         gLat = numpy.zeros(len(ra))
         
-
         for i,raVal in enumerate(ra):
             _eqgalOutput=pal.eqgal(ra[i], dec[i])
             gLong[i] = _eqgalOutput[0]
@@ -144,12 +129,10 @@ class Astrometry(object):
         ra = numpy.zeros(len(gLong))
         dec = numpy.zeros(len(gLong))
        
-
         for i,raVal in enumerate(ra):
             _galeqOutput=pal.galeq(gLong[i], gLat[i])
             ra[i] = _galeqOutput[0]
             dec[i] = _galeqOutput[1]
-
 
         return ra, dec
 
@@ -182,12 +165,15 @@ class Astrometry(object):
         """
 
         # Correct site longitude for polar motion slaPolmo
+        # As of 4 February 2014, I am not sure what to make of this comment.
+        # It appears taht aoppa corrects for polar motion.
+        # This could mean that the call to slaPolmo is unnecessary...
+        
 
         # TODO NEED UT1 - UTC to be kept as a function of date.
         # Requires a look up of the IERS tables (-0.9<dut1<0.9)
         # Assume dut = 0.3 (seconds)
         dut = 0.3
-
 
         if (includeRefraction == True):
             obsPrms=pal.aoppa(MJD, dut,
@@ -236,15 +222,6 @@ class Astrometry(object):
                 alt[i] = _de2hOutput[1]
                 az[i] = _de2hOutput[0]                   
 
-
-        #testing values
-        #_azimuth = ctypes.c_double(0.)
-        #_elevation = ctypes.c_double(0.)
-        #print 360. + azimuth.value/0.017453293, zenith.value/0.017453293
-
-        
-        #print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.site.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
-
         if (altAzHr == False):
             return raOut,decOut
         else:
@@ -264,6 +241,7 @@ class Astrometry(object):
         """
 
         # Correct site longitude for polar motion slaPolmo
+        # see comment in applyMeanObservedPlace
         
         # wavelength is not used in this version as there is no refraction
         wavelength = 5000.
@@ -301,17 +279,11 @@ class Astrometry(object):
                 _de2hOutput=pal.de2h(hourAngle, dec[i],  self.site.latitude)
                 _azimuth=_de2hOutput[0]
                 _elevation=_de2hOutput[1]
-#                print azimuth, hourAngle, dec[i], self.site.parameters["latitude"],_azimuth, _elevation
 
-
-#        print azimuth.value/0.017453293, zenith.value/0.017453293
-#        print 360. + azimuth.value/0.017453293, hourAngle.value/0.017453293, decOut[i]/0.017453293, self.site.parameters["latitude"]/0.017453293,_azimuth.value/0.017453293, _elevation.value/0.017453293
         if (altAzHr == False):
             return raOut,decOut
         else:
             return raOut,decOut, _elevation, _azimuth, 
-
-
 
     def refractionCoefficients(self):
         """ Calculate the refraction using PAL's refco routine
