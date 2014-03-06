@@ -5,6 +5,45 @@ import palpy as pal
 
 class Astrometry(object):
     """Collection of astrometry routines that operate on numpy arrays"""
+    
+    def get_epoch(self):
+        return 0.0
+    
+    @compound('ra_corr','dec_corr')
+    def get_correctedCoordinates(self):
+        
+        ra=self.column_by_name('raJ2000') #in radians
+        dec=self.column_by_name('decJ2000') #in radians
+        
+        pr=self.column_by_name('proper_motion_ra') #in radians per year
+        pd=self.column_by_name('proper_motion_dec') #in radians per year
+        px=self.column_by_name('parallax') #in arcseconds
+        
+        rv=self.column_by_name('radial_velocity') #in km/s; positive if receding
+        
+        ep0=self.column_by_name('epoch') #epoch of mean coordinates
+        mjd=self.column_by_name('mjd') #modified julian date
+        
+        ra_out=[]
+        dec_out[]
+        
+        for i in range(len(mjd)):
+            if i == 0 or (mjd[i]-mjd[i-1])*(mjd[i]-mjd[i-1])+(ep0[i]-ep[i-1])*(ep0[i]-ep0[i-1]) > 0.000001:
+                #only compute aprms again if the date or epoch have changed since the last time 
+                #it was computed
+                aprms=pal.mappa(ep0[i],mjd[i]) #returns a list with parameters needed to correct coordinates
+            
+            if px != 0.0 or pr != 0.0 or pd != 0.0:
+                output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms)
+                ra_out.append(output[0])
+                dec_out.append(output[1])
+            else:
+                output=pal.mapqkz(ra[i],da[i],aprms)
+                ra_out.append(output[0])
+                dec_out.append(output[1])
+        
+        return numpy.array([ra_out,dec_out])            
+        
         
     def sphericalToCartesian(self, longitude, latitude):
         cosDec = numpy.cos(latitude) 
@@ -336,3 +375,5 @@ class Astrometry(object):
         #I need to check this, but this should be +ve in the East and -ve in the West if Az is measured from North through East.
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
+
+    
