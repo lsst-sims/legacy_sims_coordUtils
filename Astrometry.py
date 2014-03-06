@@ -7,7 +7,7 @@ class Astrometry(object):
     """Collection of astrometry routines that operate on numpy arrays"""
     
     def get_epoch(self):
-        return 0.0
+        return 2000.0
     
     @compound('ra_corr','dec_corr')
     def get_correctedCoordinates(self):
@@ -24,8 +24,8 @@ class Astrometry(object):
         ep0=self.column_by_name('epoch') #epoch of mean coordinates
         mjd=self.column_by_name('mjd') #modified julian date
         
-        ra_out=[]
-        dec_out[]
+        ra_out=numpy.zeros(len(ra))
+        dec_out=numpy.zeros(len(ra))
         
         for i in range(len(mjd)):
             if i == 0 or (mjd[i]-mjd[i-1])*(mjd[i]-mjd[i-1])+(ep0[i]-ep[i-1])*(ep0[i]-ep0[i-1]) > 0.000001:
@@ -35,12 +35,12 @@ class Astrometry(object):
             
             if px != 0.0 or pr != 0.0 or pd != 0.0:
                 output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms)
-                ra_out.append(output[0])
-                dec_out.append(output[1])
+                ra_out[i]=output[0]
+                dec_out[i]=output[1]
             else:
                 output=pal.mapqkz(ra[i],da[i],aprms)
-                ra_out.append(output[0])
-                dec_out.append(output[1])
+                ra_out[i]=output[0]
+                dec_out[i]=output[1]
         
         return numpy.array([ra_out,dec_out])            
         
