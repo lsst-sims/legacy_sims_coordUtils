@@ -7,8 +7,54 @@ from lsst.sims.catalogs.measures.instance import compound
 class Astrometry(object):
     """Collection of astrometry routines that operate on numpy arrays"""
     
+    def get_proper_motion_ra(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=0.0001
+        
+        return out
+  
+    
+    def get_proper_motion_dec(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=0.0001
+        
+        return out
+    
+    def get_parallax(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=1.2
+        
+        return out
+    
+    def get_radial_velocity(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=100.0
+        
+        return out
+    
     def get_epoch(self):
-        return 2000.0
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=2000.0
+        
+        return out
+    
+    def get_mjd(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=2015.0
+        
+        return out
     
     @compound('ra_corr','dec_corr')
     def get_correctedCoordinates(self):
@@ -29,12 +75,12 @@ class Astrometry(object):
         dec_out=numpy.zeros(len(ra))
         
         for i in range(len(mjd)):
-            if i == 0 or (mjd[i]-mjd[i-1])*(mjd[i]-mjd[i-1])+(ep0[i]-ep[i-1])*(ep0[i]-ep0[i-1]) > 0.000001:
+            if i == 0 or (mjd[i]-mjd[i-1])*(mjd[i]-mjd[i-1])+(ep0[i]-ep0[i-1])*(ep0[i]-ep0[i-1]) > 0.000001:
                 #only compute aprms again if the date or epoch have changed since the last time 
                 #it was computed
                 aprms=pal.mappa(ep0[i],mjd[i]) #returns a list with parameters needed to correct coordinates
             
-            if px != 0.0 or pr != 0.0 or pd != 0.0:
+            if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
                 output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms)
                 ra_out[i]=output[0]
                 dec_out[i]=output[1]
