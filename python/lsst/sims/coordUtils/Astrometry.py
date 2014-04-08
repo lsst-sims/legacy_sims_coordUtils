@@ -11,7 +11,7 @@ class Astrometry(object):
         ra=self.column_by_name('raJ2000')
         out=numpy.zeros(len(ra))
         for i in range(len(ra)):
-            out[i]=0.0001
+            out[i]=0.0
         
         return out
   
@@ -20,7 +20,7 @@ class Astrometry(object):
         ra=self.column_by_name('raJ2000')
         out=numpy.zeros(len(ra))
         for i in range(len(ra)):
-            out[i]=0.0001
+            out[i]=0.0
         
         return out
     
@@ -36,7 +36,7 @@ class Astrometry(object):
         ra=self.column_by_name('raJ2000')
         out=numpy.zeros(len(ra))
         for i in range(len(ra)):
-            out[i]=100.0
+            out[i]=0.0
         
         return out
     
