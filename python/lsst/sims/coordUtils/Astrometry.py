@@ -6,56 +6,7 @@ from lsst.sims.catalogs.measures.instance import compound
 
 class Astrometry(object):
     """Collection of astrometry routines that operate on numpy arrays"""
-    
-    def get_proper_motion_ra(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=0.0
-        
-        return out
-  
-    
-    def get_proper_motion_dec(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=0.0
-        
-        return out
-    
-    def get_parallax(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=1.2
-        
-        return out
-    
-    def get_radial_velocity(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=0.0
-        
-        return out
-    
-    def get_epoch(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=2000.0
-        
-        return out
-    
-    def get_mjd(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=2015.0
-        
-        return out
-    
+          
     @compound('ra_corr','dec_corr')
     def get_correctedCoordinates(self):
         
@@ -85,7 +36,7 @@ class Astrometry(object):
                 ra_out[i]=output[0]
                 dec_out[i]=output[1]
             else:
-                output=pal.mapqkz(ra[i],da[i],aprms)
+                output=pal.mapqkz(ra[i],dec[i],aprms)
                 ra_out[i]=output[0]
                 dec_out[i]=output[1]
         
