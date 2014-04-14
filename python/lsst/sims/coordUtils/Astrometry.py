@@ -138,7 +138,7 @@ class Astrometry(object):
         # Generate Julian epoch from MJD
         julianEpoch = pal.epj(self.obs_metadata.metadata['Opsim_expmjd'][0])
         
-        for i,raVal in enumerate(ra):
+        for i in range(len(ra)):
             if ((math.fabs(pm_ra[i]) > EPSILON) or (math.fabs(pm_dec[i]) > EPSILON)):
                 _raAndDec=pal.pm(ra[i], dec[i], pm_ra[i], pm_dec[i]/numpy.cos(dec[i]), parallax[i],
                                   v_rad[i] ,EP0, julianEpoch)
@@ -156,7 +156,7 @@ class Astrometry(object):
         gLong = numpy.zeros(len(ra))
         gLat = numpy.zeros(len(ra))
         
-        for i,raVal in enumerate(ra):
+        for i in range(len(ra)):
             _eqgalOutput=pal.eqgal(ra[i], dec[i])
             gLong[i] = _eqgalOutput[0]
             gLat[i] = _eqgalOutput[1]
@@ -168,7 +168,7 @@ class Astrometry(object):
         ra = numpy.zeros(len(gLong))
         dec = numpy.zeros(len(gLong))
        
-        for i,raVal in enumerate(ra):
+        for i in range(len(ra)):
             _galeqOutput=pal.galeq(gLong[i], gLat[i])
             ra[i] = _galeqOutput[0]
             dec[i] = _galeqOutput[1]
@@ -189,7 +189,7 @@ class Astrometry(object):
         decOut = numpy.zeros(len(ra))
 
         # Loop over postions and apply corrections
-        for i,raVal in enumerate(ra):
+        for i in range(len(ra)):
             _mapqkOutput=pal.mapqk(ra[i], dec[i], pm_ra[i], (pm_dec[i]/numpy.cos(dec[i])),
                             parallax[i],v_rad[i], prms)
             raOut[i] = _mapqkOutput[0]
@@ -248,7 +248,7 @@ class Astrometry(object):
             alt = numpy.zeros(len(ra))
             az = numpy.zeros(len(ra))
  
-        for i,raVal in enumerate(ra):
+        for i in range(len(ra)):
             _aopqkOutput=pal.aopqk(ra[i], dec[i], obsPrms) 
             azimuth=_aopqkOutput[0]
             zenith=_aopqkOutput[1]
@@ -306,7 +306,7 @@ class Astrometry(object):
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
 
-        for i,raVal in enumerate(ra):
+        for i in range(len(ra)):
             _aopqkOutput=pal.aopqk(ra[i], dec[i], obsPrms)   
             azimuth=_aopqkOutput[0]
             zenith=_aopqkOutput[1]
