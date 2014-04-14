@@ -98,8 +98,6 @@ class Astrometry(object):
         The precession-nutation matrix is calculated by the pal.prenut method
         which uses the IAU 2006A/2000 model
         """
-        raOut = numpy.zeros(len(ra))
-        decOut = numpy.zeros(len(ra))
 
         # Generate Julian epoch from MJD
         julianEpoch = pal.epj(MJD)
