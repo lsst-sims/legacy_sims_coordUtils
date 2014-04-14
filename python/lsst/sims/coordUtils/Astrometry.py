@@ -78,7 +78,13 @@ class Astrometry(object):
 
         # calculate the corresponding rotation matrix
         # http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
-        rot = [[cosDot + cross[0]*cross[0]*(1-cosDot), -cross[2]*sinDot+(1-cosDot)*cross[0]*cross[1], cross[1]*sinDot + (1-cosDot)*cross[0]*cross[2]],[cross[2]*sinDot+(1-cosDot)*cross[0]*cross[1], cosDot + (1-cosDot)*cross[1]*cross[1], -cross[0]*sinDot+(1-cosDot)*cross[1]*cross[2]], [-cross[1]*sinDot+(1-cosDot)*cross[0]*cross[2], cross[0]*sinDot+(1-cosDot)*cross[1]*cross[2], cosDot + (1-cosDot)*(cross[2]*cross[2])]]
+        rot = [[cosDot + cross[0]*cross[0]*(1-cosDot), -cross[2]*sinDot+(1-cosDot)*cross[0]*cross[1], \
+                cross[1]*sinDot + (1-cosDot)*cross[0]*cross[2]],\
+                [cross[2]*sinDot+(1-cosDot)*cross[0]*cross[1], cosDot + (1-cosDot)*cross[1]*cross[1], \
+                -cross[0]*sinDot+(1-cosDot)*cross[1]*cross[2]], \
+                [-cross[1]*sinDot+(1-cosDot)*cross[0]*cross[2], \
+                cross[0]*sinDot+(1-cosDot)*cross[1]*cross[2], \
+                cosDot + (1-cosDot)*(cross[2]*cross[2])]]
 
         return rot
     
@@ -112,10 +118,12 @@ class Astrometry(object):
         raOut,decOut = self.cartesianToSpherical(xyz)
         return raOut,decOut
 
-    def applyProperMotion(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, EP0=2000.0, MJD=2015.0):
+    def applyProperMotion(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, \
+                          EP0=2000.0, MJD=2015.0):
         """Calculates proper motion between two epochs
         
-        Note pm_ra is measured in sky velocity (cos(dec)*dRa/dt). PAL assumes dRa/dt
+        Note pm_ra is measured in sky velocity (cos(dec)*dRa/dt). 
+        PAL assumes dRa/dt
         
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec 
         (radians/year), parallax (arcsec), v_rad (km/sec), EP0 (Julian years)
@@ -195,7 +203,8 @@ class Astrometry(object):
 
         return raOut,decOut
 
-    def applyMeanObservedPlace(self, ra, dec, MJD = 2015., includeRefraction = True,  altAzHr=False, wavelength=5000.):
+    def applyMeanObservedPlace(self, ra, dec, MJD = 2015., includeRefraction = True,  \
+                               altAzHr=False, wavelength=5000.):
         """Calculate the Mean Observed Place
 
         Optimized to use PAL aoppa routines
@@ -325,8 +334,8 @@ class Astrometry(object):
     def refractionCoefficients(self):
         """ Calculate the refraction using PAL's refco routine
 
-        This calculates the refraction at 2 angles and derives a tanz and tan^3z coefficient for subsequent quick
-        calculations. Good for zenith distances < 76 degrees
+        This calculates the refraction at 2 angles and derives a tanz and tan^3z 
+        coefficient for subsequent quick calculations. Good for zenith distances < 76 degrees
 
         One should call PAL refz to apply the coefficients calculated here
         """
@@ -370,7 +379,8 @@ class Astrometry(object):
 
     def paralacticAngle(self, az, dec):
         #This returns the paralactic angle between the zenith and the pole that is up.  
-        #I need to check this, but this should be +ve in the East and -ve in the West if Az is measured from North through East.
+        #I need to check this, but this should be +ve in the East and -ve in the West if 
+        #Az is measured from North through East.
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
