@@ -105,10 +105,6 @@ class Astrometry(object):
         # Determine the precession and nutation
         rmat=pal.prenut(EP0, julianEpoch)
 
-        # precession only
-        #slalib.slaPrec.argtypes = [ctypes.c_double,ctypes.c_double, rmat_ptr]
-        #slalib.slaPrec(EP0, julianEpoch, rmat)
-        
         # Apply rotation matrix
         xyz = self.sphericalToCartesian(ra,dec)
         xyz =  numpy.dot(rmat,xyz)
@@ -210,7 +206,7 @@ class Astrometry(object):
 
         # Correct site longitude for polar motion slaPolmo
         # As of 4 February 2014, I am not sure what to make of this comment.
-        # It appears taht aoppa corrects for polar motion.
+        # It appears that aoppa corrects for polar motion.
         # This could mean that the call to slaPolmo is unnecessary...
         
 
@@ -245,8 +241,6 @@ class Astrometry(object):
                             wavelength ,
                             self.site.lapseRate)
 
-
-        # slaaopqk to apply to sources 
         
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
