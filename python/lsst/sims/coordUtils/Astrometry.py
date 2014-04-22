@@ -170,7 +170,8 @@ class Astrometry(object):
         PAL assumes dRa/dt
         
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec 
-        (radians/year), parallax (arcsec), v_rad (km/sec), EP0 (Julian years)
+        (radians/year), parallax (arcsec), v_rad (km/sec, positive if receding), 
+        EP0 (Julian years)
         
         Returns corrected ra and dec (in radians)
         
@@ -233,7 +234,11 @@ class Astrometry(object):
         Uses PAL mappa routines
         Recomputers precession and nutation
         
+        units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec 
+        (radians/year), parallax (arcsec), v_rad (km/sec; positive if receding),
+        EP0 (Julian years)
         
+        Returns corrected RA and Dec
         
         """
         # Define star independent mean to apparent place parameters
@@ -256,10 +261,17 @@ class Astrometry(object):
                                altAzHr=False, wavelength=5000.):
         """Calculate the Mean Observed Place
 
-        Optimized to use PAL aoppa routines
+        Uses PAL aoppa routines
+        
+        accepts RA and Dec.
+        
+        Returns corrected RA and Dec
+        
+        Also returns altitude and asimuth of altAzHr == True
         """
 
         # Correct site longitude for polar motion slaPolmo
+        #
         # As of 4 February 2014, I am not sure what to make of this comment.
         # It appears that aoppa corrects for polar motion.
         # This could mean that the call to slaPolmo is unnecessary...
@@ -329,8 +341,11 @@ class Astrometry(object):
         trim files). This includes the hour angle, diurnal aberration,
         alt-az. This does NOT include refraction.
 
-        Optimized to use PAL aoppa routines (we turn off refractiony by
+        Uses PAL aoppa routines (we turn off refractiony by
         artificially setting the pressure and humidity to zero)
+        
+        Returns corrected RA and Dec.  Also returns altitude and azimuth
+        if altAzHr == True
         """
 
         # Correct site longitude for polar motion slaPolmo
@@ -411,6 +426,10 @@ class Astrometry(object):
         return refractedZenith
 
     def calcLast(self, mjd, long):
+        """
+        Not sure what this does;  It realies on a suboutine iauGmsta06
+        which is in PALPy, but whose source code I cannot find.
+        """
         D = pal.gmsta(mjd, 0.)
         D += long
         D = D%(2.*math.pi)
