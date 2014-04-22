@@ -37,17 +37,14 @@ class Astrometry(object):
         rv=self.column_by_name('radial_velocity') #in km/s; positive if receding
         
         ep0=self.column_by_name('epoch') #epoch of mean coordinates
-        mjd=self.column_by_name('mjd') #modified julian date
+        mjd = self.obs_metadata.mjd
         
         ra_out=numpy.zeros(len(ra))
         dec_out=numpy.zeros(len(ra))
         
+        aprms=pal.mappa(ep0[0],mjd)
         for i in range(len(mjd)):
-            if i == 0 or (mjd[i]-mjd[i-1])*(mjd[i]-mjd[i-1])+(ep0[i]-ep0[i-1])*(ep0[i]-ep0[i-1]) > 0.000001:
-                #only compute aprms again if the date or epoch have changed since the last time 
-                #it was computed
-                aprms=pal.mappa(ep0[i],mjd[i]) #returns a list with parameters needed to correct coordinates
-            
+
             if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
                 output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms)
                 ra_out[i]=output[0]
@@ -153,7 +150,7 @@ class Astrometry(object):
         decOut = numpy.zeros(len(ra))
 
         # Generate Julian epoch from MJD
-        julianEpoch = pal.epj(self.obs_metadata.metadata['Opsim_expmjd'][0])
+        julianEpoch = pal.epj(self.obs_metadata.mjd)
         
         for i in range(len(ra)):
             if ((math.fabs(pm_ra[i]) > EPSILON) or (math.fabs(pm_dec[i]) > EPSILON)):
@@ -200,7 +197,7 @@ class Astrometry(object):
         """
         # Define star independent mean to apparent place parameters
         prms=pal.mappa(Epoch0, MJD)
-
+        
         #Apply source independent parameters
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
