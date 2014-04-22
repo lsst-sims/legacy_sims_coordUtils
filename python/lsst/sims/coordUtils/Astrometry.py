@@ -35,16 +35,17 @@ class Astrometry(object):
         px=self.column_by_name('parallax') #in arcseconds
         
         rv=self.column_by_name('radial_velocity') #in km/s; positive if receding
-        
-        ep0=self.column_by_name('epoch') #epoch of mean coordinates
+  
+        ep0 = self.obs_metadata.epoch
         mjd = self.obs_metadata.mjd
         
         ra_out=numpy.zeros(len(ra))
         dec_out=numpy.zeros(len(ra))
         
-        aprms=pal.mappa(ep0[0],mjd)
-        for i in range(len(mjd)):
-
+       
+        for i in range(len(ra)):
+            if i == 0:
+                aprms = pal.mappa(ep0,mjd)
             if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
                 output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms)
                 ra_out[i]=output[0]
