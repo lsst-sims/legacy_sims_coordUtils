@@ -10,7 +10,11 @@ class Astrometry(object):
     @compound('glon','glat')
     def get_galactic_coords(self):
         """
-        getter for galactic coordinates, in case the catalog class does not provide that
+        Getter for galactic coordinates, in case the catalog class does not provide that
+        
+        Reads in the ra and dec from the data base and returns columns with galactic
+        longitude and latitude.
+        
         """
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
@@ -27,7 +31,8 @@ class Astrometry(object):
     @compound('ra_corr','dec_corr')
     def get_correctedCoordinates(self):
         """
-        Corrects RA and Dec for propermotion, radial velocity, and parallax
+        Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
+   
         """
         
         ra=self.column_by_name('raJ2000') #in radians
@@ -111,7 +116,14 @@ class Astrometry(object):
         return D
 
     def rotationMatrixFromVectors(self, v1, v2):
-        ''' Given two vectors v1,v2 calculate the rotation matrix for v1->v2 using the axis-angle approach'''
+        ''' 
+        Given two vectors v1,v2 calculate the rotation matrix for v1->v2 using the axis-angle approach
+        
+        @param [in] v1, v2 are two Cartesian vectors (in three dimensions)
+        
+        @param [out] rot is the rotation matrix that rotates from one to the other
+        
+        '''
 
         # Calculate the axis of rotation by the cross product of v1 and v2
         cross = numpy.cross(v1,v2)
@@ -146,6 +158,13 @@ class Astrometry(object):
         The precession-nutation matrix is calculated by the pal.prenut method
         which uses the IAU 2006A/2000 model
         
+        @param [in] ra
+        
+        @param [in] dec
+        
+        @param [out] raOut is ra corrected for precession and nutation
+        
+        @param [out] decOut is dec corrected for precession and nutation
         
         """
 
@@ -177,6 +196,27 @@ class Astrometry(object):
         
         The function pal.pm does not work properly if the parallax is below
         0.00045 arcseconds
+        
+        @param [in] ra in radians
+        
+        @param [in] dec in radians
+        
+        @param [in] pm_ra is ra proper motion in radians/year
+        
+        @param [in] pm_dec is dec proper motoin in radians/year
+        
+        @param [in] parallax in arcseconds
+        
+        @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
+        
+        @param [in] EP0 is epoch in Julian years
+        
+        @param [in] MJD is modified Julian date in Julian years
+        
+        @param [out] raOut is corrected ra
+        
+        @param [out] decOut is corrected dec
+        
         """
         
         for i in range(len(parallax)):
@@ -239,7 +279,29 @@ class Astrometry(object):
         EP0 (Julian years)
         
         Returns corrected RA and Dec
+       
+        @param [in] ra in radians
         
+        @param [in] dec in radians
+        
+        @param [in] pm_ra is ra proper motion in radians/year
+        
+        @param [in] pm_dec is dec proper motoin in radians/year
+        
+        @param [in] parallax in arcseconds
+        
+        @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
+        
+        @param [in] EP0 is epoch in Julian years
+        
+        @param [in] MJD is modified Julian date in Julian years
+        
+        @param [out] raOut is corrected ra
+        
+        @param [out] decOut is corrected dec
+        
+
+ 
         """
         # Define star independent mean to apparent place parameters
         prms=pal.mappa(Epoch0, MJD)
@@ -267,7 +329,14 @@ class Astrometry(object):
         
         Returns corrected RA and Dec
         
-        Also returns altitude and asimuth of altAzHr == True
+        @param [out] raOut is corrected ra
+        
+        @param [out] decOut is corrected dec
+        
+        @param [out] alt is altitude angle (only returned if altAzHr == True)
+        
+        @param [out] az is azimuth angle (only returned if altAzHr == True)
+        
         """
 
         # Correct site longitude for polar motion slaPolmo
@@ -344,8 +413,15 @@ class Astrometry(object):
         Uses PAL aoppa routines (we turn off refractiony by
         artificially setting the pressure and humidity to zero)
         
-        Returns corrected RA and Dec.  Also returns altitude and azimuth
-        if altAzHr == True
+        
+        @param [out] raOut is corrected ra
+        
+        @param [out] decOut is corrected dec
+        
+        @param [out] _elevation is the elevation angle (only returned if altAzHr == True)
+        
+        @param [out] _azimuth (only returned if altAzHr == True)
+        
         """
 
         # Correct site longitude for polar motion slaPolmo
@@ -400,6 +476,7 @@ class Astrometry(object):
         coefficient for subsequent quick calculations. Good for zenith distances < 76 degrees
 
         One should call PAL refz to apply the coefficients calculated here
+        
         """
 
         wavelength = 5000.
@@ -419,6 +496,15 @@ class Astrometry(object):
         """ Calculted refracted Zenith Distance
         
         uses the quick PAL refco routine which approximates the refractin calculation
+        
+        @param [in] zenithDistance is unrefracted zenith distance of the source in radians
+        
+        @param [in] tanzCoeff is the first output from refractionCoefficients (above)
+        
+        @param [in] tan3zCoeff is the second output from refractionCoefficients (above)
+        
+        @param [out] refractedZenith is the refracted zenith distance in radians
+        
         """
         
         refractedZenith=pal.refz(zenithDistance, tanzCoeff, tan3zCoeff)
@@ -435,6 +521,17 @@ class Astrometry(object):
         return D
         
     def equatorialToHorizontal(self, ra, dec, mjd):
+        """
+        Converts from equatorial to horizon coordinates
+        
+        @param [in] ra is hour angle in radians
+        
+        @param [in] dec is declination in radians
+        
+        @param [out] returns elevation angle and azimuth in that order
+        
+        """
+    
         hourAngle = self.calcLast(mjd, self.site.longitude) - ra
 
         _de2hOutput=pal.de2h(hourAngle, dec,  self.site.latitude)
@@ -443,9 +540,12 @@ class Astrometry(object):
         return _de2hOutput[1], _de2hOutput[0]
 
     def paralacticAngle(self, az, dec):
-        #This returns the paralactic angle between the zenith and the pole that is up.  
-        #I need to check this, but this should be +ve in the East and -ve in the West if 
-        #Az is measured from North through East.
+        """
+        This returns the paralactic angle between the zenith and the pole that is up.  
+        I need to check this, but this should be +ve in the East and -ve in the West if 
+        Az is measured from North through East.
+        """
+        
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
