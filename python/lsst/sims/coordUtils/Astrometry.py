@@ -26,6 +26,9 @@ class Astrometry(object):
           
     @compound('ra_corr','dec_corr')
     def get_correctedCoordinates(self):
+        """
+        Corrects RA and Dec for propermotion, radial velocity, and parallax
+        """
         
         ra=self.column_by_name('raJ2000') #in radians
         dec=self.column_by_name('decJ2000') #in radians
@@ -59,12 +62,31 @@ class Astrometry(object):
         
         
     def sphericalToCartesian(self, longitude, latitude):
+        """
+        Transforms between spherical and Cartesian coordinates.
+        
+        @param [in] longitude is the input longitudinal coordinate
+        
+        @param [in] latitutde is the input latitudinal coordinate
+        
+        @param [out] a list of the (three-dimensional) cartesian coordinates on a unit sphere
+        """
+        
         cosDec = numpy.cos(latitude) 
         return numpy.array([numpy.cos(longitude)*cosDec, 
                           numpy.sin(longitude)*cosDec, 
                           numpy.sin(latitude)])
 
     def cartesianToSpherical(self, xyz):
+        """
+        Transforms between Cartesian and spherical coordinates
+        
+        @param [in] xyz is a list of the three-dimensional Cartesian coordinates
+        
+        @param [out] returns longitude and latitude
+        
+        """
+    
         rad = numpy.sqrt(xyz[:][0]*xyz[:][0] + xyz[:][1]*xyz[:][1] + xyz[:][2]*xyz[:][2])
 
         longitude = numpy.arctan2( xyz[:][1], xyz[:][0])
@@ -75,6 +97,15 @@ class Astrometry(object):
     def angularSeparation(self, long1, lat1, long2, lat2):
         ''' Given two spherical points in radians, calculate the angular
         separation between them.
+        
+        @param [in] long1 is the longitudinal coordinate of one point 
+        (long2 is the longitude of the other point)
+        
+        @param [in] lat1 is the latitudinal coordinate of one point
+        (lat2 is the latitude of the other point)
+        
+        @param [out] D the angular separation in radians
+        
         '''
         D = pal.dsep (long1, lat1, long2, lat2)
         return D
@@ -105,13 +136,17 @@ class Astrometry(object):
     
     
     def applyPrecession(self, ra, dec, EP0=2000.0, MJD=2000.0):
-        """ applyPrecession() applies precesion and nutation to coordinates between two epochs.
+        """ 
+        applyPrecession() applies precesion and nutation to coordinates between two epochs.
+        Accepts RA and dec as inputs.  Returns corrected RA and dec (in radians).
         
         Assumes FK5 as the coordinate system
         units:  ra_in (radians), dec_in (radians)
         
         The precession-nutation matrix is calculated by the pal.prenut method
         which uses the IAU 2006A/2000 model
+        
+        
         """
 
         # Generate Julian epoch from MJD
@@ -129,13 +164,15 @@ class Astrometry(object):
 
     def applyProperMotion(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, \
                           EP0=2000.0, MJD=2015.0):
-        """Calculates proper motion between two epochs
+        """Applies proper motion between two epochs.
         
         Note pm_ra is measured in sky velocity (cos(dec)*dRa/dt). 
         PAL assumes dRa/dt
         
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec 
         (radians/year), parallax (arcsec), v_rad (km/sec), EP0 (Julian years)
+        
+        Returns corrected ra and dec (in radians)
         
         The function pal.pm does not work properly if the parallax is below
         0.00045 arcseconds
@@ -193,8 +230,11 @@ class Astrometry(object):
     def applyMeanApparentPlace(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, Epoch0=2000.0, MJD=2015.0):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
-        Optimized to use PAL mappa routines
+        Uses PAL mappa routines
         Recomputers precession and nutation
+        
+        
+        
         """
         # Define star independent mean to apparent place parameters
         prms=pal.mappa(Epoch0, MJD)
