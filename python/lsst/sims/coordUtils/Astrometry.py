@@ -427,8 +427,7 @@ class Astrometry(object):
 
     def calcLast(self, mjd, long):
         """
-        Not sure what this does;  It realies on a suboutine iauGmsta06
-        which is in PALPy, but whose source code I cannot find.
+        Converts the date mjd+long into Greenwhich Mean Sidereal Time (in radians)
         """
         D = pal.gmsta(mjd, 0.)
         D += long
