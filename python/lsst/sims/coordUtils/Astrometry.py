@@ -44,7 +44,7 @@ class Astrometry(object):
         
         rv=self.column_by_name('radial_velocity') #in km/s; positive if receding
   
-        ep0 = self.obs_metadata.epoch
+        ep0 = self.db_obj.epoch
         mjd = self.obs_metadata.mjd
         
         ra_out=numpy.zeros(len(ra))
@@ -292,7 +292,7 @@ class Astrometry(object):
         
         @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
         
-        @param [in] EP0 is epoch in Julian years
+        @param [in] Epoch0 is epoch in Julian years
         
         @param [in] MJD is modified Julian date in Julian years
         
