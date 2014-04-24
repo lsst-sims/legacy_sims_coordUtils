@@ -52,17 +52,21 @@ class Astrometry(object):
         
        
         for i in range(len(ra)):
+            
+            #first, apply proper motion and parallax
             if i == 0:
                 aprms = pal.mappa(ep0,mjd)
             if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
-                output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms)
-                ra_out[i]=output[0]
-                dec_out[i]=output[1]
+                yy=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms) 
             else:
-                output=pal.mapqkz(ra[i],dec[i],aprms)
-                ra_out[i]=output[0]
-                dec_out[i]=output[1]
-        
+                yy=pal.mapqkz(ra[i],dec[i],aprms)
+            
+            #apply precession and nutation after applying parallax and proper motion
+            output = self.applyPrecession(yy[0],yy[1],EP0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+            ra_out[i] = output[0]
+            dec_out[i] = output[1]
+            
+            
         return numpy.array([ra_out,dec_out])            
         
         
