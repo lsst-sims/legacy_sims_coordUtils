@@ -2,7 +2,7 @@ import numpy
 import ctypes
 import math
 import palpy as pal
-from lsst.sims.catalogs.measures.instance import compound
+from .decorators import compound
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
@@ -567,11 +567,11 @@ class AstrometryStars(AstrometryBase):
         ra=self.column_by_name('raJ2000') #in radians
         dec=self.column_by_name('decJ2000') #in radians
         
-        pr=self.column_by_name('proper_motion_ra') #in radians per year
-        pd=self.column_by_name('proper_motion_dec') #in radians per year
+        pr=self.column_by_name('properMotionRa') #in radians per year
+        pd=self.column_by_name('properMotionDec') #in radians per year
         px=self.column_by_name('parallax') #in arcseconds
         
-        rv=self.column_by_name('radial_velocity') #in km/s; positive if receding
+        rv=self.column_by_name('radialVelocity') #in km/s; positive if receding
   
         ep0 = self.db_obj.epoch
         mjd = self.obs_metadata.mjd

@@ -39,7 +39,7 @@ import warnings
 import sys
 import lsst.utils.tests as utilsTests
 
-from lsst.sims.catalogs.measures.instance import InstanceCatalog, compound, cached
+from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.coordUtils.Astrometry import AstrometryBase
 from lsst.sims.catalogs.measures.instance.Site import Site
