@@ -4,7 +4,7 @@ import math
 import palpy as pal
 from lsst.sims.catalogs.measures.instance import compound
 
-class Astrometry(object):
+class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
     
     @compound('glon','glat')
@@ -28,48 +28,6 @@ class Astrometry(object):
         
         return numpy.array([glon,glat])
           
-    @compound('ra_corr','dec_corr')
-    def get_correctedCoordinates(self):
-        """
-        Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
-   
-        """
-        
-        ra=self.column_by_name('raJ2000') #in radians
-        dec=self.column_by_name('decJ2000') #in radians
-        
-        pr=self.column_by_name('proper_motion_ra') #in radians per year
-        pd=self.column_by_name('proper_motion_dec') #in radians per year
-        px=self.column_by_name('parallax') #in arcseconds
-        
-        rv=self.column_by_name('radial_velocity') #in km/s; positive if receding
-  
-        ep0 = self.db_obj.epoch
-        mjd = self.obs_metadata.mjd
-        
-        ra_out=numpy.zeros(len(ra))
-        dec_out=numpy.zeros(len(ra))
-        
-       
-        for i in range(len(ra)):
-            
-            #first, apply proper motion and parallax
-            if i == 0:
-                aprms = pal.mappa(ep0,mjd)
-            if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
-                yy=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms) 
-            else:
-                yy=pal.mapqkz(ra[i],dec[i],aprms)
-            
-            #apply precession and nutation after applying parallax and proper motion
-            output = self.applyPrecession(yy[0],yy[1],EP0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
-            ra_out[i] = output[0]
-            dec_out[i] = output[1]
-            
-            
-        return numpy.array([ra_out,dec_out])            
-        
-        
     def sphericalToCartesian(self, longitude, latitude):
         """
         Transforms between spherical and Cartesian coordinates.
@@ -553,4 +511,84 @@ class Astrometry(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
-    
+class AstrometryGalaxies(AstrometryBase):
+
+    @compound('ra_corr','dec_corr')
+    def get_correctedCoordinates(self):
+        """
+        Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
+   
+        """
+        
+        ra=self.column_by_name('raJ2000') #in radians
+        dec=self.column_by_name('decJ2000') #in radians
+        
+        ep0 = self.db_obj.epoch
+        mjd = self.obs_metadata.mjd
+        
+        ra_out=numpy.zeros(len(ra))
+        dec_out=numpy.zeros(len(ra))
+        
+       
+        for i in range(len(ra)):
+            
+            #first, apply proper motion and parallax
+            if i == 0:
+                aprms = pal.mappa(ep0,mjd)
+            
+            #use the transformation appripriate for zero proper motion and parallax
+            yy=pal.mapqkz(ra[i],dec[i],aprms)
+            
+            #apply precession and nutation after applying parallax and proper motion
+            output = self.applyPrecession(yy[0],yy[1],EP0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+            ra_out[i] = output[0]
+            dec_out[i] = output[1]
+            
+            
+        return numpy.array([ra_out,dec_out])            
+     
+
+
+class AstrometryStars(AstrometryBase): 
+
+    @compound('ra_corr','dec_corr')
+    def get_correctedCoordinates(self):
+        """
+        Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
+   
+        """
+        
+        ra=self.column_by_name('raJ2000') #in radians
+        dec=self.column_by_name('decJ2000') #in radians
+        
+        pr=self.column_by_name('proper_motion_ra') #in radians per year
+        pd=self.column_by_name('proper_motion_dec') #in radians per year
+        px=self.column_by_name('parallax') #in arcseconds
+        
+        rv=self.column_by_name('radial_velocity') #in km/s; positive if receding
+  
+        ep0 = self.db_obj.epoch
+        mjd = self.obs_metadata.mjd
+        
+        ra_out=numpy.zeros(len(ra))
+        dec_out=numpy.zeros(len(ra))
+        
+       
+        for i in range(len(ra)):
+            
+            #first, apply proper motion and parallax
+            if i == 0:
+                aprms = pal.mappa(ep0,mjd)
+            if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
+                yy=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms) 
+            else:
+                yy=pal.mapqkz(ra[i],dec[i],aprms)
+            
+            #apply precession and nutation after applying parallax and proper motion
+            output = self.applyPrecession(yy[0],yy[1],EP0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+            ra_out[i] = output[0]
+            dec_out[i] = output[1]
+            
+            
+        return numpy.array([ra_out,dec_out])            
+     
