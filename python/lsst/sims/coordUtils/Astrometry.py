@@ -512,6 +512,9 @@ class AstrometryBase(object):
         return math.asin(sinpa)
 
 class AstrometryGalaxies(AstrometryBase):
+    """
+    This mixin contains a getter for the corrected RA and dec which ignores parallax and proper motion
+    """
 
     @compound('ra_corr','dec_corr')
     def get_correctedCoordinates(self):
@@ -550,6 +553,9 @@ class AstrometryGalaxies(AstrometryBase):
 
 
 class AstrometryStars(AstrometryBase): 
+    """
+    This mixin contains a getter for the corrected RA and dec which takes account of proper motion and parallax
+    """
 
     @compound('ra_corr','dec_corr')
     def get_correctedCoordinates(self):
