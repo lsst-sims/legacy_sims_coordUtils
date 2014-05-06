@@ -510,7 +510,8 @@ class AstrometryBase(object):
         
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
-
+    
+        
     def skyToFocalPlane(self, ra_in, dec_in):
         """
         Take an input RA and dec from the sky and convert it to coordinates
@@ -519,13 +520,17 @@ class AstrometryBase(object):
         
         #perform the gonomonic projection assuming that the RA and Dec
         #of the tangent point is the RA and Dec of the telescope pointing
-        ra_out, dec_out = pal.Ds2tp(ra_in, dec_in,
+        xx, yy = pal.Ds2tp(ra_in, dec_in,
                                     self.obs_metadata.metadata['Unrefracted_RA'],
                                     self.obs_metadata.metadata['Unrefracted_Dec'])
         
         
-        x_out = ra_out
-        y_out = dec_out
+        #rotate the result by -1 * rotskypos ("the angle of the sky relative to
+        #camera cooridnates" according to phoSim documentation) to account for
+        #the rotation of the focal plane about the telescope pointing
+        theta = -1.0 * self.obs_metadata.metadata['Opsim_rotskypos']
+        x_out = xx*numpy.cos(theta) - yy*numpy.sin(theta)
+        y_out = xx*numpy.sin(theta) + yy.numpy.cos(theta)
         
         return (x_out,y_out)
 
