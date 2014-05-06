@@ -511,12 +511,15 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
     
-        
-    def skyToFocalPlane(self, ra_in, dec_in):
+    @compound('x_focal','y_focal')    
+    def skyToFocalPlane(self):
         """
         Take an input RA and dec from the sky and convert it to coordinates
         on the focal plane
         """
+        
+        ra_in = self.column_by_name('ra_corr')
+        dec_in = self.column_by_name('dec_corr')
         
         #perform the gonomonic projection assuming that the RA and Dec
         #of the tangent point is the RA and Dec of the telescope pointing
@@ -532,7 +535,7 @@ class AstrometryBase(object):
         x_out = xx*numpy.cos(theta) - yy*numpy.sin(theta)
         y_out = xx*numpy.sin(theta) + yy.numpy.cos(theta)
         
-        return (x_out,y_out)
+        return numpy.array([x_out,y_out])
 
 class AstrometryGalaxies(AstrometryBase):
     """
