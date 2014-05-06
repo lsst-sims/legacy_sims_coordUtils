@@ -511,6 +511,24 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
+    def skyToFocalPlane(self, ra_in, dec_in):
+        """
+        Take an input RA and dec from the sky and convert it to coordinates
+        on the focal plane
+        """
+        
+        #perform the gonomonic projection assuming that the RA and Dec
+        #of the tangent point is the RA and Dec of the telescope pointing
+        ra_out, dec_out = pal.Ds2tp(ra_in, dec_in,
+                                    self.obs_metadata.metadata['Unrefracted_RA'],
+                                    self.obs_metadata.metadata['Unrefracted_Dec'])
+        
+        
+        x_out = ra_out
+        y_out = dec_out
+        
+        return (x_out,y_out)
+
 class AstrometryGalaxies(AstrometryBase):
     """
     This mixin contains a getter for the corrected RA and dec which ignores parallax and proper motion
