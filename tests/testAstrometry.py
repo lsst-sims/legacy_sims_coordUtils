@@ -41,23 +41,55 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.coordUtils.Astrometry import AstrometryBase
+from lsst.sims.coordUtils.Astrometry import AstrometryStars
 from lsst.sims.catalogs.measures.instance.Site import Site
 
-class testCatalog(InstanceCatalog,AstrometryBase):
-    """
-    This generates a catalog class that has the bare minimum of features
-    to be able to run the methods from the Astrometry mixin
-    """
-    catalog_type = 'MISC'
-    default_columns=[('Opsim_expmjd',5000.0,float)]    
-    def db_required_columns(self):
-        return ['Unrefracted_Dec'],['Opsim_altitude']
+class testDefaults(object):
+
+    def get_proper_motion_ra(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=0.0
+        
+        return out
+  
+    
+    def get_proper_motion_dec(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=0.0
+        
+        return out
+    
+    def get_parallax(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=1.2
+        
+        return out
+    
+    def get_radial_velocity(self):
+        ra=self.column_by_name('raJ2000')
+        out=numpy.zeros(len(ra))
+        for i in range(len(ra)):
+            out[i]=0.0
+        
+        return out
+
+
+class testCatalog(InstanceCatalog,AstrometryStars,testDefaults):
+    catalog_type = 'test_stars'
+    column_outputs=['id','ra_corr','dec_corr']
 
 class astrometryUnitTest(unittest.TestCase):
 
-    obsMD = DBObject.from_objid('opsim3_61')
-    obs_metadata=obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
+    obsMD = DBObject.from_objid('msstars')
+    #obs_metadata=obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
+    obs_metadata=ObservationMetaData(mjd=5000.0, circ_bounds=dict(ra=200., dec=-30, radius=1.))
+
     cat=testCatalog(obsMD,obs_metadata=obs_metadata)    
     tol=1.0e-5
     

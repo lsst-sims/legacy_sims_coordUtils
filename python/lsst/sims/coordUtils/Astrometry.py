@@ -192,6 +192,7 @@ class AstrometryBase(object):
 
         # Generate Julian epoch from MJD
         julianEpoch = pal.epj(self.obs_metadata.mjd)
+        print "julianEpoch ",julianEpoch,self.obs_metadata.mjd
         
         for i in range(len(ra)):
             if ((math.fabs(pm_ra[i]) > EPSILON) or (math.fabs(pm_dec[i]) > EPSILON)):
@@ -528,7 +529,7 @@ class AstrometryBase(object):
                                     self.obs_metadata.metadata['Unrefracted_Dec'])
         
         
-        #rotate the result by -1 * rotskypos ("the angle of the sky relative to
+        #rotate the result by -1 * rotskypos (rotskypos being "the angle of the sky relative to
         #camera cooridnates" according to phoSim documentation) to account for
         #the rotation of the focal plane about the telescope pointing
         theta = -1.0 * self.obs_metadata.metadata['Opsim_rotskypos']
