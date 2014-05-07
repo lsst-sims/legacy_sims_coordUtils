@@ -45,6 +45,10 @@ from lsst.sims.coordUtils.Astrometry import AstrometryStars
 from lsst.sims.catalogs.measures.instance.Site import Site
 
 class testDefaults(object):
+    """
+    default proper motion, parallax, and radial velocity values
+    so that testCatalog will generate properly
+    """
 
     def get_proper_motion_ra(self):
         ra=self.column_by_name('raJ2000')
@@ -81,14 +85,31 @@ class testDefaults(object):
 
 
 class testCatalog(InstanceCatalog,AstrometryStars,testDefaults):
+    """
+    A (somewhat meaningless) instance catalog class that will allow us
+    to run the astrometry routines for testing purposes
+    """
     catalog_type = 'test_stars'
     column_outputs=['id','ra_corr','dec_corr','x_focal','y_focal']
 
 class astrometryUnitTest(unittest.TestCase):
+    """
+    The bulk of this unit test involves inputting a set list of input values
+    and comparing the astrometric results to results derived from SLALIB run
+    with the same input values.  We have to create a test catalog artificially (rather than
+    querying the database) because SLALIB was originally run on values that did not correspond
+    to any particular Opsim run.
+    """
 
     obsMD = DBObject.from_objid('msstars')
     obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=1.))
     obs_metadata.metadata={}
+    
+    #below are metadata values that need to be set in order for 
+    #get_skyToFocalPlane to work.  If we had been querying the database,
+    #these would be set to meaningful values.  Because we are generating
+    #an artificial set of inputs that must comport to the baseline SLALIB
+    #inputs, these are set arbitrarily by hand
     obs_metadata.metadata['Unrefracted_RA'] = 200.0*numpy.pi/180.0
     obs_metadata.metadata['Unrefracted_Dec'] = -30.0*numpy.pi/180.0
     obs_metadata.metadata['Opsim_rotskypos'] = 1.0
