@@ -534,7 +534,10 @@ class AstrometryBase(object):
         apparentDec=[]
         inRA=[self.obs_metadata.metadata['Unrefracted_RA']]
         inDec=[self.obs_metadata.metadata['Unrefracted_Dec']]
-        motion=[0.0]
+        motion=[0.0] #set parallax, proper motion, and radial velocity all to zero
+                     #we only want to deal with precession and nutation
+                     #(this may be inappropriate; I'm not sure what Unrefracted_RA and Unrefracted_Dec
+                     #actually store)
         
         x, y = self.applyMeanApparentPlace(inRA, inDec, motion, motion, motion, motion,
                                  Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
@@ -543,18 +546,10 @@ class AstrometryBase(object):
         apparentDec.append(y)
         #correct for refraction
         trueRA, trueDec = self.applyMeanObservedPlace(apparentRA, apparentDec, MJD = self.obs_metadata.mjd)
-
+        #we should now have the true tangent point for the gnomonic projection
         
         for i in range(len(ra_in)):
-            
-            #perform the gonomonic projection assuming that the RA and Dec
-            #of the tangent point is the RA and Dec of the telescope pointing 
-            #
-            #I am using Unrefracted_RA and Unrefracted_Dec as the RA and Dec
-            #of the telescope pointing because those are the only variables in
-            #the MetaDataDBObject class that seem appropriate.  If 'Unrefracted'
-            #refers to the values of the coordinates
-            #
+ 
             x, y = pal.ds2tp(ra_in[i], dec_in[i],trueRA[0],trueDec[0])
 
             #rotate the result by -1 * rotskypos (rotskypos being "the angle of the sky relative to
