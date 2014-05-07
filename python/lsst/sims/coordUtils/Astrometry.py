@@ -523,7 +523,7 @@ class AstrometryBase(object):
         
         #perform the gonomonic projection assuming that the RA and Dec
         #of the tangent point is the RA and Dec of the telescope pointing
-        xx, yy = pal.Ds2tp(ra_in, dec_in,
+        xx, yy = pal.ds2tp(ra_in, dec_in,
                                     self.obs_metadata.metadata['Unrefracted_RA'],
                                     self.obs_metadata.metadata['Unrefracted_Dec'])
         
