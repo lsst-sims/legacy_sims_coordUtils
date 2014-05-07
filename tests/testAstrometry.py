@@ -88,7 +88,7 @@ class astrometryUnitTest(unittest.TestCase):
 
     obsMD = DBObject.from_objid('msstars')
     #obs_metadata=obsMD.getObservationMetaData(88544919, 0.1, makeCircBounds=True)
-    obs_metadata=ObservationMetaData(mjd=5000.0, circ_bounds=dict(ra=200., dec=-30, radius=1.))
+    obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=1.))
 
     cat=testCatalog(obsMD,obs_metadata=obs_metadata)    
     tol=1.0e-5
