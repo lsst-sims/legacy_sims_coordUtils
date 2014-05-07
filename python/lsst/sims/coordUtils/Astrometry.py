@@ -521,20 +521,27 @@ class AstrometryBase(object):
         ra_in = self.column_by_name('ra_corr')
         dec_in = self.column_by_name('dec_corr')
         
-        #perform the gonomonic projection assuming that the RA and Dec
-        #of the tangent point is the RA and Dec of the telescope pointing
-        xx, yy = pal.ds2tp(ra_in, dec_in,
+
+        x_out=numpy.zeros(len(ra_in))
+        y_out=numpy.zeros(len(ra_in))
+        
+        theta = -1.0 * self.obs_metadata.metadata['Opsim_rotskypos']
+        
+        for i in range(len(ra_in)):
+            
+            #perform the gonomonic projection assuming that the RA and Dec
+            #of the tangent point is the RA and Dec of the telescope pointing 
+            x, y = pal.ds2tp(ra_in[i], dec_in[i],
                                     self.obs_metadata.metadata['Unrefracted_RA'],
                                     self.obs_metadata.metadata['Unrefracted_Dec'])
         
         
-        #rotate the result by -1 * rotskypos (rotskypos being "the angle of the sky relative to
-        #camera cooridnates" according to phoSim documentation) to account for
-        #the rotation of the focal plane about the telescope pointing
-        theta = -1.0 * self.obs_metadata.metadata['Opsim_rotskypos']
-        x_out = xx*numpy.cos(theta) - yy*numpy.sin(theta)
-        y_out = xx*numpy.sin(theta) + yy.numpy.cos(theta)
-        
+            #rotate the result by -1 * rotskypos (rotskypos being "the angle of the sky relative to
+            #camera cooridnates" according to phoSim documentation) to account for
+            #the rotation of the focal plane about the telescope pointing      
+            x_out[i] = x*numpy.cos(theta) - y*numpy.sin(theta)
+            y_out[i] = x*numpy.sin(theta) + y*numpy.cos(theta)
+
         return numpy.array([x_out,y_out])
 
 class AstrometryGalaxies(AstrometryBase):

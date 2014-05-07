@@ -88,7 +88,11 @@ class astrometryUnitTest(unittest.TestCase):
 
     obsMD = DBObject.from_objid('msstars')
     obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=1.))
-
+    obs_metadata.metadata={}
+    obs_metadata.metadata['Unrefracted_RA'] = 200.0*numpy.pi/180.0
+    obs_metadata.metadata['Unrefracted_Dec'] = -30.0*numpy.pi/180.0
+    obs_metadata.metadata['Opsim_rotskypos'] = 1.0
+    
     cat=testCatalog(obsMD,obs_metadata=obs_metadata)    
     tol=1.0e-5
     
