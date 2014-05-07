@@ -512,7 +512,7 @@ class AstrometryBase(object):
         return math.asin(sinpa)
     
     @compound('x_focal','y_focal')    
-    def skyToFocalPlane(self):
+    def get_skyToFocalPlane(self):
         """
         Take an input RA and dec from the sky and convert it to coordinates
         on the focal plane
