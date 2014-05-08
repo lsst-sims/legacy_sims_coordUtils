@@ -242,6 +242,9 @@ class AstrometryBase(object):
         EP0 (Julian years)
         
         Returns corrected RA and Dec
+        
+        This calls pal.mapqk(z) which accounts for proper motion, parallax,
+        radial velocity, aberration, precession-nutation
        
         @param [in] ra in radians
         
@@ -262,9 +265,7 @@ class AstrometryBase(object):
         @param [out] raOut is corrected ra
         
         @param [out] decOut is corrected dec
-        
 
- 
         """
         
         if pm_ra == None:
@@ -323,6 +324,8 @@ class AstrometryBase(object):
         accepts RA and Dec.
         
         Returns corrected RA and Dec
+        
+        This will call pal.aopqk which accounts for refraction and diurnal aberration
         
         @param [out] raOut is corrected ra
         
@@ -403,8 +406,25 @@ class AstrometryBase(object):
     def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None, 
              includeRefraction = True):
         """
-        correct coordinates for all possible effects
-   
+        correct coordinates for all possible effects.
+        
+        included are precession-nutation, aberration, proper motion, parallax, refraction,
+        radial velocity, diurnal aberration,
+        
+        @param [in] pm_ra is proper motion in RA (radians)
+        
+        @param [in] pm_dec is proper motion in dec (radians)
+        
+        @param [in] parallax is parallax (arcseconds)
+        
+        @param [in] v_rad is radial velocity (km/s)
+        
+        @param [in] includeRefraction toggles whether or not to correct for refraction
+        
+        @param [out] ra_out RA corrected for all included effects
+        
+        @param [out] dec_out Dec corrected for all included effects
+        
         """
         
         ra=self.column_by_name('raJ2000') #in radians
@@ -597,7 +617,9 @@ class AstrometryBase(object):
                      #(this may be inappropriate; I'm not sure what Unrefracted_RA and Unrefracted_Dec
                      #actually store)
         
-        x, y = self.applyMeanApparentPlace(inRA, inDec,Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, 
+                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+                   
         #correct for refraction
         trueRA, trueDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
         #we should now have the true tangent point for the gnomonic projection
