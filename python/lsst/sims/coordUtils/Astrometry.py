@@ -266,6 +266,10 @@ class AstrometryBase(object):
  
         """
         # Define star independent mean to apparent place parameters
+        #pal.mappa calculates the star-independent parameters
+        #needed to correct RA and Dec
+        #e.g the Earth barycentric and heliocentric position and velcoity,
+        #the precession-nutation matrix, etc.
         prms=pal.mappa(Epoch0, MJD)
         
         #Apply source independent parameters
@@ -565,7 +569,7 @@ class AstrometryGalaxies(AstrometryBase):
     This mixin contains a getter for the corrected RA and dec which ignores parallax and proper motion
     """
 
-    @compound('ra_corr','dec_corr')
+    @compound('ra_corr','dec_corr)
     def get_correctedCoordinates(self):
         """
         Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
@@ -589,10 +593,14 @@ class AstrometryGalaxies(AstrometryBase):
                 aprms = pal.mappa(ep0,mjd)
             
             #use the transformation appripriate for zero proper motion and parallax
-            yy=pal.mapqkz(ra[i],dec[i],aprms)
+            #
+            #pal.mapqkz is a "quick mean to apparent place" calculator
+            #that assumes zero parallax and proper motion
+            #
+            #mapqkz accounts for aberration and precession/nutation
+            #
+            output=pal.mapqkz(ra[i],dec[i],aprms)
             
-            #apply precession and nutation after applying parallax and proper motion
-            output = self.applyPrecession(yy[0],yy[1],EP0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
             ra_out[i] = output[0]
             dec_out[i] = output[1]
             
@@ -607,7 +615,7 @@ class AstrometryStars(AstrometryBase):
     """
 
     @compound('ra_corr','dec_corr')
-    def get_correctedCoordinates(self):
+    def get_unrefractedCorrectedCoordinates(self):
         """
         Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
    
@@ -633,14 +641,29 @@ class AstrometryStars(AstrometryBase):
             
             #first, apply proper motion and parallax
             if i == 0:
-                aprms = pal.mappa(ep0,mjd)
-            if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
-                yy=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms) 
-            else:
-                yy=pal.mapqkz(ra[i],dec[i],aprms)
             
-            #apply precession and nutation after applying parallax and proper motion
-            output = self.applyPrecession(yy[0],yy[1],EP0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+                #pal.mappa calculates the star-independent parameters
+                #needed to correct RA and Dec
+                #e.g the Earth barycentric and heliocentric position and velcoity,
+                #the precession-nutation matrix, etc.
+                aprms = pal.mappa(ep0,mjd)
+            
+            if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
+            
+                #pal.mapqk does the mean to apparent place calculation
+                #accounting fora berration, precession, and nutation
+                #assuming non-zero parallax and proper motion
+                output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms) 
+                
+            else:
+            
+                #pal.mapqkz does the mean to apparent place calculation
+                #accounting for aberration, precession, and nutation
+                #assuming zero parallax, proper motion etc.
+                output=pal.mapqkz(ra[i],dec[i],aprms)
+                
+                #Note: neither mapqk or mapqkz should be used for solar system sources
+            
             ra_out[i] = output[0]
             dec_out[i] = output[1]
             
