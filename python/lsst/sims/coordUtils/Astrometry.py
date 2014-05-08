@@ -300,15 +300,14 @@ class AstrometryBase(object):
             #pal.mapqkz does the same thing in the case where proper motion, parallax
             #and radial velocity are all zero
             
-            if numpy.abs(pm_ra[i]) > pm_tol or numpy.abs(pm_dec[i]) > pm_tol or \
-            numpy.abs(parallax[i]) > pm_tol or numpy.abs(v_rad[i]) > pm_tol:
-            
+            if (numpy.abs(pm_ra[i]) > pm_tol) or (numpy.abs(pm_dec[i]) > pm_tol) or \
+            (numpy.abs(parallax[i]) > pm_tol) or (numpy.abs(v_rad[i]) > pm_tol):
+
                 _mapqkOutput = pal.mapqk(ra[i], dec[i], pm_ra[i], pm_dec[i],
                                 parallax[i],v_rad[i], prms)
             
             else:
                 _mapqkOutput = pal.mapqkz(ra[i],dec[i],prms)
-            
             
             raOut[i] = _mapqkOutput[0]
             decOut[i] = _mapqkOutput[1]

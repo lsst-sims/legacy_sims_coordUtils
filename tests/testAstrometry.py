@@ -337,7 +337,7 @@ class astrometryUnitTest(unittest.TestCase):
         pm_dec[0]=-5.618517146980475171e-07 
         parallax[0]=9.328946209650547383e-02 
         v_rad[0]=3.060308412186171267e+02
-
+       
         ra[1]=8.693375673649429425e-01 
         dec[1]=1.038086165642298164e+00 
         pm_ra[1]=-5.848962163813087908e-05 
@@ -352,10 +352,16 @@ class astrometryUnitTest(unittest.TestCase):
         parallax[2]=2.172865273161764255e-02 
         v_rad[2]=-3.225459751425886452e+02
         
+        
+        #hack because this is how the SLALIB baseline tests were run 
+        for i in range(3):
+            pm_dec[i]=pm_dec[i]/numpy.cos(dec[i])
+        
         ep=2.001040286039033845e+03 
         mjd=2.018749109074271473e+03
         
-        output=self.cat.applyMeanApparentPlace(ra,dec,pm_ra,pm_dec,parallax,v_rad,Epoch0=ep,MJD=mjd)
+        output=self.cat.applyMeanApparentPlace(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
+              parallax = parallax,v_rad = v_rad, Epoch0=ep, MJD=mjd)
         
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6) 
         self.assertAlmostEqual(output[1][0],5.309044018653210628e-01,6)
