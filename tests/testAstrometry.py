@@ -101,7 +101,7 @@ class astrometryUnitTest(unittest.TestCase):
     to any particular Opsim run.
     """
 
-    obsMD = DBObject.from_objid('msstars')
+    starDBObject = DBObject.from_objid('msstars')
     obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=1.))
     obs_metadata.metadata={}
     
@@ -114,7 +114,7 @@ class astrometryUnitTest(unittest.TestCase):
     obs_metadata.metadata['Unrefracted_Dec'] = -30.0*numpy.pi/180.0
     obs_metadata.metadata['Opsim_rotskypos'] = 1.0
     
-    cat=testCatalog(obsMD,obs_metadata=obs_metadata)    
+    cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
     
     def testPassingOfSite(self):
@@ -127,7 +127,7 @@ class astrometryUnitTest(unittest.TestCase):
               xPolar=2.4, yPolar=1.4, meanTemperature=314.0, \
               meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
         
-        cat2=testCatalog(self.obsMD,obs_metadata=self.obs_metadata,site=testSite)
+        cat2=testCatalog(self.starDBObject,obs_metadata=self.obs_metadata,site=testSite)
         
         self.assertEqual(cat2.site.longitude,10.0)
         self.assertEqual(cat2.site.latitude,20.0)
