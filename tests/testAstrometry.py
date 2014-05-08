@@ -87,7 +87,8 @@ class testCatalog(InstanceCatalog,AstrometryStars,testDefaults):
     to run the astrometry routines for testing purposes
     """
     catalog_type = 'test_stars'
-    column_outputs=['id','ra_corr','dec_corr','x_focal','y_focal']
+    column_outputs=['id','raTrim','decTrim','raObserved','decObserved',
+                   'x_focal','y_focal']
 
 class astrometryUnitTest(unittest.TestCase):
     """

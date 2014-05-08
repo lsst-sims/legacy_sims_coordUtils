@@ -307,7 +307,7 @@ class AstrometryBase(object):
                                 parallax[i],v_rad[i], prms)
             
             else:
-                _mapqkOuput = pal.mapqkz(ra[i],dec[i],prms)
+                _mapqkOutput = pal.mapqkz(ra[i],dec[i],prms)
             
             
             raOut[i] = _mapqkOutput[0]
@@ -401,26 +401,26 @@ class AstrometryBase(object):
         else:
             return raOut,decOut, alt, az
     
-        def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None, 
+    def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None, 
              includeRefraction = True):
-            """
-            correct coordinates for all possible effects
+        """
+        correct coordinates for all possible effects
    
-            """
+        """
         
-            ra=self.column_by_name('raJ2000') #in radians
-            dec=self.column_by_name('decJ2000') #in radians
+        ra=self.column_by_name('raJ2000') #in radians
+        dec=self.column_by_name('decJ2000') #in radians
         
-            ep0 = self.db_obj.epoch
-            mjd = self.obs_metadata.mjd
+        ep0 = self.db_obj.epoch
+        mjd = self.obs_metadata.mjd
       
-            ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
-                     pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0, MJD = mjd)
+        ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
+                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0, MJD = mjd)
                      
-            ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, MJD = mjd,
-                                                       includeRefractoin = includeRefraction)
+        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, MJD = mjd,
+                                                   includeRefraction = includeRefraction)
 
-            return numpy.array([ra_out,dec_out])       
+        return numpy.array([ra_out,dec_out])       
     
 
     def applyApparentToTrim(self, ra, dec, MJD = 2015., altAzHr=False):
@@ -577,8 +577,8 @@ class AstrometryBase(object):
         on the focal plane
         """
         
-        ra_in = self.column_by_name('ra_corr')
-        dec_in = self.column_by_name('dec_corr')
+        ra_in = self.column_by_name('raObserved')
+        dec_in = self.column_by_name('decObserved')
         
 
         x_out=numpy.zeros(len(ra_in))
@@ -624,7 +624,7 @@ class AstrometryGalaxies(AstrometryBase):
     This mixin contains a getter for the corrected RA and dec which ignores parallax and proper motion
     """
 
-    @compound('raTrim','decTrime'):
+    @compound('raTrim','decTrim')
     def get_trimCoordinates(self):
         return self.correctCoordinates(includeRefraction = False)    
         
@@ -653,7 +653,7 @@ class AstrometryStars(AstrometryBase):
         px=self.column_by_name('parallax') #in arcseconds
         rv=self.column_by_name('radialVelocity') #in km/s; positive if receding
         
-        return self.correctCoordinates(pm_ra = pr, pm_dec = pd, parallax = px, v_rad = vr, 
+        return self.correctCoordinates(pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv, 
                      includeRefraction = includeRefraction)
            
      
