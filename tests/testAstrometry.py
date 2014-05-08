@@ -52,10 +52,7 @@ class testDefaults(object):
 
     def get_proper_motion_ra(self):
         ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=0.0
-        
+        out=numpy.zeros(len(ra))        
         return out
   
     
