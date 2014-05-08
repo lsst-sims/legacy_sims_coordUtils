@@ -230,7 +230,8 @@ class AstrometryBase(object):
 
         return ra, dec
 
-    def applyMeanApparentPlace(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, Epoch0=2000.0, MJD=2015.0):
+    def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
+         v_rad=None, Epoch0=2000.0, MJD=2015.0):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
         Uses PAL mappa routines
@@ -265,6 +266,19 @@ class AstrometryBase(object):
 
  
         """
+        
+        if pm_ra == None:
+            pm_ra=numpy.zeros(len(ra))
+        
+        if pm_dec == None:
+            pm_dec=numpy.zeros(len(ra))
+        
+        if v_rad == None:
+            v_rad=numpy.zeros(len(ra))
+        
+        if parallax == None:
+            parallax=numpy.zeros(len(ra))
+        
         # Define star independent mean to apparent place parameters
         #pal.mappa calculates the star-independent parameters
         #needed to correct RA and Dec
@@ -275,11 +289,27 @@ class AstrometryBase(object):
         #Apply source independent parameters
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
-
+        
+        pm_tol = 1.0e-9
         # Loop over postions and apply corrections
         for i in range(len(ra)):
-            _mapqkOutput=pal.mapqk(ra[i], dec[i], pm_ra[i], (pm_dec[i]/numpy.cos(dec[i])),
-                            parallax[i],v_rad[i], prms)
+            
+            #pal.mapqk does a quick mean to apparent place calculation using
+            #the output of pal.mappa
+            #
+            #pal.mapqkz does the same thing in the case where proper motion, parallax
+            #and radial velocity are all zero
+            
+            if numpy.abs(pm_ra[i]) > pm_tol or numpy.abs(pm_dec[i]) > pm_tol or \
+            numpy.abs(parallax[i]) > pm_tol or numpy.abs(v_rad[i]) > pm_tol:
+            
+                _mapqkOutput = pal.mapqk(ra[i], dec[i], pm_ra[i], pm_dec[i],
+                                parallax[i],v_rad[i], prms)
+            
+            else:
+                _mapqkOuput = pal.mapqkz(ra[i],dec[i],prms)
+            
+            
             raOut[i] = _mapqkOutput[0]
             decOut[i] = _mapqkOutput[1]
 
@@ -351,6 +381,10 @@ class AstrometryBase(object):
             az = numpy.zeros(len(ra))
  
         for i in range(len(ra)):
+        
+            #pal.aopqk does an apparent to observed place
+            #correction (i.e. including refraction and other
+            #atmospheric effects)
             _aopqkOutput=pal.aopqk(ra[i], dec[i], obsPrms) 
             azimuth=_aopqkOutput[0]
             zenith=_aopqkOutput[1]
@@ -366,7 +400,28 @@ class AstrometryBase(object):
             return raOut,decOut
         else:
             return raOut,decOut, alt, az
+    
+        def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None, 
+             includeRefraction = True):
+            """
+            correct coordinates for all possible effects
+   
+            """
+        
+            ra=self.column_by_name('raJ2000') #in radians
+            dec=self.column_by_name('decJ2000') #in radians
+        
+            ep0 = self.db_obj.epoch
+            mjd = self.obs_metadata.mjd
+      
+            ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
+                     pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0, MJD = mjd)
+                     
+            ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, MJD = mjd,
+                                                       includeRefractoin = includeRefraction)
 
+            return numpy.array([ra_out,dec_out])       
+    
 
     def applyApparentToTrim(self, ra, dec, MJD = 2015., altAzHr=False):
         """ Generate TRIM coordinates
@@ -543,17 +598,17 @@ class AstrometryBase(object):
                      #(this may be inappropriate; I'm not sure what Unrefracted_RA and Unrefracted_Dec
                      #actually store)
         
-        x, y = self.applyMeanApparentPlace(inRA, inDec, motion, motion, motion, motion,
-                                 Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
-        
-        apparentRA.append(x)
-        apparentDec.append(y)
+        x, y = self.applyMeanApparentPlace(inRA, inDec,Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
         #correct for refraction
-        trueRA, trueDec = self.applyMeanObservedPlace(apparentRA, apparentDec, MJD = self.obs_metadata.mjd)
+        trueRA, trueDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
         #we should now have the true tangent point for the gnomonic projection
         
         for i in range(len(ra_in)):
- 
+            
+            #pal.ds2tp performs the gnomonic projection on ra_in and dec_in
+            #with a tangent point at trueRA and trueDec
+            #
+
             x, y = pal.ds2tp(ra_in[i], dec_in[i],trueRA[0],trueDec[0])
 
             #rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
@@ -569,104 +624,43 @@ class AstrometryGalaxies(AstrometryBase):
     This mixin contains a getter for the corrected RA and dec which ignores parallax and proper motion
     """
 
-    @compound('ra_corr','dec_corr)
-    def get_correctedCoordinates(self):
+    @compound('raTrim','decTrime'):
+    def get_trimCoordinates(self):
+        return self.correctCoordinates(includeRefraction = False)    
+        
+    
+    @compound('raObserved','decObserved')
+    def get_observedCoordinates(self):
         """
-        Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
-   
+        get coordinates corrected for everything
         """
         
-        ra=self.column_by_name('raJ2000') #in radians
-        dec=self.column_by_name('decJ2000') #in radians
-        
-        ep0 = self.db_obj.epoch
-        mjd = self.obs_metadata.mjd
-        
-        ra_out=numpy.zeros(len(ra))
-        dec_out=numpy.zeros(len(ra))
-        
-       
-        for i in range(len(ra)):
-            
-            #first, apply proper motion and parallax
-            if i == 0:
-                aprms = pal.mappa(ep0,mjd)
-            
-            #use the transformation appripriate for zero proper motion and parallax
-            #
-            #pal.mapqkz is a "quick mean to apparent place" calculator
-            #that assumes zero parallax and proper motion
-            #
-            #mapqkz accounts for aberration and precession/nutation
-            #
-            output=pal.mapqkz(ra[i],dec[i],aprms)
-            
-            ra_out[i] = output[0]
-            dec_out[i] = output[1]
-            
-            
-        return numpy.array([ra_out,dec_out])            
-     
-
+        return self.correctCoordinates()
+    
 
 class AstrometryStars(AstrometryBase): 
     """
     This mixin contains a getter for the corrected RA and dec which takes account of proper motion and parallax
     """
 
-    @compound('ra_corr','dec_corr')
-    def get_unrefractedCorrectedCoordinates(self):
+    def correctStellarCoordinates(self, includeRefraction = True):
         """
         Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
    
         """
-        
-        ra=self.column_by_name('raJ2000') #in radians
-        dec=self.column_by_name('decJ2000') #in radians
-        
         pr=self.column_by_name('properMotionRa') #in radians per year
         pd=self.column_by_name('properMotionDec') #in radians per year
         px=self.column_by_name('parallax') #in arcseconds
-        
         rv=self.column_by_name('radialVelocity') #in km/s; positive if receding
-  
-        ep0 = self.db_obj.epoch
-        mjd = self.obs_metadata.mjd
         
-        ra_out=numpy.zeros(len(ra))
-        dec_out=numpy.zeros(len(ra))
-        
-       
-        for i in range(len(ra)):
-            
-            #first, apply proper motion and parallax
-            if i == 0:
-            
-                #pal.mappa calculates the star-independent parameters
-                #needed to correct RA and Dec
-                #e.g the Earth barycentric and heliocentric position and velcoity,
-                #the precession-nutation matrix, etc.
-                aprms = pal.mappa(ep0,mjd)
-            
-            if px[i] != 0.0 or pr[i] != 0.0 or pd[i] != 0.0:
-            
-                #pal.mapqk does the mean to apparent place calculation
-                #accounting fora berration, precession, and nutation
-                #assuming non-zero parallax and proper motion
-                output=pal.mapqk(ra[i],dec[i],pr[i],pd[i],px[i],rv[i],aprms) 
-                
-            else:
-            
-                #pal.mapqkz does the mean to apparent place calculation
-                #accounting for aberration, precession, and nutation
-                #assuming zero parallax, proper motion etc.
-                output=pal.mapqkz(ra[i],dec[i],aprms)
-                
-                #Note: neither mapqk or mapqkz should be used for solar system sources
-            
-            ra_out[i] = output[0]
-            dec_out[i] = output[1]
-            
-            
-        return numpy.array([ra_out,dec_out])            
+        return self.correctCoordinates(pm_ra = pr, pm_dec = pd, parallax = px, v_rad = vr, 
+                     includeRefraction = includeRefraction)
+           
      
+    @compound('raTrim','decTrim')
+    def get_trimCoordinates(self):
+        return self.correctStellarCoordinates(includeRefraction = False)
+    
+    @compound('raObserved','decObserved')
+    def get_observedCoordinates(self):
+        return self.correctStellarCoordinates()
