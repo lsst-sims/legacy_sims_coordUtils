@@ -525,7 +525,7 @@ class AstrometryBase(object):
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
         
-        theta = -1.0 * self.obs_metadata.metadata['Opsim_rotskypos']
+        theta = self.obs_metadata.metadata['Opsim_rotskypos']
         
         #correct RA and Dec for refraction, precession and nutation
         #
@@ -552,7 +552,7 @@ class AstrometryBase(object):
  
             x, y = pal.ds2tp(ra_in[i], dec_in[i],trueRA[0],trueDec[0])
 
-            #rotate the result by -1 * rotskypos (rotskypos being "the angle of the sky relative to
+            #rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
             #camera cooridnates" according to phoSim documentation) to account for
             #the rotation of the focal plane about the telescope pointing      
             x_out[i] = x*numpy.cos(theta) - y*numpy.sin(theta)
