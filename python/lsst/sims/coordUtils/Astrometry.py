@@ -409,6 +409,9 @@ class AstrometryBase(object):
             raOut[i] = _aopqkOutput[4]
             decOut[i] = _aopqkOutput[3]
             if (altAzHr == True):
+                #
+                #pal.de2h converts equatorial to horizon coordinates
+                #
                 _de2hOutput=pal.de2h(hourAngle, decOut[i],  self.site.latitude)
                 alt[i] = _de2hOutput[1]
                 az[i] = _de2hOutput[0]                   
@@ -561,11 +564,7 @@ class AstrometryBase(object):
         apparentDec=[]
         inRA=[self.obs_metadata.metadata['Unrefracted_RA']]
         inDec=[self.obs_metadata.metadata['Unrefracted_Dec']]
-        motion=[0.0] #set parallax, proper motion, and radial velocity all to zero
-                     #we only want to deal with precession and nutation
-                     #(this may be inappropriate; I'm not sure what Unrefracted_RA and Unrefracted_Dec
-                     #actually store)
-        
+       
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
                    
@@ -578,7 +577,6 @@ class AstrometryBase(object):
             #pal.ds2tp performs the gnomonic projection on ra_in and dec_in
             #with a tangent point at trueRA and trueDec
             #
-
             x, y = pal.ds2tp(ra_in[i], dec_in[i],trueRA[0],trueDec[0])
 
             #rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
