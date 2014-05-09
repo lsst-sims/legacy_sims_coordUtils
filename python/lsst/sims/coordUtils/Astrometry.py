@@ -283,7 +283,7 @@ class AstrometryBase(object):
         # Define star independent mean to apparent place parameters
         #pal.mappa calculates the star-independent parameters
         #needed to correct RA and Dec
-        #e.g the Earth barycentric and heliocentric position and velcoity,
+        #e.g the Earth barycentric and heliocentric position and velocity,
         #the precession-nutation matrix, etc.
         prms=pal.mappa(Epoch0, MJD)
         
@@ -300,6 +300,9 @@ class AstrometryBase(object):
             #
             #pal.mapqkz does the same thing in the case where proper motion, parallax
             #and radial velocity are all zero
+            #
+            #These routines correct RA and Dec for the motion of the star through space
+            #as well as aberration, parallax, and precession-nutation
             
             if (numpy.abs(pm_ra[i]) > pm_tol) or (numpy.abs(pm_dec[i]) > pm_tol) or \
             (numpy.abs(parallax[i]) > pm_tol) or (numpy.abs(v_rad[i]) > pm_tol):
@@ -348,7 +351,14 @@ class AstrometryBase(object):
         # Requires a look up of the IERS tables (-0.9<dut1<0.9)
         # Assume dut = 0.3 (seconds)
         dut = 0.3
-
+        
+        
+        #
+        #pal.aoppa computes star-independent parameters necessary for
+        #converting apparent place into observed place
+        #i.e. it calculates geodetic latitude, magnitude of diurnal aberration,
+        #refraction coefficients and the like based on data about the observation site
+        #
         if (includeRefraction == True):
             obsPrms=pal.aoppa(MJD, dut,
                             self.site.longitude,
@@ -385,8 +395,13 @@ class AstrometryBase(object):
         for i in range(len(ra)):
         
             #pal.aopqk does an apparent to observed place
-            #correction (i.e. including refraction and other
-            #atmospheric effects)
+            #correction
+            #
+            #it corrects for diurnal aberration and refraction
+            #(using a fast algorithm for refraction in the case of
+            #a small zenith distance and a more rigorous algorithm
+            #for a large zenith distance)
+            #
             _aopqkOutput=pal.aopqk(ra[i], dec[i], obsPrms) 
             azimuth=_aopqkOutput[0]
             zenith=_aopqkOutput[1]
@@ -442,72 +457,6 @@ class AstrometryBase(object):
         return numpy.array([ra_out,dec_out])       
     
 
-    def applyApparentToTrim(self, ra, dec, MJD = 2015., altAzHr=False):
-        """ Generate TRIM coordinates
-
-        From the observed coordinates generate the position of the
-        source as observed from the telescope site (required for the
-        trim files). This includes the hour angle, diurnal aberration,
-        alt-az. This does NOT include refraction.
-
-        Uses PAL aoppa routines (we turn off refractiony by
-        artificially setting the pressure and humidity to zero)
-        
-        
-        @param [out] raOut is corrected ra
-        
-        @param [out] decOut is corrected dec
-        
-        @param [out] _elevation is the elevation angle (only returned if altAzHr == True)
-        
-        @param [out] _azimuth (only returned if altAzHr == True)
-        
-        """
-
-        # Correct site longitude for polar motion slaPolmo
-        # see comment in applyMeanObservedPlace
-        
-        # wavelength is not used in this version as there is no refraction
-        wavelength = 5000.
-
-        # TODO NEED UT1 - UTC to be kept as a function of date.
-        # Requires a look up of the IERS tables (-0.9<dut1<0.9)
-        # Assume dut = 0.3 (seconds)
-        dut = 0.3
-        
-        #as above, we deactivate refraction by artificially setting
-        #pressure and humidity to zero
-        obsPrms=pal.aoppa(MJD, dut,
-                        self.site.longitude,
-                        self.site.latitude,
-                        self.site.height,
-                        self.site.xPolar,
-                        self.site.yPolar,
-                        self.site.meanTemperature,
-                        0.0,
-                        0.0,
-                        wavelength ,
-                        self.site.lapseRate)
-                             
-        raOut = numpy.zeros(len(ra))
-        decOut = numpy.zeros(len(ra))
-
-        for i in range(len(ra)):
-            _aopqkOutput=pal.aopqk(ra[i], dec[i], obsPrms)   
-            azimuth=_aopqkOutput[0]
-            zenith=_aopqkOutput[1]
-            hourAngle=_aopqkOutput[2]
-            decOut[i]=_aopqkOutput[3]
-            raOut[i]=_aopqkOutput[4]         
-            if (altAzHr == True):
-                _de2hOutput=pal.de2h(hourAngle, dec[i],  self.site.latitude)
-                _azimuth=_de2hOutput[0]
-                _elevation=_de2hOutput[1]
-
-        if (altAzHr == False):
-            return raOut,decOut
-        else:
-            return raOut,decOut, _elevation, _azimuth, 
 
     def refractionCoefficients(self):
         """ Calculate the refraction using PAL's refco routine

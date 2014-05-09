@@ -446,7 +446,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
 
 
-    def testApplyApparentToTrim(self):
+    def testMeanObservedPlace_NoRefraction(self):
         
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
@@ -460,7 +460,8 @@ class astrometryUnitTest(unittest.TestCase):
         
         mjd=2.018749109074271473e+03
         
-        output=self.cat.applyApparentToTrim(ra,dec,MJD=mjd,altAzHr=True)        
+        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd,altAzHr=True,
+                 includeRefraction = False)        
         
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
         self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
@@ -468,8 +469,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1][1],-5.190436610150490626e-01,6)
         self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
         self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
-        self.assertAlmostEqual(output[2],5.271914342095551653e-01,6)
-        self.assertAlmostEqual(output[3],5.479759402150099490e+00,6)
+        self.assertAlmostEqual(output[2][2],5.271914342095551653e-01,6)
+        self.assertAlmostEqual(output[3][2],5.479759402150099490e+00,6)
 
     def testRefractionCoefficients(self):
         output=self.cat.refractionCoefficients()
