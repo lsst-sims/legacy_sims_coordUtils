@@ -268,6 +268,10 @@ class AstrometryBase(object):
 
         """
         
+        if len(ra) != len(dec):
+            raise ValueError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d ' 
+                            % (len(ra),len(dec)))
+        
         if pm_ra == None:
             pm_ra=numpy.zeros(len(ra))
         
