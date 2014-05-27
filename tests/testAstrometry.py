@@ -42,7 +42,14 @@ import lsst.utils.tests as utilsTests
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.coordUtils.Astrometry import AstrometryStars
+from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 from lsst.sims.catalogs.measures.instance.Site import Site
+
+# Create test databases
+if os.path.exists('testDatabase.db'):
+    print "deleting database"
+    os.unlink('testDatabase.db')
+makeStarTestDB(size=100000, seedVal=1)
 
 class testDefaults(object):
     """
@@ -99,7 +106,7 @@ class astrometryUnitTest(unittest.TestCase):
     to any particular Opsim run.
     """
 
-    starDBObject = DBObject.from_objid('msstars')
+    starDBObject = myTestStars()
     obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=1.))
     obs_metadata.metadata={}
     
