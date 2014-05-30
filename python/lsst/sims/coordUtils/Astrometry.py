@@ -2,9 +2,9 @@ import numpy
 import ctypes
 import math
 import palpy as pal
-from .decorators import compound
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS
+from lsst.sims.catalogs.measures.instance import compound
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
