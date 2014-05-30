@@ -3,6 +3,8 @@ import ctypes
 import math
 import palpy as pal
 from .decorators import compound
+import lsst.afw.geom as afwGeom
+from lsst.afw.cameraGeom import PUPIL, PIXELS
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
@@ -545,11 +547,11 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
     
-    @compound('x_focal','y_focal')    
-    def get_skyToFocalPlane(self):
+    @compound('x_pupil','y_pupil')    
+    def get_skyToPupil(self):
         """
-        Take an input RA and dec from the sky and convert it to coordinates
-        on the focal plane
+        Take an input RA and dec from the sky and convert it to coordinates (x, y in radians)
+        on the pupil
         """
         
         ra_in = self.column_by_name('raObserved')
@@ -590,6 +592,46 @@ class AstrometryBase(object):
             y_out[i] = x*numpy.sin(theta) + y*numpy.cos(theta)
 
         return numpy.array([x_out,y_out])
+
+class CameraCoords(AstrometryBase):
+    camera = None
+    def get_chipName(self):
+        if not self.camera:
+            raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
+        chipNames = []
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        for x, y in zip(xPupil, yPupil):
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            detList = self.camera.findDetectors(cp)
+            if len(detList) > 1:
+                raise RuntimeError("This method does not know how to deal with cameras where points can be"+
+                                   " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
+            if not detList:
+                chipNames.append(None)
+            else:
+                chipNames.append(detList[0])
+        return numpy.asarray(chipNames)
+
+    @compound('xPix', 'yPix')
+    def get_pixelCoordinates(self):
+        if not self.camera:
+            raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
+        chipNames = self.column_by_name('chipName')
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        xPix = []
+        yPix = []
+        for name, x, y in zip(chipNames, xPupil, yPupil):
+            if not name:
+                xPix.append(numpy.nan)
+                yPix.append(numpy.nan)
+                continue
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            det = self.camera[name]
+            cs = det.makeCameraSys(PIXELS)
+            detPoint = det.transform(cp, cs)
+            xPix.append(detPoint.getPoint().getX())
+            yPix.append(detPoint.getPoint().getY())
+        return numpy.array(zip(xPix, yPix))
 
 class AstrometryGalaxies(AstrometryBase):
     """

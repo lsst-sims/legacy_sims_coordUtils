@@ -41,8 +41,9 @@ import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.coordUtils.Astrometry import AstrometryStars
+from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.catalogs.measures.instance.Site import Site
+import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 class testDefaults(object):
     """
@@ -81,14 +82,16 @@ class testDefaults(object):
         return out
 
 
-class testCatalog(InstanceCatalog,AstrometryStars,testDefaults):
+class testCatalog(InstanceCatalog,AstrometryStars,testDefaults,CameraCoords):
     """
     A (somewhat meaningless) instance catalog class that will allow us
     to run the astrometry routines for testing purposes
     """
     catalog_type = 'test_stars'
     column_outputs=['id','raTrim','decTrim','raObserved','decObserved',
-                   'x_focal','y_focal']
+                   'x_pupil','y_pupil', 'chipName', 'xPix', 'yPix']
+    #Needed to do camera coordinate transforms.
+    camera = camTestUtils.CameraWrapper().camera
 
 class astrometryUnitTest(unittest.TestCase):
     """

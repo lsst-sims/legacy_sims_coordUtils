@@ -3,5 +3,6 @@ setupRequired(base)
 setupRequired(python)
 setupRequired(throughputs)
 setupRequired(pyfits)
+setupRequired(afw)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
