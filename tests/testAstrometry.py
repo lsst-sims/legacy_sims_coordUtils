@@ -37,59 +37,28 @@ import os
 import unittest
 import warnings
 import sys
+import math
 import lsst.utils.tests as utilsTests
 
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
-from lsst.sims.coordUtils.Astrometry import AstrometryStars
+from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 from lsst.sims.catalogs.measures.instance.Site import Site
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 # Create test databases
-if os.path.exists('testDatabase.db'):
-    print "deleting database"
-    os.unlink('testDatabase.db')
-makeStarTestDB(size=100000, seedVal=1)
+#if os.path.exists('testDatabase.db'):
+#    print "deleting database"
+#    os.unlink('testDatabase.db')
+#makeStarTestDB(size=1000000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
-class testDefaults(object):
-    """
-    default proper motion, parallax, and radial velocity values
-    so that testCatalog will generate properly
-    """
+def d_haversine(ra1, ra2, dec1, dec2):
+    term1 = math.sin((dec2-dec1)/2.)**2
+    term2 = math.cos(dec1)*math.cos(dec2)*math.sin((ra2-ra1)/2.)**2.
+    return 2.*math.asin(math.sqrt(term1 + term2))
 
-    def get_proper_motion_ra(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))        
-        return out
-  
-    
-    def get_proper_motion_dec(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=0.0
-        
-        return out
-    
-    def get_parallax(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=1.2
-        
-        return out
-    
-    def get_radial_velocity(self):
-        ra=self.column_by_name('raJ2000')
-        out=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            out[i]=0.0
-        
-        return out
-
-
-class testCatalog(InstanceCatalog,AstrometryStars,testDefaults,CameraCoords):
+class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     """
     A (somewhat meaningless) instance catalog class that will allow us
     to run the astrometry routines for testing purposes
@@ -99,6 +68,11 @@ class testCatalog(InstanceCatalog,AstrometryStars,testDefaults,CameraCoords):
                    'x_pupil','y_pupil', 'chipName', 'xPix', 'yPix']
     #Needed to do camera coordinate transforms.
     camera = camTestUtils.CameraWrapper().camera
+    default_columns = [('properMotionRa', 0., float),
+                       ('properMotionDec', 0., float),
+                       ('parallax', 1.2, float),
+                       ('radial_velocity', 0., float)]
+
 
 class astrometryUnitTest(unittest.TestCase):
     """
@@ -110,7 +84,7 @@ class astrometryUnitTest(unittest.TestCase):
     """
 
     starDBObject = myTestStars()
-    obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=1.))
+    obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.01))
     obs_metadata.metadata={}
     
     #below are metadata values that need to be set in order for 
@@ -519,6 +493,16 @@ class astrometryUnitTest(unittest.TestCase):
         output=self.cat.paralacticAngle(arg1,arg2)
         
         self.assertAlmostEqual(output,1.381600229503358701e+00,6)
+
+    def testPixelPos(self):
+        ra_boresite = math.radians(self.obs_metadata.circ_bounds['ra'])
+        dec_boresite = math.radians(self.obs_metadata.circ_bounds['dec'])
+        for chunk, chunkMap in self.cat.iter_catalog_chunks():
+            for x, y, xp, yp, ra, dec in zip(self.cat.column_by_name('xPix'), self.cat.column_by_name('yPix'),
+                            self.cat.column_by_name('x_pupil'), self.cat.column_by_name('y_pupil'), 
+                            self.cat.column_by_name('raObserved'), self.cat.column_by_name('decObserved')):
+                print math.degrees(math.sqrt(xp*xp + yp*yp)), math.degrees(math.sqrt(xp*xp + yp*yp))/math.degrees(d_haversine(ra_boresite, ra,
+                                                                                    dec_boresite, dec))
         
 def suite():
     utilsTests.init()

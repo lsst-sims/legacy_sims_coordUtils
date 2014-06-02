@@ -601,15 +601,16 @@ class CameraCoords(AstrometryBase):
         chipNames = []
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
         for x, y in zip(xPupil, yPupil):
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
             detList = self.camera.findDetectors(cp)
+            #import pdb;pdb.set_trace()
             if len(detList) > 1:
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
             if not detList:
                 chipNames.append(None)
             else:
-                chipNames.append(detList[0])
+                chipNames.append(detList[0].getName())
         return numpy.asarray(chipNames)
 
     @compound('xPix', 'yPix')
@@ -625,13 +626,13 @@ class CameraCoords(AstrometryBase):
                 xPix.append(numpy.nan)
                 yPix.append(numpy.nan)
                 continue
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
             det = self.camera[name]
             cs = det.makeCameraSys(PIXELS)
-            detPoint = det.transform(cp, cs)
+            detPoint = self.camera.transform(cp, cs)
             xPix.append(detPoint.getPoint().getX())
             yPix.append(detPoint.getPoint().getY())
-        return numpy.array(zip(xPix, yPix))
+        return numpy.array([xPix, yPix])
 
 class AstrometryGalaxies(AstrometryBase):
     """
