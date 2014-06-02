@@ -629,24 +629,24 @@ class AstrometryBase(object):
         boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
         #we should now have the true tangent point for the gnomonic projection
         
-        dPhi = boreDec - dec_in
-        dLambda = boreRa - ra_in
+        dPhi = dec_obj - boreDec
+        dLambda = ra_obj - boreRA
         
         #see en.wikipedia.org/wiki/Haversine_formula
         #Phi is latitude on the sphere (declination)
         #Lambda is longitude on the sphere (RA)
-        h = 2.0*numpy.arcsin(numpy.sqrt(numpy.sin(0.5 * dPhi) + numpy.cos(boreDec) *
-               numpy.cos(dec_in) * (numpy.sin(0.5 * dLambda))**2))
+        h = 2.0*numpy.arcsin(numpy.sqrt(numpy.sin(0.5 * dPhi)**2 + numpy.cos(boreDec) *
+               numpy.cos(dec_obj) * (numpy.sin(0.5 * dLambda))**2))
         
         #demand that the Euclidean distance on the pupil matches
         #the haversine distance on the sphere    
-        dx = dPhi*numpy.sqrt(h**2 - dPhi**2)/numpy.abs(dPhi)
+        dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
         
         #correct for rotation of the telescope
         x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
         y_out = dx*numpy.sin(theta) - dPhi*numpy.cos(theta)
         
-        return numpy.arra([x_out, y_out])
+        return numpy.array([x_out, y_out])
 
 class AstrometryGalaxies(AstrometryBase):
     """

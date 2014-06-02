@@ -95,7 +95,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,testDefaults):
     """
     catalog_type = 'test_stars'
     column_outputs=['id','raTrim','decTrim','raObserved','decObserved',
-                   'x_focal','y_focal']
+                   'x_focal','y_focal','x_focal_nominal','y_focal_nominal']
 
 class astrometryUnitTest(unittest.TestCase):
     """
