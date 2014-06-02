@@ -545,11 +545,15 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
     
-    @compound('x_focal','y_focal')    
-    def get_skyToFocalPlane(self):
+    @compound('x_focal_nominal','y_focal_nominal')    
+    def get_gnomonicProjection(self):
         """
         Take an input RA and dec from the sky and convert it to coordinates
-        on the focal plane
+        on the focal plane.
+        
+        This uses PAL's gnonomonic projection routine which assumes that the focal
+        plane is perfectly flat.  The output is in Cartesian coordinates, assuming
+        that the Celestial Sphere is a unit sphere.
         """
         
         ra_in = self.column_by_name('raObserved')
