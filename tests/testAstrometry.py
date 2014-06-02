@@ -122,6 +122,9 @@ class astrometryUnitTest(unittest.TestCase):
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
     
+    def testWritingOfCatalog(self):
+        self.cat.write_catalog("starsTestOutput.txt")
+    
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to 
