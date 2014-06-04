@@ -547,11 +547,15 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
     
-    @compound('x_pupil','y_pupil')    
-    def get_skyToPupil(self):
+    @compound('x_focal_nominal','y_focal_nominal')    
+    def get_gnomonicProjection(self):
         """
-        Take an input RA and dec from the sky and convert it to coordinates (x, y in radians)
-        on the pupil
+        Take an input RA and dec from the sky and convert it to coordinates
+        on the focal plane.
+        
+        This uses PAL's gnonomonic projection routine which assumes that the focal
+        plane is perfectly flat.  The output is in Cartesian coordinates, assuming
+        that the Celestial Sphere is a unit sphere.
         """
         
         ra_in = self.column_by_name('raObserved')
@@ -561,15 +565,15 @@ class AstrometryBase(object):
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
         
-        theta = self.obs_metadata.metadata['Opsim_rotskypos']
+        theta = -numpy.radians(self.obs_metadata.metadata['Opsim_rotskypos'][0])
         
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
         apparentRA=[]
         apparentDec=[]
-        inRA=[self.obs_metadata.metadata['Unrefracted_RA']]
-        inDec=[self.obs_metadata.metadata['Unrefracted_Dec']]
+        inRA=[numpy.radians(self.obs_metadata.metadata['Unrefracted_RA'][0])]
+        inDec=[numpy.radians(self.obs_metadata.metadata['Unrefracted_Dec'][0])]
        
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
@@ -593,6 +597,56 @@ class AstrometryBase(object):
 
         return numpy.array([x_out,y_out])
 
+    @compound('x_pupil','y_pupil')    
+    def get_skyToPupil(self):
+        """
+        Take an input RA and dec from the sky and convert it to coordinates
+        in the pupil.
+        
+        This routine will use the haversine formula to calculate the arc distance h
+        between the bore sight and the object.  It will convert this into pupil coordinates
+        by assuming that the y-coordinate is identically the declination of the object.
+        It will find the x-coordinate by demanding that
+        
+        h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
+        """
+        
+        ra_obj = self.column_by_name('raObserved')
+        dec_obj = self.column_by_name('decObserved')
+        
+        theta = -numpy.radians(self.obs_metadata.metadata['Opsim_rotskypos'][0])
+        
+        #correct RA and Dec for refraction, precession and nutation
+        #
+        #correct for precession and nutation
+
+        inRA=[numpy.radians(self.obs_metadata.metadata['Unrefracted_RA'][0])]
+        inDec=[numpy.radians(self.obs_metadata.metadata['Unrefracted_Dec'][0])]
+       
+        x, y = self.applyMeanApparentPlace(inRA, inDec, 
+                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+                   
+        #correct for refraction
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
+        #we should now have the true tangent point for the gnomonic projection
+        dPhi = dec_obj - boreDec
+        dLambda = ra_obj - boreRA
+        
+        #see en.wikipedia.org/wiki/Haversine_formula
+        #Phi is latitude on the sphere (declination)
+        #Lambda is longitude on the sphere (RA)
+        h = 2.0*numpy.arcsin(numpy.sqrt(numpy.sin(0.5 * dPhi)**2 + numpy.cos(boreDec) *
+               numpy.cos(dec_obj) * (numpy.sin(0.5 * dLambda))**2))
+        
+        #demand that the Euclidean distance on the pupil matches
+        #the haversine distance on the sphere    
+        dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
+        #correct for rotation of the telescope
+        x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
+        y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
+        
+        return numpy.array([x_out, y_out])
+
 class CameraCoords(AstrometryBase):
     camera = None
     def get_chipName(self):
@@ -603,7 +657,6 @@ class CameraCoords(AstrometryBase):
         for x, y in zip(xPupil, yPupil):
             cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
             detList = self.camera.findDetectors(cp)
-            #import pdb;pdb.set_trace()
             if len(detList) > 1:
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
@@ -611,6 +664,7 @@ class CameraCoords(AstrometryBase):
                 chipNames.append(None)
             else:
                 chipNames.append(detList[0].getName())
+      
         return numpy.asarray(chipNames)
 
     @compound('xPix', 'yPix')

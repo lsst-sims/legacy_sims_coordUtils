@@ -48,10 +48,10 @@ from lsst.sims.catalogs.measures.instance.Site import Site
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 # Create test databases
-#if os.path.exists('testDatabase.db'):
-#    print "deleting database"
-#    os.unlink('testDatabase.db')
-#makeStarTestDB(size=1000000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+if os.path.exists('testDatabase.db'):
+    print "deleting database"
+    os.unlink('testDatabase.db')
+makeStarTestDB(size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
 def d_haversine(ra1, ra2, dec1, dec2):
     term1 = math.sin((dec2-dec1)/2.)**2
@@ -65,7 +65,8 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     """
     catalog_type = 'test_stars'
     column_outputs=['id','raTrim','decTrim','raObserved','decObserved',
-                   'x_pupil','y_pupil', 'chipName', 'xPix', 'yPix']
+                   'x_focal_nominal', 'y_focal_nominal', 'x_pupil','y_pupil',
+                   'chipName', 'xPix', 'yPix']
     #Needed to do camera coordinate transforms.
     camera = camTestUtils.CameraWrapper().camera
     default_columns = [('properMotionRa', 0., float),
@@ -98,6 +99,9 @@ class astrometryUnitTest(unittest.TestCase):
     
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
+    
+    def testWritingOfCatalog(self):
+        self.cat.write_catalog("starsTestOutput.txt")
     
     def testPassingOfSite(self):
         """
@@ -501,6 +505,7 @@ class astrometryUnitTest(unittest.TestCase):
             for x, y, xp, yp, ra, dec in zip(self.cat.column_by_name('xPix'), self.cat.column_by_name('yPix'),
                             self.cat.column_by_name('x_pupil'), self.cat.column_by_name('y_pupil'), 
                             self.cat.column_by_name('raObserved'), self.cat.column_by_name('decObserved')):
+                #XXX come up with a better test for this.
                 print math.degrees(math.sqrt(xp*xp + yp*yp)), math.degrees(math.sqrt(xp*xp + yp*yp))/math.degrees(d_haversine(ra_boresite, ra,
                                                                                     dec_boresite, dec))
         
