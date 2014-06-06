@@ -3,7 +3,7 @@ import ctypes
 import math
 import palpy as pal
 import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import PUPIL, PIXELS
+from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.sims.catalogs.measures.instance import compound
 
 class AstrometryBase(object):
@@ -686,6 +686,20 @@ class CameraCoords(AstrometryBase):
             detPoint = self.camera.transform(cp, cs)
             xPix.append(detPoint.getPoint().getX())
             yPix.append(detPoint.getPoint().getY())
+        return numpy.array([xPix, yPix])
+
+    @compound('xFocalPlane', 'yFocalPlane')
+    def get_focalPlaneCoordinates(self):
+        if not self.camera:
+            raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        xPix = []
+        yPix = []
+        for x, y in zip(xPupil, yPupil):
+            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            fpPoint = self.camera.transform(cp, FOCAL_PLANE)
+            xPix.append(fpPoint.getPoint().getX())
+            yPix.append(fpPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
 
 class AstrometryGalaxies(AstrometryBase):
