@@ -2,7 +2,7 @@ import numpy
 import ctypes
 import math
 import palpy as pal
-from .decorators import compound
+from lsst.sims.catalogs.measures.instance import compound
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
