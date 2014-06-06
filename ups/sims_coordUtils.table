@@ -3,6 +3,7 @@ setupRequired(utils)
 setupRequired(base)
 setupRequired(python)
 setupRequired(throughputs)
+setupRequired(palpy)
 setupRequired(pyfits)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
