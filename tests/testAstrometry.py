@@ -40,6 +40,7 @@ import sys
 import math
 import lsst.utils.tests as utilsTests
 
+import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
@@ -85,7 +86,7 @@ class astrometryUnitTest(unittest.TestCase):
     """
 
     starDBObject = myTestStars()
-    obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.01))
+    obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05))
     obs_metadata.metadata={}
     
     #below are metadata values that need to be set in order for 
@@ -93,9 +94,9 @@ class astrometryUnitTest(unittest.TestCase):
     #these would be set to meaningful values.  Because we are generating
     #an artificial set of inputs that must comport to the baseline SLALIB
     #inputs, these are set arbitrarily by hand
-    obs_metadata.metadata['Unrefracted_RA'] = 200.0*numpy.pi/180.0
-    obs_metadata.metadata['Unrefracted_Dec'] = -30.0*numpy.pi/180.0
-    obs_metadata.metadata['Opsim_rotskypos'] = 1.0
+    obs_metadata.metadata['Unrefracted_RA'] = (200.0, float)
+    obs_metadata.metadata['Unrefracted_Dec'] = (-30.0, float)
+    obs_metadata.metadata['Opsim_rotskypos'] = (1.0, float)
     
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
@@ -499,15 +500,16 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output,1.381600229503358701e+00,6)
 
     def testPixelPos(self):
-        ra_boresite = math.radians(self.obs_metadata.circ_bounds['ra'])
-        dec_boresite = math.radians(self.obs_metadata.circ_bounds['dec'])
         for chunk, chunkMap in self.cat.iter_catalog_chunks():
-            for x, y, xp, yp, ra, dec in zip(self.cat.column_by_name('xPix'), self.cat.column_by_name('yPix'),
-                            self.cat.column_by_name('x_pupil'), self.cat.column_by_name('y_pupil'), 
-                            self.cat.column_by_name('raObserved'), self.cat.column_by_name('decObserved')):
-                #XXX come up with a better test for this.
-                print math.degrees(math.sqrt(xp*xp + yp*yp)), math.degrees(math.sqrt(xp*xp + yp*yp))/math.degrees(d_haversine(ra_boresite, ra,
-                                                                                    dec_boresite, dec))
+            self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
+            self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('y_pupil'))))
+            for x, y, cname in zip(self.cat.column_by_name('xPix'), self.cat.column_by_name('yPix'),
+                if cname is None:
+                    #make sure that x and y are not set if the object doesn't land on a chip
+                    self.assertTrue(not numpy.isfinite(x) and not numpy.isfinite(y))
+                else:
+                    #make sure the pixel positions are inside the detector bounding box.
+                    self.assertTrue(afwGeom.Box2D(self.cat.camera[cname].getBBox()).contains(afwGeom.Point2D(x,y)))
         
 def suite():
     utilsTests.init()

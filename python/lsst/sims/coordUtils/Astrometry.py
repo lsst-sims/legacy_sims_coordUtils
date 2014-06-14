@@ -616,8 +616,6 @@ class AstrometryBase(object):
         
         theta = -numpy.radians(self.obs_metadata.metadata['Opsim_rotskypos'][0])
         
-        #correct RA and Dec for refraction, precession and nutation
-        #
         #correct for precession and nutation
 
         inRA=[numpy.radians(self.obs_metadata.metadata['Unrefracted_RA'][0])]
@@ -648,8 +646,10 @@ class AstrometryBase(object):
         return numpy.array([x_out, y_out])
 
 class CameraCoords(AstrometryBase):
+    """Methods for getting coordinates from the camera object"""
     camera = None
     def get_chipName(self):
+        """Get the chip name if there is one for each catalog entry"""
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
         chipNames = []
@@ -669,6 +669,7 @@ class CameraCoords(AstrometryBase):
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
+        """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
         chipNames = self.column_by_name('chipName')
@@ -690,6 +691,7 @@ class CameraCoords(AstrometryBase):
 
     @compound('xFocalPlane', 'yFocalPlane')
     def get_focalPlaneCoordinates(self):
+        """Get the focal plane coordinates for all objects in the catalog."""
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
