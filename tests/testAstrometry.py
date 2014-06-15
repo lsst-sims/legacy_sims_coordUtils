@@ -504,6 +504,7 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
             self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('y_pupil'))))
             for x, y, cname in zip(self.cat.column_by_name('xPix'), self.cat.column_by_name('yPix'),
+                                   self.cat.column_by_name('chipName')):
                 if cname is None:
                     #make sure that x and y are not set if the object doesn't land on a chip
                     self.assertTrue(not numpy.isfinite(x) and not numpy.isfinite(y))
