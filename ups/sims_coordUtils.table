@@ -5,5 +5,6 @@ setupRequired(python)
 setupRequired(throughputs)
 setupRequired(palpy)
 setupRequired(pyfits)
+setupRequired(afw)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
