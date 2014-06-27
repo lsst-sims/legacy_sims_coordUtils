@@ -8,7 +8,7 @@ from lsst.sims.catalogs.measures.instance import compound
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
-    
+
     @compound('glon','glat')
     def get_galactic_coords(self):
         """
@@ -21,13 +21,8 @@ class AstrometryBase(object):
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
         
-        glon=numpy.zeros(len(ra))
-        glat=numpy.zeros(len(ra))
-        for i in range(len(ra)):
-            gg=pal.eqgal(ra[i],dec[i])
-            glon[i]=gg[0]
-            glat[i]=gg[1]
-        
+        glon, glat = self.equatorialToGalactic(ra,dec)
+
         return numpy.array([glon,glat])
           
     def sphericalToCartesian(self, longitude, latitude):
@@ -207,8 +202,8 @@ class AstrometryBase(object):
             
         return raOut,decOut
 
-
-    def equatorialToGalactic(self, ra, dec):
+    @staticmethod
+    def equatorialToGalactic(ra, dec):
         '''Convert RA,Dec (J2000) to Galactic Coordinates'''
         gLong = numpy.zeros(len(ra))
         gLat = numpy.zeros(len(ra))
@@ -219,8 +214,9 @@ class AstrometryBase(object):
             gLat[i] = _eqgalOutput[1]
 
         return gLong, gLat
-
-    def galacticToEquatorial(self, gLong, gLat):
+    
+    @staticmethod
+    def galacticToEquatorial(gLong, gLat):
         '''Convert Galactic Coordinates to RA, dec (J2000)'''
         ra = numpy.zeros(len(gLong))
         dec = numpy.zeros(len(gLong))
