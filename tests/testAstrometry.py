@@ -101,6 +101,7 @@ class astrometryUnitTest(unittest.TestCase):
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
     
+    @unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
     
@@ -499,6 +500,7 @@ class astrometryUnitTest(unittest.TestCase):
         
         self.assertAlmostEqual(output,1.381600229503358701e+00,6)
 
+    @unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testPixelPos(self):
         for chunk, chunkMap in self.cat.iter_catalog_chunks():
             self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
