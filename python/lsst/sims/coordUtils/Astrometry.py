@@ -705,8 +705,8 @@ class AstrometryGalaxies(AstrometryBase):
     This mixin contains a getter for the corrected RA and dec which ignores parallax and proper motion
     """
 
-    @compound('raTrim','decTrim')
-    def get_trimCoordinates(self):
+    @compound('raPhoSim','decPhoSim')
+    def get_phoSimCoordinates(self):
         return self.correctCoordinates(includeRefraction = False)    
         
     
@@ -738,8 +738,8 @@ class AstrometryStars(AstrometryBase):
                      includeRefraction = includeRefraction)
            
      
-    @compound('raTrim','decTrim')
-    def get_trimCoordinates(self):
+    @compound('raPhoSim','decPhoSim')
+    def get_phoSimCoordinates(self):
         return self.correctStellarCoordinates(includeRefraction = False)
     
     @compound('raObserved','decObserved')
