@@ -86,16 +86,18 @@ class astrometryUnitTest(unittest.TestCase):
 
     starDBObject = myTestStars()
     obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05))
-    obs_metadata.metadata={}
+    metadata={}
     
     #below are metadata values that need to be set in order for 
     #get_skyToFocalPlane to work.  If we had been querying the database,
     #these would be set to meaningful values.  Because we are generating
     #an artificial set of inputs that must comport to the baseline SLALIB
     #inputs, these are set arbitrarily by hand
-    obs_metadata.metadata['Unrefracted_RA'] = (200.0, float)
-    obs_metadata.metadata['Unrefracted_Dec'] = (-30.0, float)
-    obs_metadata.metadata['Opsim_rotskypos'] = (1.0, float)
+    metadata['Unrefracted_RA'] = (200.0, float)
+    metadata['Unrefracted_Dec'] = (-30.0, float)
+    metadata['Opsim_rotskypos'] = (1.0, float)
+    
+    obs_metadata.assignMetaData(metadata)
     
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
@@ -115,20 +117,21 @@ class astrometryUnitTest(unittest.TestCase):
               meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
         
         obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05),site=testSite)
-        obs_metadata.metadata={}
+        metadata={}
         
         #below are metadata values that need to be set in order for 
         #get_skyToFocalPlane to work.  If we had been querying the database,
         #these would be set to meaningful values.  Because we are generating
         #an artificial set of inputs that must comport to the baseline SLALIB
         #inputs, these are set arbitrarily by hand
-        obs_metadata.metadata['Unrefracted_RA'] = (200.0, float)
-        obs_metadata.metadata['Unrefracted_Dec'] = (-30.0, float)
-        obs_metadata.metadata['Opsim_rotskypos'] = (1.0, float)
+        metadata['Unrefracted_RA'] = (200.0, float)
+        metadata['Unrefracted_Dec'] = (-30.0, float)
+        metadata['Opsim_rotskypos'] = (1.0, float)
         
+        obs_metadata.assignMetaData(metadata)
         
         cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
-        
+
         self.assertEqual(cat2.site.longitude,10.0)
         self.assertEqual(cat2.site.latitude,20.0)
         self.assertEqual(cat2.site.height,4000.0)

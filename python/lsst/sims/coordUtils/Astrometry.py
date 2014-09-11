@@ -561,6 +561,10 @@ class AstrometryBase(object):
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
         
+        if self.RotSkyPos is None:
+            #there is no observation meta data on which to base astrometry
+            return numpy.array([x_out, y_out])
+        
         theta = -numpy.radians(self.RotSkyPos)
         
         #correct RA and Dec for refraction, precession and nutation
@@ -609,6 +613,12 @@ class AstrometryBase(object):
         
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
+        
+        if self.RotSkyPos is None:
+            #there is no observation data on which to base astrometry
+            x_out = numpy.zeros(len(ra_obj))
+            y_out = numpy.zeros(len(ra_obj))
+            return numpy.array([x_out,y_out])
         
         theta = -numpy.radians(self.RotSkyPos)
         
