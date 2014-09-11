@@ -42,9 +42,9 @@ import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData, Site
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
-from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, Site
+from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 # Create test databases
@@ -116,6 +116,16 @@ class astrometryUnitTest(unittest.TestCase):
         
         obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05),site=testSite)
         obs_metadata.metadata={}
+        
+        #below are metadata values that need to be set in order for 
+        #get_skyToFocalPlane to work.  If we had been querying the database,
+        #these would be set to meaningful values.  Because we are generating
+        #an artificial set of inputs that must comport to the baseline SLALIB
+        #inputs, these are set arbitrarily by hand
+        obs_metadata.metadata['Unrefracted_RA'] = (200.0, float)
+        obs_metadata.metadata['Unrefracted_Dec'] = (-30.0, float)
+        obs_metadata.metadata['Opsim_rotskypos'] = (1.0, float)
+        
         
         cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
         
