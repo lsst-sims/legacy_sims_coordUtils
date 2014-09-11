@@ -114,7 +114,10 @@ class astrometryUnitTest(unittest.TestCase):
               xPolar=2.4, yPolar=1.4, meanTemperature=314.0, \
               meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
         
-        cat2=testCatalog(self.starDBObject,obs_metadata=self.obs_metadata,site=testSite)
+        obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05),site=testSite)
+        obs_metadata.metadata={}
+        
+        cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
         
         self.assertEqual(cat2.site.longitude,10.0)
         self.assertEqual(cat2.site.latitude,20.0)
