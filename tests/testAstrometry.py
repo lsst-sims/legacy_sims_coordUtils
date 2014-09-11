@@ -97,7 +97,7 @@ class astrometryUnitTest(unittest.TestCase):
     metadata['Unrefracted_Dec'] = (-30.0, float)
     metadata['Opsim_rotskypos'] = (1.0, float)
     
-    obs_metadata.assignMetaData(metadata)
+    obs_metadata.assignPhoSimMetaData(metadata)
     
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
@@ -128,7 +128,7 @@ class astrometryUnitTest(unittest.TestCase):
         metadata['Unrefracted_Dec'] = (-30.0, float)
         metadata['Opsim_rotskypos'] = (1.0, float)
         
-        obs_metadata.assignMetaData(metadata)
+        obs_metadata.assignPhoSimMetaData(metadata)
         
         cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
 
