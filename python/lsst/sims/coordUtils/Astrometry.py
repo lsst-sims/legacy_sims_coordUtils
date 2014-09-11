@@ -561,15 +561,15 @@ class AstrometryBase(object):
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
         
-        theta = -numpy.radians(self.obs_metadata.metadata['Opsim_rotskypos'][0])
+        theta = -numpy.radians(self.RotSkyPos)
         
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
         apparentRA=[]
         apparentDec=[]
-        inRA=[numpy.radians(self.obs_metadata.metadata['Unrefracted_RA'][0])]
-        inDec=[numpy.radians(self.obs_metadata.metadata['Unrefracted_Dec'][0])]
+        inRA=[numpy.radians(self.UnrefractedRA)]
+        inDec=[numpy.radians(self.UnrefractedDec)]
        
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
@@ -610,12 +610,12 @@ class AstrometryBase(object):
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
         
-        theta = -numpy.radians(self.obs_metadata.metadata['Opsim_rotskypos'][0])
+        theta = -numpy.radians(self.RotSkyPos)
         
         #correct for precession and nutation
 
-        inRA=[numpy.radians(self.obs_metadata.metadata['Unrefracted_RA'][0])]
-        inDec=[numpy.radians(self.obs_metadata.metadata['Unrefracted_Dec'][0])]
+        inRA=[numpy.radians(self.UnrefractedRA)]
+        inDec=[numpy.radians(self.UnrefractedDec)]
        
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
