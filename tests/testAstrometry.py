@@ -44,8 +44,7 @@ import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
-from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
-from lsst.sims.catalogs.measures.instance.Site import Site
+from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, Site
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 # Create test databases
