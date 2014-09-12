@@ -178,6 +178,10 @@ class AstrometryBase(object):
         
         """
         
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
+        
+        
         for i in range(len(parallax)):
             if parallax[i] < 0.00045:
                 parallax[i]=0.00045 #so that pal.Pm returns meaningful values
@@ -447,6 +451,12 @@ class AstrometryBase(object):
         
         """
         
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call correctCoordinates; self.obs_metadata.mjd is none")
+        
+        if self.db_obj.epoch is None:
+            raise ValueError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
+        
         ra=self.column_by_name('raJ2000') #in radians
         dec=self.column_by_name('decJ2000') #in radians
         
@@ -554,6 +564,13 @@ class AstrometryBase(object):
         that the Celestial Sphere is a unit sphere.
         """
         
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call get_gnomonicProjection; obs_metadata.mjd is None")
+        
+        if self.db_obj.epoch is None:
+            raise ValueError("in Astrometry.py cannot call get_gnomonicProjection; db_obj.epoch is None")
+        
+        
         ra_in = self.column_by_name('raObserved')
         dec_in = self.column_by_name('decObserved')
         
@@ -613,6 +630,12 @@ class AstrometryBase(object):
         
         h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
         """
+        
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call get_skyToPupil; obs_metadata.mjd is None")
+        
+        if self.db_obj.epoch is None:
+            raise ValueError("in Astrometry.py cannot call get_skyToPupil; db_obj epoch is None")
         
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
