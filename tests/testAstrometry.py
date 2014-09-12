@@ -132,15 +132,15 @@ class astrometryUnitTest(unittest.TestCase):
         
         cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
 
-        self.assertEqual(cat2.site().longitude,10.0)
-        self.assertEqual(cat2.site().latitude,20.0)
-        self.assertEqual(cat2.site().height,4000.0)
-        self.assertEqual(cat2.site().xPolar,2.4)
-        self.assertEqual(cat2.site().yPolar,1.4)
-        self.assertEqual(cat2.site().meanTemperature,314.0)
-        self.assertEqual(cat2.site().meanPressure,800.0)
-        self.assertEqual(cat2.site().meanHumidity,0.9)
-        self.assertEqual(cat2.site().lapseRate,0.01)
+        self.assertEqual(cat2.site.longitude,10.0)
+        self.assertEqual(cat2.site.latitude,20.0)
+        self.assertEqual(cat2.site.height,4000.0)
+        self.assertEqual(cat2.site.xPolar,2.4)
+        self.assertEqual(cat2.site.yPolar,1.4)
+        self.assertEqual(cat2.site.meanTemperature,314.0)
+        self.assertEqual(cat2.site.meanPressure,800.0)
+        self.assertEqual(cat2.site.meanHumidity,0.9)
+        self.assertEqual(cat2.site.lapseRate,0.01)
     
     def testSphericalToCartesian(self):
         arg1=2.19911485751

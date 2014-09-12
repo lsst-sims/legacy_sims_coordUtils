@@ -363,29 +363,29 @@ class AstrometryBase(object):
         #
         if (includeRefraction == True):
             obsPrms=pal.aoppa(MJD, dut,
-                            self.site().longitude,
-                            self.site().latitude,
-                            self.site().height,
-                            self.site().xPolar,
-                            self.site().yPolar,
-                            self.site().meanTemperature,
-                            self.site().meanPressure,
-                            self.site().meanHumidity,
+                            self.site.longitude,
+                            self.site.latitude,
+                            self.site.height,
+                            self.site.xPolar,
+                            self.site.yPolar,
+                            self.site.meanTemperature,
+                            self.site.meanPressure,
+                            self.site.meanHumidity,
                             wavelength ,
-                            self.site().lapseRate)
+                            self.site.lapseRate)
         else:
             #we can discard refraction by setting pressure and humidity to zero
             obsPrms=pal.aoppa(MJD, dut,
-                            self.site().longitude,
-                            self.site().latitude,
-                            self.site().height,
-                            self.site().xPolar,
-                            self.site().yPolar,
-                            self.site().meanTemperature,
+                            self.site.longitude,
+                            self.site.latitude,
+                            self.site.height,
+                            self.site.xPolar,
+                            self.site.yPolar,
+                            self.site.meanTemperature,
                             0.0,
                             0.0,
                             wavelength ,
-                            self.site().lapseRate)
+                            self.site.lapseRate)
 
         
         raOut = numpy.zeros(len(ra))
@@ -414,7 +414,7 @@ class AstrometryBase(object):
                 #
                 #pal.de2h converts equatorial to horizon coordinates
                 #
-                _de2hOutput=pal.de2h(hourAngle, decOut[i],  self.site().latitude)
+                _de2hOutput=pal.de2h(hourAngle, decOut[i],  self.site.latitude)
                 alt[i] = _de2hOutput[1]
                 az[i] = _de2hOutput[0]                   
 
@@ -475,13 +475,13 @@ class AstrometryBase(object):
 
         wavelength = 5000.
         precision = 1.e-10
-        _refcoOutput=pal.refco(self.site().height,
-                        self.site().meanTemperature,
-                        self.site().meanPressure,
-                        self.site().meanHumidity,
+        _refcoOutput=pal.refco(self.site.height,
+                        self.site.meanTemperature,
+                        self.site.meanPressure,
+                        self.site.meanHumidity,
                         wavelength ,
-                        self.site().latitude,
-                        self.site().lapseRate,
+                        self.site.latitude,
+                        self.site.lapseRate,
                         precision)
    
         return _refcoOutput[0], _refcoOutput[1]
@@ -526,9 +526,9 @@ class AstrometryBase(object):
         
         """
     
-        hourAngle = self.calcLast(mjd, self.site().longitude) - ra
+        hourAngle = self.calcLast(mjd, self.site.longitude) - ra
 
-        _de2hOutput=pal.de2h(hourAngle, dec,  self.site().latitude)
+        _de2hOutput=pal.de2h(hourAngle, dec,  self.site.latitude)
         
         #return (altitude, azimuth)
         return _de2hOutput[1], _de2hOutput[0]
@@ -540,7 +540,7 @@ class AstrometryBase(object):
         Az is measured from North through East.
         """
         
-        sinpa = math.sin(az)*math.cos(self.site().latitude)/math.cos(dec)
+        sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
     
     @compound('x_focal_nominal','y_focal_nominal')    
@@ -561,19 +561,22 @@ class AstrometryBase(object):
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
         
-        if self.RotSkyPos() is None:
+        if self.rotSkyPos() is None:
             #there is no observation meta data on which to base astrometry
-            return numpy.array([x_out, y_out])
+            raise ValueError("Cannot calculate [x,y]_focal_nominal without rotSkyPos obs_metadata")
         
-        theta = -numpy.radians(self.RotSkyPos())
+        if self.unrefractedRA() is None or self.unrefractedDec() is None:
+            raise ValueError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
+        
+        theta = -numpy.radians(self.rotSkyPos())
         
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
         apparentRA=[]
         apparentDec=[]
-        inRA=[numpy.radians(self.UnrefractedRA())]
-        inDec=[numpy.radians(self.UnrefractedDec())]
+        inRA=[numpy.radians(self.unrefractedRA())]
+        inDec=[numpy.radians(self.unrefractedDec())]
        
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
@@ -614,18 +617,19 @@ class AstrometryBase(object):
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
         
-        if self.RotSkyPos() is None:
+        if self.rotSkyPos() is None:
             #there is no observation data on which to base astrometry
-            x_out = numpy.zeros(len(ra_obj))
-            y_out = numpy.zeros(len(ra_obj))
-            return numpy.array([x_out,y_out])
+            raise ValueError("Cannot calculate x_pupil, y_pupil without rotSkyPos in obs_metadata")
         
-        theta = -numpy.radians(self.RotSkyPos())
+        if self.unrefractedRA() is None or self.unrefractedDec() is None:
+            raise ValueError("Cannot calculate x_pupil, y_pupil without unrefracted RA, Dec in obs_metadata")
+        
+        theta = -numpy.radians(self.rotSkyPos())
         
         #correct for precession and nutation
 
-        inRA=[numpy.radians(self.UnrefractedRA())]
-        inDec=[numpy.radians(self.UnrefractedDec())]
+        inRA=[numpy.radians(self.unrefractedRA())]
+        inDec=[numpy.radians(self.unrefractedDec())]
        
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
