@@ -42,10 +42,9 @@ import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData
+from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData, Site
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
-from lsst.sims.catalogs.measures.instance.Site import Site
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 # Create test databases
@@ -87,24 +86,26 @@ class astrometryUnitTest(unittest.TestCase):
 
     starDBObject = myTestStars()
     obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05))
-    obs_metadata.metadata={}
+    metadata={}
     
     #below are metadata values that need to be set in order for 
     #get_skyToFocalPlane to work.  If we had been querying the database,
     #these would be set to meaningful values.  Because we are generating
     #an artificial set of inputs that must comport to the baseline SLALIB
     #inputs, these are set arbitrarily by hand
-    obs_metadata.metadata['Unrefracted_RA'] = (200.0, float)
-    obs_metadata.metadata['Unrefracted_Dec'] = (-30.0, float)
-    obs_metadata.metadata['Opsim_rotskypos'] = (1.0, float)
+    metadata['Unrefracted_RA'] = (200.0, float)
+    metadata['Unrefracted_Dec'] = (-30.0, float)
+    metadata['Opsim_rotskypos'] = (1.0, float)
+    
+    obs_metadata.assignPhoSimMetaData(metadata)
     
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)    
     tol=1.0e-5
     
-    @unittest.skip("Temporary until mid cycle release 7/14/2014")
+    #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
-    
+     
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to 
@@ -115,8 +116,22 @@ class astrometryUnitTest(unittest.TestCase):
               xPolar=2.4, yPolar=1.4, meanTemperature=314.0, \
               meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
         
-        cat2=testCatalog(self.starDBObject,obs_metadata=self.obs_metadata,site=testSite)
+        obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05),site=testSite)
+        metadata={}
         
+        #below are metadata values that need to be set in order for 
+        #get_skyToFocalPlane to work.  If we had been querying the database,
+        #these would be set to meaningful values.  Because we are generating
+        #an artificial set of inputs that must comport to the baseline SLALIB
+        #inputs, these are set arbitrarily by hand
+        metadata['Unrefracted_RA'] = (200.0, float)
+        metadata['Unrefracted_Dec'] = (-30.0, float)
+        metadata['Opsim_rotskypos'] = (1.0, float)
+        
+        obs_metadata.assignPhoSimMetaData(metadata)
+        
+        cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
+
         self.assertEqual(cat2.site.longitude,10.0)
         self.assertEqual(cat2.site.latitude,20.0)
         self.assertEqual(cat2.site.height,4000.0)
@@ -500,7 +515,7 @@ class astrometryUnitTest(unittest.TestCase):
         
         self.assertAlmostEqual(output,1.381600229503358701e+00,6)
 
-    @unittest.skip("Temporary until mid cycle release 7/14/2014")
+    #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testPixelPos(self):
         for chunk, chunkMap in self.cat.iter_catalog_chunks():
             self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
