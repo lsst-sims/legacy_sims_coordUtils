@@ -64,7 +64,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     to run the astrometry routines for testing purposes
     """
     catalog_type = 'test_stars'
-    column_outputs=['id','raTrim','decTrim','raObserved','decObserved',
+    column_outputs=['id','raPhoSim','decPhoSim','raObserved','decObserved',
                    'x_focal_nominal', 'y_focal_nominal', 'x_pupil','y_pupil',
                    'chipName', 'xPix', 'yPix']
     #Needed to do camera coordinate transforms.
