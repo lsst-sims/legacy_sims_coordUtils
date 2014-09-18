@@ -578,22 +578,22 @@ class AstrometryBase(object):
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
         
-        if self.rotSkyPos() is None:
+        if self.rotSkyPos is None:
             #there is no observation meta data on which to base astrometry
             raise ValueError("Cannot calculate [x,y]_focal_nominal without rotSkyPos obs_metadata")
         
-        if self.unrefractedRA() is None or self.unrefractedDec() is None:
+        if self.unrefractedRA is None or self.unrefractedDec is None:
             raise ValueError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
         
-        theta = -numpy.radians(self.rotSkyPos())
+        theta = -numpy.radians(self.rotSkyPos)
         
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
         apparentRA=[]
         apparentDec=[]
-        inRA=[numpy.radians(self.unrefractedRA())]
-        inDec=[numpy.radians(self.unrefractedDec())]
+        inRA=[numpy.radians(self.unrefractedRA)]
+        inDec=[numpy.radians(self.unrefractedDec)]
        
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
@@ -640,19 +640,19 @@ class AstrometryBase(object):
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
         
-        if self.rotSkyPos() is None:
+        if self.rotSkyPos is None:
             #there is no observation data on which to base astrometry
             raise ValueError("Cannot calculate x_pupil, y_pupil without rotSkyPos in obs_metadata")
         
-        if self.unrefractedRA() is None or self.unrefractedDec() is None:
+        if self.unrefractedRA is None or self.unrefractedDec is None:
             raise ValueError("Cannot calculate x_pupil, y_pupil without unrefracted RA, Dec in obs_metadata")
         
-        theta = -numpy.radians(self.rotSkyPos())
+        theta = -numpy.radians(self.rotSkyPos)
         
         #correct for precession and nutation
 
-        inRA=[numpy.radians(self.unrefractedRA())]
-        inDec=[numpy.radians(self.unrefractedDec())]
+        inRA=[numpy.radians(self.unrefractedRA)]
+        inDec=[numpy.radians(self.unrefractedDec)]
        
         x, y = self.applyMeanApparentPlace(inRA, inDec, 
                    Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
