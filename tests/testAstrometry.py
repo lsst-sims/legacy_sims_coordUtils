@@ -105,15 +105,7 @@ class astrometryUnitTest(unittest.TestCase):
     #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
-    
-   # def testExceptions(self):
-   #     """
-   #     Test that exceptions are raised when obs_metadata is not specified
-   #     """
-   #     
-   #     exceptionCatalog=testCatalog(self.starDBObject)
-   #     self.assertRaises(ValueError,exceptionCatalog.write_catalog,"badCatalog.txt")
-    
+     
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to 
