@@ -566,6 +566,8 @@ class AstrometryBase(object):
         Take an input RA and dec from the sky and convert it to coordinates
         in the pupil.
 
+        Note that ra_obj and dec_obj do not have to be corrected for all astrometric effects
+
         This routine will use the haversine formula to calculate the arc distance h
         between the bore sight and the object.  It will convert this into pupil coordinates
         by assuming that the y-coordinate is identically the declination of the object.
@@ -618,15 +620,24 @@ class AstrometryBase(object):
 
         return numpy.array([x_out, y_out])
 
-    @compound('x_focal_nominal','y_focal_nominal')    
-    def get_gnomonicProjection(self):
+    def calculateGnomonicProjection(self, ra_in, dec_in):
         """
         Take an input RA and dec from the sky and convert it to coordinates
         on the focal plane.
-        
+
         This uses PAL's gnonomonic projection routine which assumes that the focal
         plane is perfectly flat.  The output is in Cartesian coordinates, assuming
         that the Celestial Sphere is a unit sphere.
+
+        @param [in] ra_in is a numpy array of RAs corrected for precession, nutation, proper motion, parallax,
+        refraction, etc. (see getter for raObserved)
+
+        @param [in] dec_in is a numpy array of Decs corrected as above
+
+        @param [out] returns a numpy array whose first row is the x coordinate according to a naive
+        gnomonic projection and whose second row is the y coordinate
+
+        Note that ra_in and dec_in do not have to be corrected for all astrometric effects
         """
         
         if self.obs_metadata.mjd is None:
@@ -634,11 +645,6 @@ class AstrometryBase(object):
         
         if self.db_obj.epoch is None:
             raise ValueError("in Astrometry.py cannot call get_gnomonicProjection; db_obj.epoch is None")
-        
-        
-        ra_in = self.column_by_name('raObserved')
-        dec_in = self.column_by_name('decObserved')
-        
 
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
@@ -681,6 +687,12 @@ class AstrometryBase(object):
             y_out[i] = x*numpy.sin(theta) + y*numpy.cos(theta)
 
         return numpy.array([x_out,y_out])
+
+    @compound('x_focal_nominal', 'y_focal_nominal')
+    def get_gnomonicProjection(self):
+        ra = self.column_by_name('raObserved')
+        dec = self.column_by_name('decObserved')
+        return self.calculateGnomonicProjection(ra, dec)
 
     @compound('x_pupil','y_pupil')    
     def get_skyToPupil(self):
