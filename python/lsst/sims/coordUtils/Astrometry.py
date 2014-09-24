@@ -553,7 +553,7 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
     
-    def calculatePupilCoords(self,ra_obj,dec_obj):
+    def calculatePupilCoordinates(self, ra_obj, dec_obj):
         """
         @param [in] ra_obj is the RA of the object corrected for all astrometric effects (precession, 
         nutation, proper motion, parallax, refraction, etc.; see the getter for 'raObserved').  In radians.
@@ -692,7 +692,7 @@ class AstrometryBase(object):
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
         
-        return self.calculatePupilCoords(ra_obj,dec_obj)
+        return self.calculatePupilCoordinates(ra_obj, dec_obj)
 
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
@@ -723,18 +723,25 @@ class CameraCoords(AstrometryBase):
       
         return numpy.asarray(chipNames)
 
-    def get_chipName(self):
-        """Get the chip name if there is one for each catalog entry"""
-        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        return self.findChipName(xPupil,yPupil)
-    
-    @compound('xPix', 'yPix')
-    def get_pixelCoordinates(self):
-        """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
+    def calculatePixelCoordinates(self, xPupil, yPupil, chipNames = None):
+        """
+        Get the pixel positions (or nan if not on a chip) for all objects in the catalog
+
+        @param [in] xPupil a numpy array containing x pupil coordinates
+
+        @param [in] yPupil a numpy array containing y pupil coordinates
+
+        @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call findChipName
+        to find the array.  The option exists for the user to specify chipNames, just in case the user
+        has already called findChipName for some reason.
+        """
+
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
-        chipNames = self.column_by_name('chipName')
-        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+
+        if chipNames is None:
+            chipNames = findChipName(xPupil, yPupil)
+
         xPix = []
         yPix = []
         for name, x, y in zip(chipNames, xPupil, yPupil):
@@ -749,6 +756,21 @@ class CameraCoords(AstrometryBase):
             xPix.append(detPoint.getPoint().getX())
             yPix.append(detPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
+
+    def get_chipName(self):
+        """Get the chip name if there is one for each catalog entry"""
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        return self.findChipName(xPupil, yPupil)
+
+    @compound('xPix', 'yPix')
+    def get_pixelCoordinates(self):
+        """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
+        if not self.camera:
+            raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
+        chipNames = self.column_by_name('chipName')
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+
+        return self.calculatePixelCoordinates(xPupil, yPupil, chipNames=chipNames)
 
     @compound('xFocalPlane', 'yFocalPlane')
     def get_focalPlaneCoordinates(self):
