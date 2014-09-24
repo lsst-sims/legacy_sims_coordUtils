@@ -111,7 +111,40 @@ class astrometryUnitTest(unittest.TestCase):
         self.cat.write_catalog("starsTestOutput.txt")
 
     def testExceptions(self):
-        pass
+        """
+        Test to make sure that focal plane methods raise exceptions when coordinates are improperly
+        specified.
+        """
+
+        #these are just values shown heuristically to give an actual chip name
+        ra = numpy.array([3.568263669914])
+        dec = numpy.array([-0.593605445572])
+        xPupil = numpy.array([-0.000262243770])
+        yPupil = numpy.array([0.000199467792])
+
+        xx, yy = self.cat.calculateFocalPlaneCoordinates(xPupil = xPupil, yPupil = yPupil)
+        xx, yy = self.cat.calculateFocalPlaneCoordinates(ra = ra, dec = dec)
+
+        self.assertRaises(RuntimeError, self.cat.calculateFocalPlaneCoordinates)
+        self.assertRaises(RuntimeError, self.cat.calculateFocalPlaneCoordinates, ra = ra, dec = dec,
+                             xPupil = xPupil, yPupil = yPupil)
+
+        xx, yy = self.cat.calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil)
+        xx, yy = self.cat.calculatePixelCoordinates(ra = ra, dec = dec)
+
+        self.assertRaises(RuntimeError, self.cat.calculatePixelCoordinates)
+        self.assertRaises(RuntimeError, self.cat.calculatePixelCoordinates, xPupil = xPupil,
+                           yPupil = yPupil, ra = ra, dec = dec)
+
+        name = self.cat.findChipName(xPupil = xPupil, yPupil = yPupil)
+        self.assertTrue(name[0] is not None)
+
+        name = self.cat.findChipName(ra = ra, dec = dec)
+        self.assertTrue(name[0] is not None)
+
+        self.assertRaises(RuntimeError, self.cat.findChipName)
+        self.assertRaises(RuntimeError, self.cat.findChipName, xPupil = xPupil, yPupil = yPupil,
+                  ra = ra, dec = dec)
 
     #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testClassMethods(self):
