@@ -729,13 +729,17 @@ class CameraCoords(AstrometryBase):
       
         return numpy.asarray(chipNames)
 
-    def calculatePixelCoordinates(self, xPupil, yPupil, chipNames = None):
+    def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames = None):
         """
         Get the pixel positions (or nan if not on a chip) for all objects in the catalog
 
         @param [in] xPupil a numpy array containing x pupil coordinates
 
         @param [in] yPupil a numpy array containing y pupil coordinates
+
+        @param [in] ra one could alternatively provide a numpy array of ra and...
+
+        @param [in] ...dec (both in radians)
 
         @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call findChipName
         to find the array.  The option exists for the user to specify chipNames, just in case the user
@@ -744,6 +748,21 @@ class CameraCoords(AstrometryBase):
 
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
+
+        specifiedPupil = False
+        specifiedRaDec = False
+
+        specifiedPupil = (xPupil is not None and yPupil is not None)
+        specifiedRaDec = (ra is not None and dec is not None)
+
+        if not specifiedPupil and not specifiedRaDec:
+            raise RuntimeError("You need to specifiy either pupil coordinates or equatorial coordinates in calculatePixelCoordinates")
+
+        if specifiedPupil and specifiedRaDec:
+            raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
+
+        if specifiedRaDec:
+            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec)
 
         if chipNames is None:
             chipNames = self.findChipName(xPupil, yPupil)
@@ -800,7 +819,7 @@ class CameraCoords(AstrometryBase):
         chipNames = self.column_by_name('chipName')
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
-        return self.calculatePixelCoordinates(xPupil, yPupil, chipNames=chipNames)
+        return self.calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil, chipNames=chipNames)
 
     @compound('xFocalPlane', 'yFocalPlane')
     def get_focalPlaneCoordinates(self):

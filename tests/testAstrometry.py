@@ -137,16 +137,24 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        pixTest = self.cat.calculatePixelCoordinates(pupilTest[0],pupilTest[1])
-        for (xxtest, yytest, xx, yy) in \
-                zip(pixTest[0], pixTest[1], baselineData['xPix'], baselineData['yPix']):
+        pixTest = self.cat.calculatePixelCoordinates(xPupil = pupilTest[0], yPupil = pupilTest[1])
+        pixTestRaDec = self.cat.calculatePixelCoordinates(ra = baselineData['raObserved'],
+                                   dec = baselineData['decObserved'])
+
+        for (xxtest, yytest, xxra, yyra, xx, yy) in \
+                zip(pixTest[0], pixTest[1], pixTestRaDec[0], pixTestRaDec[1],
+                           baselineData['xPix'], baselineData['yPix']):
 
             if not numpy.isnan(xx) and not numpy.isnan(yy):
                 self.assertAlmostEqual(xxtest,xx,6)
                 self.assertAlmostEqual(yytest,yy,6)
+                self.assertAlmostEqual(xxra,xx,6)
+                self.assertAlmostEqual(yyra,yy,6)
             else:
                 self.assertTrue(numpy.isnan(xx))
                 self.assertTrue(numpy.isnan(yy))
+                self.assertTrue(numpy.isnan(xxra))
+                self.assertTrue(numpy.isnan(yyra))
                 self.assertTrue(numpy.isnan(xxtest))
                 self.assertTrue(numpy.isnan(yytest))
 
