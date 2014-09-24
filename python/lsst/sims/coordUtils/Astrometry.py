@@ -746,7 +746,7 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
 
         if chipNames is None:
-            chipNames = findChipName(xPupil, yPupil)
+            chipNames = self.findChipName(xPupil, yPupil)
 
         xPix = []
         yPix = []

@@ -70,7 +70,7 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     camera = camTestUtils.CameraWrapper().camera
     default_formats = {'f':'%.12f'}
 
-    delimiter = '; ' #so that numpy.loadtxt can parse the chipNames which may contain commas
+    delimiter = ';' #so that numpy.loadtxt can parse the chipNames which may contain commas
                      #(see testClassMethods)
 
     default_columns = [('properMotionRa', 0., float),
@@ -115,17 +115,47 @@ class astrometryUnitTest(unittest.TestCase):
 
         dtype = [('id',int),('raPhoSim',float),('decPhoSim',float),('raObserved',float),
                  ('decObserved',float),('x_focal_nominal',float),('y_focal_nominal',float),
-                 ('x_pupil',float),('y_pupil',float),('chipName',str),('xPix',float),
+                 ('x_pupil',float),('y_pupil',float),('chipName',str,11),('xPix',float),
                  ('yPix',float),('xFocalPlane',float),('yFocalPlane',float)]
-        
+
         baselineData = numpy.loadtxt('AstrometryTestCatalog.txt',dtype = dtype, delimiter = ';')
 
         pupilTest = self.cat.calculatePupilCoordinates(baselineData['raObserved'],
                                                  baselineData['decObserved'])
 
-        for (xxtest, yytest, xx, yy) in zip(pupilTest[0], pupilTest[1], baselineData['x_pupil'], baselineData['y_pupil']):
+        for (xxtest, yytest, xx, yy) in \
+                zip(pupilTest[0], pupilTest[1], baselineData['x_pupil'], baselineData['y_pupil']):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
+
+        focalTest = self.cat.calculateFocalPlaneCoordinates(pupilTest[0],
+                                      pupilTest[1])
+
+        for (xxtest, yytest, xx, yy) in \
+                zip(focalTest[0], focalTest[1], baselineData['xFocalPlane'], baselineData['yFocalPlane']):
+
+            self.assertAlmostEqual(xxtest,xx,6)
+            self.assertAlmostEqual(yytest,yy,6)
+
+        pixTest = self.cat.calculatePixelCoordinates(pupilTest[0],pupilTest[1])
+        for (xxtest, yytest, xx, yy) in \
+                zip(pixTest[0], pixTest[1], baselineData['xPix'], baselineData['yPix']):
+
+            if not numpy.isnan(xx) and not numpy.isnan(yy):
+                self.assertAlmostEqual(xxtest,xx,6)
+                self.assertAlmostEqual(yytest,yy,6)
+            else:
+                self.assertTrue(numpy.isnan(xx))
+                self.assertTrue(numpy.isnan(yy))
+                self.assertTrue(numpy.isnan(xxtest))
+                self.assertTrue(numpy.isnan(yytest))
+
+        nameTest = self.cat.findChipName(pupilTest[0],pupilTest[1])
+        for (ntest, ncontrol) in zip(nameTest, baselineData['chipName']):
+            if ncontrol != 'None':
+                self.assertEqual(ntest,ncontrol)
+            else:
+                self.assertTrue(ntest is None)
 
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
