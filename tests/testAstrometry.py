@@ -57,11 +57,6 @@ makeStarTestDB(filename='AstrometryTestDatabase.db',
 class AstrometryTestStars(myTestStars):
     dbAddress = 'sqlite:///AstrometryTestDatabase.db'
 
-def d_haversine(ra1, ra2, dec1, dec2):
-    term1 = math.sin((dec2-dec1)/2.)**2
-    term2 = math.cos(dec1)*math.cos(dec2)*math.sin((ra2-ra1)/2.)**2.
-    return 2.*math.asin(math.sqrt(term1 + term2))
-
 class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     """
     A (somewhat meaningless) instance catalog class that will allow us
