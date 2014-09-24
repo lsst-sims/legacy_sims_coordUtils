@@ -555,18 +555,15 @@ class AstrometryBase(object):
     
     def calculatePupilCoordinates(self, ra_obj, dec_obj):
         """
-        @param [in] ra_obj is the RA of the object corrected for all astrometric effects (precession, 
-        nutation, proper motion, parallax, refraction, etc.; see the getter for 'raObserved').  In radians.
+        @param [in] ra_obj is a numpy array of RAs in radians
 
-        @param [in] dec_obj is the Dec of the object corrected as above.  In radians.
+        @param [in] dec_obj is a numpy array of Decs in radians
 
         @param [out] a numpy array in which the first row is the x pupil coordinate and the second
         row is the y pupil coordinate
 
         Take an input RA and dec from the sky and convert it to coordinates
         in the pupil.
-
-        Note that ra_obj and dec_obj do not have to be corrected for all astrometric effects
 
         This routine will use the haversine formula to calculate the arc distance h
         between the bore sight and the object.  It will convert this into pupil coordinates
@@ -629,15 +626,12 @@ class AstrometryBase(object):
         plane is perfectly flat.  The output is in Cartesian coordinates, assuming
         that the Celestial Sphere is a unit sphere.
 
-        @param [in] ra_in is a numpy array of RAs corrected for precession, nutation, proper motion, parallax,
-        refraction, etc. (see getter for raObserved)
+        @param [in] ra_in is a numpy array of RAs in radians
 
-        @param [in] dec_in is a numpy array of Decs corrected as above
+        @param [in] dec_in in radians
 
         @param [out] returns a numpy array whose first row is the x coordinate according to a naive
         gnomonic projection and whose second row is the y coordinate
-
-        Note that ra_in and dec_in do not have to be corrected for all astrometric effects
         """
         
         if self.obs_metadata.mjd is None:
