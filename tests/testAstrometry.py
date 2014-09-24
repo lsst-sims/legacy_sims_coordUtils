@@ -48,10 +48,14 @@ from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 # Create test databases
-if os.path.exists('testDatabase.db'):
+if os.path.exists('AstrometryTestDatabase.db'):
     print "deleting database"
-    os.unlink('testDatabase.db')
-makeStarTestDB(size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+    os.unlink('AstrometryTestDatabase.db')
+makeStarTestDB(filename='AstrometryTestDatabase.db',
+       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+
+class AstrometryTestStars(myTestStars):
+    dbAddress = 'sqlite:///AstrometryTestDatabase.db'
 
 def d_haversine(ra1, ra2, dec1, dec2):
     term1 = math.sin((dec2-dec1)/2.)**2
@@ -85,7 +89,7 @@ class astrometryUnitTest(unittest.TestCase):
     to any particular Opsim run.
     """
 
-    starDBObject = myTestStars()
+    starDBObject = AstrometryTestStars()
     obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05))
     metadata={}
     
