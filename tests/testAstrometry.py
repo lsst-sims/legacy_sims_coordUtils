@@ -110,6 +110,10 @@ class astrometryUnitTest(unittest.TestCase):
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
 
+    def testExceptions(self):
+        pass
+
+    #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
 
@@ -173,12 +177,16 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        nameTest = self.cat.findChipName(pupilTest[0],pupilTest[1])
-        for (ntest, ncontrol) in zip(nameTest, baselineData['chipName']):
+        nameTest = self.cat.findChipName(xPupil = pupilTest[0], yPupil = pupilTest[1])
+        nameRA = self.cat.findChipName(ra = baselineData['raObserved'], dec = baselineData['decObserved'])
+
+        for (ntest, nra, ncontrol) in zip(nameTest, nameRA, baselineData['chipName']):
             if ncontrol != 'None':
                 self.assertEqual(ntest,ncontrol)
+                self.assertEqual(nra,ncontrol)
             else:
                 self.assertTrue(ntest is None)
+                self.assertTrue(nra is None)
 
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")

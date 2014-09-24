@@ -704,7 +704,7 @@ class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
     camera = None
 
-    def findChipName(self, xPupil, yPupil):
+    def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None):
         """
         @param [in] xPupil a numpy array of x pupil coordinates
 
@@ -712,6 +712,17 @@ class CameraCoords(AstrometryBase):
 
         @param [out] a numpy array of chip names
         """
+        specifiedPupil = (xPupil is not None and yPupil is not None)
+        specifiedRaDec = (ra is not None and dec is not None)
+
+        if not specifiedPupil and not specifiedRaDec:
+            raise RuntimeError("You must specifyeither pupil coordinates or equatorial coordinates in findChipName")
+
+        if specifiedPupil and specifiedRaDec:
+            raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
+
+        if specifiedRaDec:
+            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec)
 
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
@@ -765,7 +776,7 @@ class CameraCoords(AstrometryBase):
             xPupil, yPupil = self.calculatePupilCoordinates(ra, dec)
 
         if chipNames is None:
-            chipNames = self.findChipName(xPupil, yPupil)
+            chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil)
 
         xPix = []
         yPix = []
@@ -823,7 +834,7 @@ class CameraCoords(AstrometryBase):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        return self.findChipName(xPupil, yPupil)
+        return self.findChipName(xPupil = xPupil, yPupil = yPupil)
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
