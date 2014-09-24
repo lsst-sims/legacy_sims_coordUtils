@@ -697,12 +697,19 @@ class AstrometryBase(object):
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
     camera = None
-    def get_chipName(self):
-        """Get the chip name if there is one for each catalog entry"""
+
+    def findChipName(self, xPupil, yPupil):
+        """
+        @param [in] xPupil a numpy array of x pupil coordinates
+
+        @param [in] yPupil a numpy array of y pupil coordinates
+
+        @param [out] a numpy array of chip names
+        """
+
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
         chipNames = []
-        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
         for x, y in zip(xPupil, yPupil):
             cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
             detList = self.camera.findDetectors(cp)
@@ -716,6 +723,11 @@ class CameraCoords(AstrometryBase):
       
         return numpy.asarray(chipNames)
 
+    def get_chipName(self):
+        """Get the chip name if there is one for each catalog entry"""
+        xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
+        return self.findChipName(xPupil,yPupil)
+    
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
         """Get the pixel positions (or nan if not on a chip) for all objects in the catalog"""
