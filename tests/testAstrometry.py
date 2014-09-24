@@ -43,7 +43,7 @@ import lsst.utils.tests as utilsTests
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import DBObject, ObservationMetaData, Site
-from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
+from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -68,7 +68,11 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
                    'chipName', 'xPix', 'yPix','xFocalPlane','yFocalPlane']
     #Needed to do camera coordinate transforms.
     camera = camTestUtils.CameraWrapper().camera
-    default_formats = {'f':'%le'}
+    default_formats = {'f':'%.12f'}
+
+    delimiter = '; ' #so that numpy.loadtxt can parse the chipNames which may contain commas
+                     #(see testClassMethods)
+
     default_columns = [('properMotionRa', 0., float),
                        ('properMotionDec', 0., float),
                        ('parallax', 1.2, float),
@@ -105,7 +109,27 @@ class astrometryUnitTest(unittest.TestCase):
     #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
-     
+
+    def testClassMethods(self):
+        self.cat.write_catalog("AstrometryTestCatalog.txt")
+
+        dtype = [('id',int),('raPhoSim',float),('decPhoSim',float),('raObserved',float),
+                 ('decObserved',float),('x_focal_nominal',float),('y_focal_nominal',float),
+                 ('x_pupil',float),('y_pupil',float),('chipName',str),('xPix',float),
+                 ('yPix',float),('xFocalPlane',float),('yFocalPlane',float)]
+        
+        baselineData = numpy.loadtxt('AstrometryTestCatalog.txt',dtype = dtype, delimiter = ';')
+
+        pupilTest = self.cat.calculatePupilCoordinates(baselineData['raObserved'],
+                                                 baselineData['decObserved'])
+
+        for (xxtest, yytest, xx, yy) in zip(pupilTest[0], pupilTest[1], baselineData['x_pupil'], baselineData['y_pupil']):
+            self.assertAlmostEqual(xxtest,xx,6)
+            self.assertAlmostEqual(yytest,yy,6)
+
+        if os.path.exists("AstrometryTestCatalog.txt"):
+            os.unlink("AstrometryTestCatalog.txt")
+
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to 

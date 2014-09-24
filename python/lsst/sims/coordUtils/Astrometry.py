@@ -697,7 +697,7 @@ class AstrometryBase(object):
         
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
-        
+
         return self.calculatePupilCoordinates(ra_obj, dec_obj)
 
 class CameraCoords(AstrometryBase):
