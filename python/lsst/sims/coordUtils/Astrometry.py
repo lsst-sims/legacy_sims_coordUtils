@@ -553,6 +553,71 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
     
+    def calculatePupilCoords(self,ra_obj,dec_obj):
+        """
+        @param [in] ra_obj is the RA of the object corrected for all astrometric effects (precession, 
+        nutation, proper motion, parallax, refraction, etc.; see the getter for 'raObserved').  In radians.
+
+        @param [in] dec_obj is the Dec of the object corrected as above.  In radians.
+
+        @param [out] a numpy array in which the first row is the x pupil coordinate and the second
+        row is the y pupil coordinate
+
+        Take an input RA and dec from the sky and convert it to coordinates
+        in the pupil.
+
+        This routine will use the haversine formula to calculate the arc distance h
+        between the bore sight and the object.  It will convert this into pupil coordinates
+        by assuming that the y-coordinate is identically the declination of the object.
+        It will find the x-coordinate by demanding that
+
+        h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
+        """
+        
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call get_skyToPupil; obs_metadata.mjd is None")
+        
+        if self.db_obj.epoch is None:
+            raise ValueError("in Astrometry.py cannot call get_skyToPupil; db_obj epoch is None")
+        
+        if self.rotSkyPos is None:
+            #there is no observation data on which to base astrometry
+            raise ValueError("Cannot calculate x_pupil, y_pupil without rotSkyPos in obs_metadata")
+        
+        if self.unrefractedRA is None or self.unrefractedDec is None:
+            raise ValueError("Cannot calculate x_pupil, y_pupil without unrefracted RA, Dec in obs_metadata")
+        
+        theta = -numpy.radians(self.rotSkyPos)
+        
+        #correct for precession and nutation
+
+        inRA=[numpy.radians(self.unrefractedRA)]
+        inDec=[numpy.radians(self.unrefractedDec)]
+
+        x, y = self.applyMeanApparentPlace(inRA, inDec,
+                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+
+        #correct for refraction
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
+        #we should now have the true tangent point for the gnomonic projection
+        dPhi = dec_obj - boreDec
+        dLambda = ra_obj - boreRA
+
+        #see en.wikipedia.org/wiki/Haversine_formula
+        #Phi is latitude on the sphere (declination)
+        #Lambda is longitude on the sphere (RA)
+        h = 2.0*numpy.arcsin(numpy.sqrt(numpy.sin(0.5 * dPhi)**2 + numpy.cos(boreDec) *
+               numpy.cos(dec_obj) * (numpy.sin(0.5 * dLambda))**2))
+
+        #demand that the Euclidean distance on the pupil matches
+        #the haversine distance on the sphere
+        dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
+        #correct for rotation of the telescope
+        x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
+        y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
+
+        return numpy.array([x_out, y_out])
+
     @compound('x_focal_nominal','y_focal_nominal')    
     def get_gnomonicProjection(self):
         """
@@ -622,61 +687,12 @@ class AstrometryBase(object):
         """
         Take an input RA and dec from the sky and convert it to coordinates
         in the pupil.
-        
-        This routine will use the haversine formula to calculate the arc distance h
-        between the bore sight and the object.  It will convert this into pupil coordinates
-        by assuming that the y-coordinate is identically the declination of the object.
-        It will find the x-coordinate by demanding that
-        
-        h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
         """
-        
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call get_skyToPupil; obs_metadata.mjd is None")
-        
-        if self.db_obj.epoch is None:
-            raise ValueError("in Astrometry.py cannot call get_skyToPupil; db_obj epoch is None")
         
         ra_obj = self.column_by_name('raObserved')
         dec_obj = self.column_by_name('decObserved')
         
-        if self.rotSkyPos is None:
-            #there is no observation data on which to base astrometry
-            raise ValueError("Cannot calculate x_pupil, y_pupil without rotSkyPos in obs_metadata")
-        
-        if self.unrefractedRA is None or self.unrefractedDec is None:
-            raise ValueError("Cannot calculate x_pupil, y_pupil without unrefracted RA, Dec in obs_metadata")
-        
-        theta = -numpy.radians(self.rotSkyPos)
-        
-        #correct for precession and nutation
-
-        inRA=[numpy.radians(self.unrefractedRA)]
-        inDec=[numpy.radians(self.unrefractedDec)]
-       
-        x, y = self.applyMeanApparentPlace(inRA, inDec, 
-                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
-                   
-        #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
-        #we should now have the true tangent point for the gnomonic projection
-        dPhi = dec_obj - boreDec
-        dLambda = ra_obj - boreRA
-        
-        #see en.wikipedia.org/wiki/Haversine_formula
-        #Phi is latitude on the sphere (declination)
-        #Lambda is longitude on the sphere (RA)
-        h = 2.0*numpy.arcsin(numpy.sqrt(numpy.sin(0.5 * dPhi)**2 + numpy.cos(boreDec) *
-               numpy.cos(dec_obj) * (numpy.sin(0.5 * dLambda))**2))
-        
-        #demand that the Euclidean distance on the pupil matches
-        #the haversine distance on the sphere    
-        dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
-        #correct for rotation of the telescope
-        x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
-        y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
-        
-        return numpy.array([x_out, y_out])
+        return self.calculatePupilCoords(ra_obj,dec_obj)
 
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
