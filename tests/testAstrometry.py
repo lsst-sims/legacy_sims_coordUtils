@@ -150,6 +150,15 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertTrue(numpy.isnan(xxtest))
                 self.assertTrue(numpy.isnan(yytest))
 
+        gnomonTest = self.cat.calculateGnomonicProjection(baselineData['raObserved'],
+                             baselineData['decObserved'])
+        for (xxtest, yytest, xx, yy) in \
+                zip(gnomonTest[0], gnomonTest[1],
+                    baselineData['x_focal_nominal'], baselineData['y_focal_nominal']):
+
+            self.assertAlmostEqual(xxtest,xx,6)
+            self.assertAlmostEqual(yytest,yy,6)
+
         nameTest = self.cat.findChipName(pupilTest[0],pupilTest[1])
         for (ntest, ncontrol) in zip(nameTest, baselineData['chipName']):
             if ncontrol != 'None':
