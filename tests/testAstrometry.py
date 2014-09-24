@@ -128,14 +128,20 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        focalTest = self.cat.calculateFocalPlaneCoordinates(pupilTest[0],
-                                      pupilTest[1])
-
-        for (xxtest, yytest, xx, yy) in \
-                zip(focalTest[0], focalTest[1], baselineData['xFocalPlane'], baselineData['yFocalPlane']):
+        focalTest = self.cat.calculateFocalPlaneCoordinates(xPupil = pupilTest[0],
+                                      yPupil = pupilTest[1])
+        
+        focalRa = self.cat.calculateFocalPlaneCoordinates(ra = baselineData['raObserved'],
+                        dec = baselineData['decObserved'])
+        
+        for (xxtest, yytest, xxra, yyra, xx, yy) in \
+                zip(focalTest[0], focalTest[1], focalRa[0], focalRa[1],
+                        baselineData['xFocalPlane'], baselineData['yFocalPlane']):
 
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
+            self.assertAlmostEqual(xxra,xx,6)
+            self.assertAlmostEqual(yyra,yy,6)
 
         pixTest = self.cat.calculatePixelCoordinates(xPupil = pupilTest[0], yPupil = pupilTest[1])
         pixTestRaDec = self.cat.calculatePixelCoordinates(ra = baselineData['raObserved'],

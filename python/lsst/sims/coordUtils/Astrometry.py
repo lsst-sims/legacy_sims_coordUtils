@@ -782,21 +782,35 @@ class CameraCoords(AstrometryBase):
             yPix.append(detPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
 
-    def calculateFocalPlaneCoordinates(self, xPupil, yPupil):
+    def calculateFocalPlaneCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None):
         """
         Get the focal plane coordinates for all objects in the catalog.
 
         @param [in] xPupil a numpy array of x pupil coordinates
 
         @param [in] yPupil a numpy array of y pupil coordinates
+        
+        @param [in] alternatively, one can specify numpy arrays of ra and dec (in radians)
 
         @param [out] a numpy array in which the first row is the x pixel coordinates
         and the second row is the y pixel coordinates
         """
-
+        
+        specifiedPupil = (xPupil is not None and yPupil is not None)
+        specifiedRaDec = (ra is not None and dec is not None)
+        
+        if not specifiedPupil and not specifiedRaDec:
+            raise RuntimeError("You must specify either pupil coordinates or equatorial coordinates to call calculateFocalPlaneCoordinates")
+        
+        if specifiedPupil and specifiedRaDec:
+            raise RuntimeError("You cannot specify both pupil and equaltorial coordinates when calling calculateFocalPlaneCoordinates")
+        
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
-
+        
+        if specifiedRaDec:
+            xPupil, yPupil = self.calculatePupilCoordinates(ra,dec)
+        
         xPix = []
         yPix = []
         for x, y in zip(xPupil, yPupil):
@@ -826,7 +840,7 @@ class CameraCoords(AstrometryBase):
         """Get the focal plane coordinates for all objects in the catalog."""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
 
-        return self.calculateFocalPlaneCoordinates(xPupil, yPupil)
+        return self.calculateFocalPlaneCoordinates(xPupil = xPupil, yPupil = yPupil)
 
 class AstrometryGalaxies(AstrometryBase):
     """
