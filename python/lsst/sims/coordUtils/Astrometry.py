@@ -757,6 +757,30 @@ class CameraCoords(AstrometryBase):
             yPix.append(detPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
 
+    def calculateFocalPlaneCoordinates(self, xPupil, yPupil):
+        """
+        Get the focal plane coordinates for all objects in the catalog.
+
+        @param [in] xPupil a numpy array of x pupil coordinates
+
+        @param [in] yPupil a numpy array of y pupil coordinates
+
+        @param [out] a numpy array in which the first row is the x pixel coordinates
+        and the second row is the y pixel coordinates
+        """
+
+        if not self.camera:
+            raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
+
+        xPix = []
+        yPix = []
+        for x, y in zip(xPupil, yPupil):
+            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            fpPoint = self.camera.transform(cp, FOCAL_PLANE)
+            xPix.append(fpPoint.getPoint().getX())
+            yPix.append(fpPoint.getPoint().getY())
+        return numpy.array([xPix, yPix])
+
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
@@ -775,17 +799,9 @@ class CameraCoords(AstrometryBase):
     @compound('xFocalPlane', 'yFocalPlane')
     def get_focalPlaneCoordinates(self):
         """Get the focal plane coordinates for all objects in the catalog."""
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        xPix = []
-        yPix = []
-        for x, y in zip(xPupil, yPupil):
-            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            fpPoint = self.camera.transform(cp, FOCAL_PLANE)
-            xPix.append(fpPoint.getPoint().getX())
-            yPix.append(fpPoint.getPoint().getY())
-        return numpy.array([xPix, yPix])
+
+        return self.calculateFocalPlaneCoordinates(xPupil, yPupil)
 
 class AstrometryGalaxies(AstrometryBase):
     """
