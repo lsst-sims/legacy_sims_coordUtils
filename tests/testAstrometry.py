@@ -66,9 +66,10 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     catalog_type = 'test_stars'
     column_outputs=['id','raPhoSim','decPhoSim','raObserved','decObserved',
                    'x_focal_nominal', 'y_focal_nominal', 'x_pupil','y_pupil',
-                   'chipName', 'xPix', 'yPix']
+                   'chipName', 'xPix', 'yPix','xFocalPlane','yFocalPlane']
     #Needed to do camera coordinate transforms.
     camera = camTestUtils.CameraWrapper().camera
+    default_formats = {'f':'%le'}
     default_columns = [('properMotionRa', 0., float),
                        ('properMotionDec', 0., float),
                        ('parallax', 1.2, float),
