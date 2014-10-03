@@ -89,7 +89,9 @@ class astrometryUnitTest(unittest.TestCase):
     """
 
     starDBObject = AstrometryTestStars()
-    obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05))
+    obs_metadata=ObservationMetaData(mjd=50984.371741,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
     metadata={}
 
     #below are metadata values that need to be set in order for
@@ -234,7 +236,8 @@ class astrometryUnitTest(unittest.TestCase):
               xPolar=2.4, yPolar=1.4, meanTemperature=314.0, \
               meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
 
-        obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05),site=testSite)
+        obs_metadata=ObservationMetaData(mjd=50984.371741,boundType='circle',unrefractedRA=200.0,
+                                         unrefractedDec=-30.0,boundLength=0.05,site=testSite)
         metadata={}
 
         #below are metadata values that need to be set in order for
