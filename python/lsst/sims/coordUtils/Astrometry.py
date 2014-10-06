@@ -325,7 +325,6 @@ class AstrometryBase(object):
         # Assume dut = 0.3 (seconds)
         dut = 0.3
 
-
         #
         #pal.aoppa computes star-independent parameters necessary for
         #converting apparent place into observed place
