@@ -281,34 +281,15 @@ class AstrometryBase(object):
         #the precession-nutation matrix, etc.
         prms=pal.mappa(Epoch0, MJD)
 
-        #Apply source independent parameters
-        raOut = numpy.zeros(len(ra))
-        decOut = numpy.zeros(len(ra))
-
-        pm_tol = 1.0e-9
-        # Loop over postions and apply corrections
-        for i in range(len(ra)):
-
-            #pal.mapqk does a quick mean to apparent place calculation using
-            #the output of pal.mappa
-            #
-            #pal.mapqkz does the same thing in the case where proper motion, parallax
-            #and radial velocity are all zero
-            #
-            #These routines correct RA and Dec for the motion of the star through space
-            #as well as aberration, parallax, and precession-nutation
-
-            if (numpy.abs(pm_ra[i]) > pm_tol) or (numpy.abs(pm_dec[i]) > pm_tol) or \
-            (numpy.abs(parallax[i]) > pm_tol) or (numpy.abs(v_rad[i]) > pm_tol):
-
-                _mapqkOutput = pal.mapqk(ra[i], dec[i], pm_ra[i], pm_dec[i],
-                                parallax[i],v_rad[i], prms)
-
-            else:
-                _mapqkOutput = pal.mapqkz(ra[i],dec[i],prms)
-
-            raOut[i] = _mapqkOutput[0]
-            decOut[i] = _mapqkOutput[1]
+        #pal.mapqk does a quick mean to apparent place calculation using
+        #the output of pal.mappa
+        #
+        #pal.mapqkz does the same thing in the case where proper motion, parallax
+        #and radial velocity are all zero
+        #
+        #These routines correct RA and Dec for the motion of the star through space
+        #as well as aberration, parallax, and precession-nutation
+        raOut,decOut = pal.mapqkAllVector(ra,dec,pm_ra,pm_dec,parallax,v_rad,prms)
 
         return raOut,decOut
 
