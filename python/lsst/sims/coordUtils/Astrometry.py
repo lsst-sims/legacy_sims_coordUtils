@@ -281,18 +281,13 @@ class AstrometryBase(object):
         #the precession-nutation matrix, etc.
         prms=pal.mappa(Epoch0, MJD)
 
-        #The routine below will determine whether or not to call pal.mapqk
-        #or pal.mapqkz
-        #
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
         #
-        #pal.mapqkz does the same thing in the case where proper motion, parallax
-        #and radial velocity are all zero
-        #
-        #These routines correct RA and Dec for the motion of the star through space
-        #as well as aberration, parallax, and precession-nutation
-        raOut,decOut = pal.mapqkAllVector(ra,dec,pm_ra,pm_dec,parallax,v_rad,prms)
+        #Assuming that everything has propermotion, radial velocity, and parallax
+        #is accurate to 10^-5 radians
+
+        raOut,decOut = pal.mapqkVector(ra,dec,pm_ra,pm_dec,parallax,v_rad,prms)
 
         return raOut,decOut
 
