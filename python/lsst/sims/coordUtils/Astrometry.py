@@ -185,7 +185,7 @@ class AstrometryBase(object):
         if self.obs_metadata.mjd is None:
             raise ValueError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
 
-        px = numpy.where(parallax>0.00045, parallax, 0.00045)
+        px = numpy.where(parallax<0.00045, 0.00045, parallax)
         #so that pal.Pm returns meaningful values
 
         # Generate Julian epoch from MJD
