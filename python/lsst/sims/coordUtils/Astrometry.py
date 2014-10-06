@@ -25,7 +25,8 @@ class AstrometryBase(object):
 
         return numpy.array([glon,glat])
 
-    def sphericalToCartesian(self, longitude, latitude):
+    @staticmethod
+    def sphericalToCartesian(longitude, latitude):
         """
         Transforms between spherical and Cartesian coordinates.
 
@@ -41,7 +42,8 @@ class AstrometryBase(object):
                           numpy.sin(longitude)*cosDec,
                           numpy.sin(latitude)])
 
-    def cartesianToSpherical(self, xyz):
+    @staticmethod
+    def cartesianToSpherical(xyz):
         """
         Transforms between Cartesian and spherical coordinates
 
@@ -75,7 +77,8 @@ class AstrometryBase(object):
         D = pal.dsep (long1, lat1, long2, lat2)
         return D
 
-    def rotationMatrixFromVectors(self, v1, v2):
+    @staticmethod
+    def rotationMatrixFromVectors(v1, v2):
         '''
         Given two vectors v1,v2 calculate the rotation matrix for v1->v2 using the axis-angle approach
 
@@ -471,8 +474,6 @@ class AstrometryBase(object):
                                                    includeRefraction = includeRefraction)
 
         return numpy.array([ra_out,dec_out])
-
-
 
     def refractionCoefficients(self):
         """ Calculate the refraction using PAL's refco routine
