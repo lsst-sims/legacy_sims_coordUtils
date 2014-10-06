@@ -281,6 +281,9 @@ class AstrometryBase(object):
         #the precession-nutation matrix, etc.
         prms=pal.mappa(Epoch0, MJD)
 
+        #The routine below will determine whether or not to call pal.mapqk
+        #or pal.mapqkz
+        #
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
         #
