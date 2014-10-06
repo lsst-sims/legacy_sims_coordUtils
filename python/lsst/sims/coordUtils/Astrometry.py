@@ -58,7 +58,8 @@ class AstrometryBase(object):
 
         return longitude, latitude
 
-    def angularSeparation(self, long1, lat1, long2, lat2):
+    @staticmethod
+    def angularSeparation(long1, lat1, long2, lat2):
         ''' Given two spherical points in radians, calculate the angular
         separation between them.
 
