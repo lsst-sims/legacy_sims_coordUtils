@@ -608,8 +608,6 @@ class AstrometryBase(object):
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
-        apparentRA=[]
-        apparentDec=[]
         inRA=numpy.array([numpy.radians(self.unrefractedRA)])
         inDec=numpy.array([numpy.radians(self.unrefractedDec)])
 
