@@ -367,6 +367,10 @@ class AstrometryBase(object):
         #
 
         azimuth, zenith, hourAngle, decOut, raOut = pal.aopqkVector(ra,dec,obsPrms)
+        #
+        #Note: this is a choke point.  Even the vectorized version of aopqk
+        #is expensive (it takes about 0.006 seconds per call)
+
         if altAzHr == True:
             #
             #pal.de2h converts equatorial to horizon coordinates
@@ -374,44 +378,7 @@ class AstrometryBase(object):
             az, alt = pal.de2hVector(hourAngle,decOut,self.site.latitude)
             return raOut, decOut, alt, az
         return raOut, decOut
-        
-        """
-        raOut = numpy.zeros(len(ra))
-        decOut = numpy.zeros(len(ra))
-        if (altAzHr == True):
-            alt = numpy.zeros(len(ra))
-            az = numpy.zeros(len(ra))
 
-        for i in range(len(ra)):
-
-            #pal.aopqk does an apparent to observed place
-            #correction
-            #
-            #it corrects for diurnal aberration and refraction
-            #(using a fast algorithm for refraction in the case of
-            #a small zenith distance and a more rigorous algorithm
-            #for a large zenith distance)
-            #
-            _aopqkOutput=pal.aopqk(ra[i], dec[i], obsPrms)
-            azimuth=_aopqkOutput[0]
-            zenith=_aopqkOutput[1]
-            hourAngle=_aopqkOutput[2]
-            raOut[i] = _aopqkOutput[4]
-            decOut[i] = _aopqkOutput[3]
-            if (altAzHr == True):
-                #
-                #pal.de2h converts equatorial to horizon coordinates
-                #
-                _de2hOutput=pal.de2h(hourAngle, decOut[i],  self.site.latitude)
-                alt[i] = _de2hOutput[1]
-                az[i] = _de2hOutput[0]
-
-        if (altAzHr == False):
-            return raOut,decOut
-        else:
-            return raOut,decOut, alt, az
-        """
-        
     def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None,
              includeRefraction = True):
         """
