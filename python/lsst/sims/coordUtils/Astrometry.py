@@ -357,7 +357,25 @@ class AstrometryBase(object):
                             wavelength ,
                             self.site.lapseRate)
 
+        #pal.aopqk does an apparent to observed place
+        #correction
+        #
+        #it corrects for diurnal aberration and refraction
+        #(using a fast algorithm for refraction in the case of
+        #a small zenith distance and a more rigorous algorithm
+        #for a large zenith distance)
+        #
 
+        azimuth, zenith, hourAngle, decOut, raOut = pal.aopqkVector(ra,dec,obsPrms)
+        if altAzHr == True:
+            #
+            #pal.de2h converts equatorial to horizon coordinates
+            #
+            az, alt = pal.de2hVector(hourAngle,decOut,self.site.latitude)
+            return raOut, decOut, alt, az
+        return raOut, decOut
+        
+        """
         raOut = numpy.zeros(len(ra))
         decOut = numpy.zeros(len(ra))
         if (altAzHr == True):
@@ -392,7 +410,8 @@ class AstrometryBase(object):
             return raOut,decOut
         else:
             return raOut,decOut, alt, az
-
+        """
+        
     def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None,
              includeRefraction = True):
         """
