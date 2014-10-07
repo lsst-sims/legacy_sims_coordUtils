@@ -370,6 +370,9 @@ class AstrometryBase(object):
         #
         #Note: this is a choke point.  Even the vectorized version of aopqk
         #is expensive (it takes about 0.006 seconds per call)
+        #
+        #Actually, this is only a choke point if you are dealing with zenith
+        #distances of greater than about 70 degrees
 
         if altAzHr == True:
             #
