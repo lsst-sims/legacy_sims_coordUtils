@@ -618,20 +618,19 @@ class AstrometryBase(object):
         trueRA, trueDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
         #we should now have the true tangent point for the gnomonic projection
 
-        for i in range(len(ra_in)):
+        #pal.ds2tp performs the gnomonic projection on ra_in and dec_in
+        #with a tangent point at (trueRA, trueDec)
+        #
+        x, y = pal.ds2tpVector(ra_in,dec_in,trueRA[0],trueDec[0])
 
-            #pal.ds2tp performs the gnomonic projection on ra_in and dec_in
-            #with a tangent point at trueRA and trueDec
-            #
-            x, y = pal.ds2tp(ra_in[i], dec_in[i],trueRA[0],trueDec[0])
+        #rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
+        #camera cooridnates" according to phoSim documentation) to account for
+        #the rotation of the focal plane about the telescope pointing
 
-            #rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
-            #camera cooridnates" according to phoSim documentation) to account for
-            #the rotation of the focal plane about the telescope pointing
-            x_out[i] = x*numpy.cos(theta) - y*numpy.sin(theta)
-            y_out[i] = x*numpy.sin(theta) + y*numpy.cos(theta)
+        x_out = x*numpy.cos(theta) - y*numpy.sin(theta)
+        y_out = x*numpy.sin(theta) + y*numpy.cos(theta)
 
-        return numpy.array([x_out,y_out])
+        return numpy.array([x_out, y_out])
 
     @compound('x_focal_nominal', 'y_focal_nominal')
     def get_gnomonicProjection(self):
