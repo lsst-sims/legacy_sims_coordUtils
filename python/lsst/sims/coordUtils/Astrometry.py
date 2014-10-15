@@ -476,7 +476,7 @@ class AstrometryBase(object):
                         self.site.meanPressure,
                         self.site.meanHumidity,
                         wavelength ,
-                        self.site.latitude,
+                        self.site.latitude, #this actually needs to be the astronomical latitude
                         self.site.lapseRate,
                         precision)
 
