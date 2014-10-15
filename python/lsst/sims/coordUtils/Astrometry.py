@@ -308,8 +308,8 @@ class AstrometryBase(object):
 
         return raOut,decOut
 
-    def applyMeanObservedPlace(self, ra, dec, MJD = 2015., includeRefraction = True,  \
-                               altAzHr=False, wavelength=5000.):
+    def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,  \
+                               altAzHr=False, wavelength=0.5):
         """Calculate the Mean Observed Place
 
         Uses PAL aoppa routines
@@ -464,7 +464,7 @@ class AstrometryBase(object):
 
         """
 
-        wavelength = 5000.
+        wavelength = 0.5 #effective wavelength in microns
         precision = 1.e-10
         _refcoOutput=pal.refco(self.site.height,
                         self.site.meanTemperature,
