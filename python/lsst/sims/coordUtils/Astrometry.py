@@ -229,7 +229,7 @@ class AstrometryBase(object):
         return ra, dec
 
     def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-         v_rad=None, Epoch0=2000.0, MJD=2015.0):
+         v_rad=None, Epoch0=2000.0):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
         Uses PAL mappa routines
@@ -266,6 +266,9 @@ class AstrometryBase(object):
 
         """
 
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call applyMeanApparentPlace; self.obs_metadata.mjd is None")
+
         if len(ra) != len(dec):
             raise ValueError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
                             % (len(ra),len(dec)))
@@ -287,7 +290,12 @@ class AstrometryBase(object):
         #needed to correct RA and Dec
         #e.g the Earth barycentric and heliocentric position and velocity,
         #the precession-nutation matrix, etc.
-        prms=pal.mappa(Epoch0, MJD)
+        #
+        #arguments of pal.mapp are:
+        #epoch of mean equinox to be used (Julian)
+        #
+        #date (MJD)
+        prms=pal.mappa(Epoch0, self.obs_metadata.mjd)
 
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
