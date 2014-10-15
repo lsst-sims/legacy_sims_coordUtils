@@ -136,11 +136,10 @@ class AstrometryBase(object):
 
         """
 
-        # Generate Julian epoch from MJD
-        julianEpoch = pal.epj(MJD)
-
         # Determine the precession and nutation
-        rmat=pal.prenut(EP0, julianEpoch)
+        #pal.prenut takes the julian epoch for the mean coordinates
+        #and the MJD for the the true coordinates
+        rmat=pal.prenut(EP0, MJD)
 
         # Apply rotation matrix
         xyz = self.sphericalToCartesian(ra,dec)
