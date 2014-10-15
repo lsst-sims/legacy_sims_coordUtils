@@ -216,7 +216,10 @@ class AstrometryBase(object):
 
     @staticmethod
     def galacticToEquatorial(gLong, gLat):
-        '''Convert Galactic Coordinates to RA, dec (J2000)'''
+        '''Convert Galactic Coordinates to RA, dec (J2000)
+
+        All angles are in radians
+        '''
         ra = numpy.zeros(len(gLong))
         dec = numpy.zeros(len(gLong))
 
