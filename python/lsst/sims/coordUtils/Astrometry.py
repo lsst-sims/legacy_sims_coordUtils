@@ -149,7 +149,7 @@ class AstrometryBase(object):
         return raOut,decOut
 
     def applyProperMotion(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, \
-                          EP0=2000.0, MJD=2015.0):
+                          EP0=2000.0):
         """Applies proper motion between two epochs.
 
         Note pm_ra is measured in sky velocity (cos(dec)*dRa/dt).
@@ -177,8 +177,6 @@ class AstrometryBase(object):
         @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
 
         @param [in] EP0 is epoch in Julian years
-
-        @param [in] MJD is modified Julian date
 
         @param [out] raOut is corrected ra
 
