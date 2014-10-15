@@ -139,6 +139,9 @@ class AstrometryBase(object):
         # Determine the precession and nutation
         #pal.prenut takes the julian epoch for the mean coordinates
         #and the MJD for the the true coordinates
+        #
+        #TODO it is not specified what this MJD should be (i.e. in which
+        #time system it should be reckoned)
         rmat=pal.prenut(EP0, MJD)
 
         # Apply rotation matrix
@@ -191,6 +194,10 @@ class AstrometryBase(object):
         #so that pal.Pm returns meaningful values
 
         # Generate Julian epoch from MJD
+        #
+        #TODO do we actually want proper motion measured against
+        #obs_metadata.mjd (is it clear what time system we should
+        #be using)
         julianEpoch = pal.epj(self.obs_metadata.mjd)
         raOut, decOut = pal.pmVector(ra,dec,pm_ra,pm_dec/numpy.cos(dec),parallax,v_rad, EP0, julianEpoch)
 
@@ -295,6 +302,8 @@ class AstrometryBase(object):
         #epoch of mean equinox to be used (Julian)
         #
         #date (MJD)
+        #
+        #TODO This mjd should be the Barycentric Dynamical Tyime
         prms=pal.mappa(Epoch0, self.obs_metadata.mjd)
 
         #pal.mapqk does a quick mean to apparent place calculation using
@@ -362,7 +371,7 @@ class AstrometryBase(object):
         #i.e. it calculates geodetic latitude, magnitude of diurnal aberration,
         #refraction coefficients and the like based on data about the observation site
         #
-        #This will be tricky: pal.aoppa requires as its first argument
+        #TODO: pal.aoppa requires as its first argument
         #the UTC time expressed as an MJD.  It is not clear to me
         #how to actually calculate that.
         if (includeRefraction == True):
@@ -471,12 +480,15 @@ class AstrometryBase(object):
 
         wavelength = 0.5 #effective wavelength in microns
         precision = 1.e-10
+
+        #TODO the latitude in refco needs to be astronomical latitude,
+        #not geodetic latitude
         _refcoOutput=pal.refco(self.site.height,
                         self.site.meanTemperature,
                         self.site.meanPressure,
                         self.site.meanHumidity,
                         wavelength ,
-                        self.site.latitude, #this actually needs to be the astronomical latitude
+                        self.site.latitude,
                         self.site.lapseRate,
                         precision)
 
@@ -507,6 +519,8 @@ class AstrometryBase(object):
 
         Note that mjd is the UT1 time expressed as an MJD
         """
+
+        #TODO gmsta wants UT1 expressed as mjd
         D = pal.gmsta(mjd, 0.)
         D += long
         D = D%(2.*math.pi)
