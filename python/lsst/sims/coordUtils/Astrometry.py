@@ -17,6 +17,7 @@ class AstrometryBase(object):
         Reads in the ra and dec from the data base and returns columns with galactic
         longitude and latitude.
 
+        All angles are in radians
         """
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
@@ -32,9 +33,11 @@ class AstrometryBase(object):
 
         @param [in] longitude is the input longitudinal coordinate
 
-        @param [in] latitutde is the input latitudinal coordinate
+        @param [in] latitude is the input latitudinal coordinate
 
         @param [out] a list of the (three-dimensional) cartesian coordinates on a unit sphere
+
+        All angles are in radians
         """
 
         cosDec = numpy.cos(latitude)
@@ -51,6 +54,7 @@ class AstrometryBase(object):
 
         @param [out] returns longitude and latitude
 
+        All angles are in radians
         """
 
         rad = numpy.sqrt(xyz[:][0]*xyz[:][0] + xyz[:][1]*xyz[:][1] + xyz[:][2]*xyz[:][2])
@@ -73,6 +77,7 @@ class AstrometryBase(object):
 
         @param [out] D the angular separation in radians
 
+        All angles are in radians
         '''
         D = pal.dsep (long1, lat1, long2, lat2)
         return D
@@ -196,7 +201,10 @@ class AstrometryBase(object):
 
     @staticmethod
     def equatorialToGalactic(ra, dec):
-        '''Convert RA,Dec (J2000) to Galactic Coordinates'''
+        '''Convert RA,Dec (J2000) to Galactic Coordinates
+
+        All angles are in radians
+        '''
         gLong = numpy.zeros(len(ra))
         gLat = numpy.zeros(len(ra))
 
