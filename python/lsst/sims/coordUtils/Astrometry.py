@@ -388,7 +388,7 @@ class AstrometryBase(object):
                             self.site.lapseRate)
         else:
             #we can discard refraction by setting pressure and humidity to zero
-            obsPrms=pal.aoppa(MJD, dut,
+            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
                             self.site.longitude,
                             self.site.latitude,
                             self.site.height,
