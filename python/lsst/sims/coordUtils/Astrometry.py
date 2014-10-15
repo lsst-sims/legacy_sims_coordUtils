@@ -299,6 +299,10 @@ class AstrometryBase(object):
 
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
+        #
+        #Taken from the palpy source code:
+        #The accuracy is sub-milliarcsecond, limited by the
+        #precession-nutation model (see palPrenut for details).
 
         raOut,decOut = pal.mapqkVector(ra,dec,pm_ra,pm_dec,parallax,v_rad,prms)
 
