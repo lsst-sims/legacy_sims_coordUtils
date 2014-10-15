@@ -320,13 +320,24 @@ class AstrometryBase(object):
 
         This will call pal.aopqk which accounts for refraction and diurnal aberration
 
-        @param [out] raOut is corrected ra
+        @param [in] ra is geocentric apparent RA (radians)
 
-        @param [out] decOut is corrected dec
+        @param [in] dec is geocentric apparent Dec (radians)
 
-        @param [out] alt is altitude angle (only returned if altAzHr == True)
+        @param [in] includeRefraction is a boolean to turn refraction on and off
 
-        @param [out] az is azimuth angle (only returned if altAzHr == True)
+        @param [in] altAzHr is a boolean indicating whether or not to return altitude
+        and azimuth
+
+        @param [in] wavelength is effective wavelength in microns
+
+        @param [out] raOut is corrected ra (radians)
+
+        @param [out] decOut is corrected dec (radians)
+
+        @param [out] alt is altitude angle (only returned if altAzHr == True) (radians)
+
+        @param [out] az is azimuth angle (only returned if altAzHr == True) (radians)
 
         """
 
@@ -488,6 +499,8 @@ class AstrometryBase(object):
     def calcLast(self, mjd, long):
         """
         Converts the date mjd+long into Greenwhich Mean Sidereal Time (in radians)
+
+        Note that mjd is the UT1 time expressed as an MJD
         """
         D = pal.gmsta(mjd, 0.)
         D += long
