@@ -412,8 +412,8 @@ class AstrometryBase(object):
             #
             #pal.de2h converts equatorial to horizon coordinates
             #
-            az, alt = pal.de2hVector(hourAngle,decOut,self.site.latitude)
-            return raOut, decOut, alt, az
+            az, el = pal.de2hVector(hourAngle,decOut,self.site.latitude)
+            return raOut, decOut, el, az
         return raOut, decOut
 
     def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None,
