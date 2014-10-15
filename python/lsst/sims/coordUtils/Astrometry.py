@@ -341,6 +341,9 @@ class AstrometryBase(object):
 
         """
 
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call applyMeanObservedPlace; self.obs_metadata.mjd is None")
+
         # Correct site longitude for polar motion slaPolmo
         #
         # As of 4 February 2014, I am not sure what to make of this comment.
@@ -359,8 +362,11 @@ class AstrometryBase(object):
         #i.e. it calculates geodetic latitude, magnitude of diurnal aberration,
         #refraction coefficients and the like based on data about the observation site
         #
+        #This will be tricky: pal.aoppa requires as its first argument
+        #the UTC time expressed as an MJD.  It is not clear to me
+        #how to actually calculate that.
         if (includeRefraction == True):
-            obsPrms=pal.aoppa(MJD, dut,
+            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
                             self.site.longitude,
                             self.site.latitude,
                             self.site.height,
@@ -444,12 +450,11 @@ class AstrometryBase(object):
         dec=self.column_by_name('decJ2000') #in radians
 
         ep0 = self.db_obj.epoch
-        mjd = self.obs_metadata.mjd
 
         ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
-                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0, MJD = mjd)
+                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0)
 
-        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, MJD = mjd,
+        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent,
                                                    includeRefraction = includeRefraction)
 
         return numpy.array([ra_out,dec_out])
@@ -576,11 +581,10 @@ class AstrometryBase(object):
         inRA=numpy.array([numpy.radians(self.unrefractedRA)])
         inDec=numpy.array([numpy.radians(self.unrefractedDec)])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec,
-                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0 = self.db_obj.epoch)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y)
         #we should now have the true tangent point for the gnomonic projection
         dPhi = dec_obj - boreDec
         dLambda = ra_obj - boreRA
@@ -641,11 +645,10 @@ class AstrometryBase(object):
         inRA=numpy.array([numpy.radians(self.unrefractedRA)])
         inDec=numpy.array([numpy.radians(self.unrefractedDec)])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec,
-                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=self.db_obj.epoch)
 
         #correct for refraction
-        trueRA, trueDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
+        trueRA, trueDec = self.applyMeanObservedPlace(x, y)
         #we should now have the true tangent point for the gnomonic projection
 
         #pal.ds2tp performs the gnomonic projection on ra_in and dec_in
