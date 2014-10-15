@@ -170,7 +170,7 @@ class AstrometryBase(object):
 
         @param [in] pm_ra is ra proper motion in radians/year
 
-        @param [in] pm_dec is dec proper motoin in radians/year
+        @param [in] pm_dec is dec proper motion in radians/year
 
         @param [in] parallax in arcseconds
 
@@ -178,7 +178,7 @@ class AstrometryBase(object):
 
         @param [in] EP0 is epoch in Julian years
 
-        @param [in] MJD is modified Julian date in Julian years
+        @param [in] MJD is modified Julian date
 
         @param [out] raOut is corrected ra
 
