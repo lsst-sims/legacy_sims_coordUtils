@@ -291,7 +291,7 @@ class AstrometryBase(object):
         #e.g the Earth barycentric and heliocentric position and velocity,
         #the precession-nutation matrix, etc.
         #
-        #arguments of pal.mapp are:
+        #arguments of pal.mappa are:
         #epoch of mean equinox to be used (Julian)
         #
         #date (MJD)
