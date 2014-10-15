@@ -89,7 +89,9 @@ class astrometryUnitTest(unittest.TestCase):
     """
 
     starDBObject = AstrometryTestStars()
-    obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05))
+    obs_metadata=ObservationMetaData(mjd=50984.371741,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
     metadata={}
 
     #below are metadata values that need to be set in order for
@@ -106,7 +108,6 @@ class astrometryUnitTest(unittest.TestCase):
     cat=testCatalog(starDBObject,obs_metadata=obs_metadata)
     tol=1.0e-5
 
-    #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
 
@@ -146,7 +147,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, self.cat.findChipName, xPupil = xPupil, yPupil = yPupil,
                   ra = ra, dec = dec)
 
-    #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
 
@@ -234,7 +234,8 @@ class astrometryUnitTest(unittest.TestCase):
               xPolar=2.4, yPolar=1.4, meanTemperature=314.0, \
               meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
 
-        obs_metadata=ObservationMetaData(mjd=50984.371741, circ_bounds=dict(ra=200., dec=-30, radius=0.05),site=testSite)
+        obs_metadata=ObservationMetaData(mjd=50984.371741,boundType='circle',unrefractedRA=200.0,
+                                         unrefractedDec=-30.0,boundLength=0.05,site=testSite)
         metadata={}
 
         #below are metadata values that need to be set in order for
@@ -633,7 +634,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertAlmostEqual(output,1.381600229503358701e+00,6)
 
-    #@unittest.skip("Temporary until mid cycle release 7/14/2014")
     def testPixelPos(self):
         for chunk, chunkMap in self.cat.iter_catalog_chunks():
             self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
