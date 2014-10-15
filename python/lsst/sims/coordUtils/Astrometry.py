@@ -299,9 +299,6 @@ class AstrometryBase(object):
 
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
-        #
-        #Assuming that everything has propermotion, radial velocity, and parallax
-        #is accurate to 10^-5 radians
 
         raOut,decOut = pal.mapqkVector(ra,dec,pm_ra,pm_dec,parallax,v_rad,prms)
 
