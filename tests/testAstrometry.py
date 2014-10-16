@@ -365,7 +365,11 @@ class astrometryUnitTest(unittest.TestCase):
         ra[2]=7.740864769302191473e-01
         dec[2]=2.758053025017753179e-01
 
-        output=self.cat.applyPrecession(ra,dec)
+        #the MJD kwarg in applyPrecession below is a hold-over from
+        #a misunderstanding in the API for the pal.prenut() back
+        #when we generated the test data
+        output=self.cat.applyPrecession(ra,dec, MJD=pal.epj(2000.0))
+
         self.assertAlmostEqual(output[0][0],2.514361575034799401e+00,6)
         self.assertAlmostEqual(output[1][0], 5.306722463159389003e-01,6)
         self.assertAlmostEqual(output[0][1],8.224493314855578774e-01,6)
@@ -405,8 +409,14 @@ class astrometryUnitTest(unittest.TestCase):
 
         ep=2.001040286039033845e+03
         mjd=2.018749109074271473e+03
+        obs_metadata=ObservationMetaData(mjd=mjd,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
 
-        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec,parallax,v_rad,EP0=ep,MJD=mjd)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
+        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+
+        output=cat.applyProperMotion(ra,dec,pm_ra,pm_dec,parallax,v_rad,EP0=ep)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
         self.assertAlmostEqual(output[1][0],5.198769294314042888e-01,6)
@@ -525,8 +535,14 @@ class astrometryUnitTest(unittest.TestCase):
         dec[2]=2.758053025017753179e-01
 
         mjd=2.018749109074271473e+03
+        obs_metadata=ObservationMetaData(mjd=mjd,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
+        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+
+        output=cat.applyMeanObservedPlace(ra,dec)
 
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
@@ -596,8 +612,18 @@ class astrometryUnitTest(unittest.TestCase):
         dec[2]=2.758053025017753179e-01
 
         mjd=2.018749109074271473e+03
+        obs_metadata=ObservationMetaData(mjd=mjd,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
+        metadata={}
+        metadata['Unrefracted_RA'] = (200.0, float)
+        metadata['Unrefracted_Dec'] = (-30.0, float)
+        metadata['Opsim_rotskypos'] = (1.0, float)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd,altAzHr=True,
+        obs_metadata.assignPhoSimMetaData(metadata)
+        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+ 
+        output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True,
                  includeRefraction = False)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
