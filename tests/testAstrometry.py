@@ -162,7 +162,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, self.cat.findChipName, xPupil = xPupil, yPupil = yPupil,
                   ra = ra, dec = dec)
 
-    @unittest.skip("sfd")
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
 
