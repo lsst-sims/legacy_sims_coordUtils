@@ -38,6 +38,7 @@ import unittest
 import warnings
 import sys
 import math
+import palpy as pal
 import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
