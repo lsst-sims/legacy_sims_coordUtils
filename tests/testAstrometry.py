@@ -121,7 +121,6 @@ class astrometryUnitTest(unittest.TestCase):
         del self.cat
         del self.obs_metadata
     
-    @unittest.skip("sfd")
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
 
@@ -156,14 +155,12 @@ class astrometryUnitTest(unittest.TestCase):
 
         name = self.cat.findChipName(ra = ra, dec = dec)
         xtest, ytest = self.cat.calculatePupilCoordinates(ra, dec )
-        print 'xtest ',xtest,' ytest ',ytest
         self.assertTrue(name[0] is not None)
 
         self.assertRaises(RuntimeError, self.cat.findChipName)
         self.assertRaises(RuntimeError, self.cat.findChipName, xPupil = xPupil, yPupil = yPupil,
                   ra = ra, dec = dec)
 
-    @unittest.skip("sfd")
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
 
@@ -241,7 +238,6 @@ class astrometryUnitTest(unittest.TestCase):
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
 
-    @unittest.skip("sfd")
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to
@@ -279,7 +275,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertEqual(cat2.site.meanHumidity,0.9)
         self.assertEqual(cat2.site.lapseRate,0.01)
 
-    @unittest.skip("sfd")
     def testSphericalToCartesian(self):
         arg1=2.19911485751
         arg2=5.96902604182
@@ -294,7 +289,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1],vv[1],7)
         self.assertAlmostEqual(output[2],vv[2],7)
 
-    @unittest.skip("sfd")
     def testCartesianToSpherical(self):
         """
         Note that xyz[i][j] is the ith component of the jth vector
@@ -328,7 +322,6 @@ class astrometryUnitTest(unittest.TestCase):
             for j in range(3):
                 self.assertAlmostEqual(vv[j],xyz[j][i],7)
 
-    @unittest.skip("sfd")
     def testAngularSeparation(self):
         arg1 = 7.853981633974482790e-01
         arg2 = 3.769911184307751517e-01
@@ -339,7 +332,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertAlmostEqual(output,2.162615946398791955e+00,10)
 
-    @unittest.skip("sfd")
     def testRotationMatrixFromVectors(self):
         v1=numpy.zeros((3),dtype=float)
         v2=numpy.zeros((3),dtype=float)
@@ -361,7 +353,6 @@ class astrometryUnitTest(unittest.TestCase):
         for i in range(3):
             self.assertAlmostEqual(v3[i],v2[i],7)
 
-    @unittest.skip("sfd")
     def testApplyPrecession(self):
 
         ra=numpy.zeros((3),dtype=float)
@@ -386,7 +377,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.412362765815005972e-01,6)
         self.assertAlmostEqual(output[1][2],2.662034339930458571e-01,6)
 
-    @unittest.skip("sfd")
     def testApplyProperMotion(self):
 
         ra=numpy.zeros((3),dtype=float)
@@ -428,7 +418,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.740849573146946216e-01,6)
         self.assertAlmostEqual(output[1][2],2.758844356561930278e-01,6)
 
-    @unittest.skip("sfd")
     def testEquatorialToGalactic(self):
 
         ra=numpy.zeros((3),dtype=float)
@@ -450,7 +439,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],2.829585540991265358e+00,6)
         self.assertAlmostEqual(output[1][2],-6.510790587552289788e-01,6)
 
-    @unittest.skip("sfd")
     def testGalacticToEquatorial(self):
 
         lon=numpy.zeros((3),dtype=float)
@@ -472,7 +460,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.740864769302191473e-01,6)
         self.assertAlmostEqual(output[1][2],2.758053025017753179e-01,6)
 
-    @unittest.skip("sfd")
     def testApplyMeanApparentPlace(self):
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
@@ -527,7 +514,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.408639821342507537e-01,6)
         self.assertAlmostEqual(output[1][2],2.703229189890907214e-01,6)
 
-    @unittest.skip("sfd")
     def testApplyMeanObservedPlace(self):
         """
         Note: this routine depends on Aopqk which fails if zenith distance
@@ -612,7 +598,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[2][2],5.271912536356709866e-01,6)
         self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
 
-    @unittest.skip("sfd")
     def testMeanObservedPlace_NoRefraction(self):
 
         ra=numpy.zeros((3),dtype=float)
@@ -649,14 +634,12 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[2][2],5.271914342095551653e-01,6)
         self.assertAlmostEqual(output[3][2],5.479759402150099490e+00,6)
 
-    @unittest.skip("sfd")
     def testRefractionCoefficients(self):
         output=self.cat.refractionCoefficients(wavelength=5000.0)
 
         self.assertAlmostEqual(output[0],2.295817926320665320e-04,6)
         self.assertAlmostEqual(output[1],-2.385964632924575670e-07,6)
 
-    @unittest.skip("sfd")
     def testApplyRefraction(self):
         coeffs=self.cat.refractionCoefficients(wavelength = 5000.0)
 
@@ -664,7 +647,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertAlmostEqual(output,7.851689251070859132e-01,6)
 
-    @unittest.skip("sfd")
     def testCalcLast(self):
 
         arg1=2.004031374869656474e+03
@@ -673,7 +655,6 @@ class astrometryUnitTest(unittest.TestCase):
         output=self.cat.calcLast(arg1,arg2)
         self.assertAlmostEqual(output,1.662978602873423029e+00,5)
 
-    @unittest.skip("sfd")
     def testEquatorialToHorizontal(self):
         arg1=2.549091039839124218e+00
         arg2=5.198752733024248895e-01
@@ -683,7 +664,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0],4.486633480937949336e-01,5)
         self.assertAlmostEqual(output[1],5.852620488358430961e+00,5)
 
-    @unittest.skip("sfd")
     def testParalacticAngle(self):
         arg1=1.507444663929565554e+00
         arg2=-4.887258694875344922e-01
@@ -692,7 +672,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertAlmostEqual(output,1.381600229503358701e+00,6)
 
-    @unittest.skip("sfd")
     def testPixelPos(self):
         for chunk, chunkMap in self.cat.iter_catalog_chunks():
             self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
