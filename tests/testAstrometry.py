@@ -548,7 +548,6 @@ class astrometryUnitTest(unittest.TestCase):
         obs_metadata.assignPhoSimMetaData(self.metadata)
         cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
 
-
         output=cat.applyMeanObservedPlace(ra,dec, wavelength=wv)
 
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
@@ -559,9 +558,9 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
         self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
-
+        
         output=self.cat.applyMeanObservedPlace(ra,dec,altAzHr=True, wavelength=wv)
-
+        
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
         self.assertAlmostEqual(output[2][0],1.168920017932007643e-01,6)

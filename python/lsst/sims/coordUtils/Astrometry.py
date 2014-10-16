@@ -410,6 +410,7 @@ class AstrometryBase(object):
         #
 
         azimuth, zenith, hourAngle, decOut, raOut = pal.aopqkVector(ra,dec,obsPrms)
+
         #
         #Note: this is a choke point.  Even the vectorized version of aopqk
         #is expensive (it takes about 0.006 seconds per call)
