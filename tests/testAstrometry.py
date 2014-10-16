@@ -619,7 +619,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[2][2],5.271912536356709866e-01,6)
         self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
 
-    @unittest.skip("sfd")
     def testMeanObservedPlace_NoRefraction(self):
 
         ra=numpy.zeros((3),dtype=float)
