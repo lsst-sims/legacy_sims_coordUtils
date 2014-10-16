@@ -468,17 +468,17 @@ class AstrometryBase(object):
 
         return numpy.array([ra_out,dec_out])
 
-    def refractionCoefficients(self):
+    def refractionCoefficients(self, wavelength=0.5):
         """ Calculate the refraction using PAL's refco routine
 
         This calculates the refraction at 2 angles and derives a tanz and tan^3z
         coefficient for subsequent quick calculations. Good for zenith distances < 76 degrees
 
+        @param [in] wavelength is effective wavelength in microns
+
         One should call PAL refz to apply the coefficients calculated here
 
         """
-
-        wavelength = 0.5 #effective wavelength in microns
         precision = 1.e-10
 
         #TODO the latitude in refco needs to be astronomical latitude,
