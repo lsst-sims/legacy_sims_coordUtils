@@ -572,7 +572,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
         self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
         
-        output=self.cat.applyMeanObservedPlace(ra,dec,altAzHr=True, wavelength=wv)
+        output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True, wavelength=wv)
         
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
@@ -589,7 +589,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[2][2],5.275840601437552513e-01,6)
         self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
+        output=cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
                                                wavelength=wv)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
@@ -601,7 +601,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
         self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
+        output=cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
                                                altAzHr=True, wavelength=wv)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
