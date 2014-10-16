@@ -204,10 +204,10 @@ class astrometryUnitTest(unittest.TestCase):
                            baselineData['xPix'], baselineData['yPix']):
 
             if not numpy.isnan(xx) and not numpy.isnan(yy):
-                self.assertAlmostEqual(xxtest,xx,6)
-                self.assertAlmostEqual(yytest,yy,6)
-                self.assertAlmostEqual(xxra,xx,6)
-                self.assertAlmostEqual(yyra,yy,6)
+                self.assertAlmostEqual(xxtest,xx,5)
+                self.assertAlmostEqual(yytest,yy,5)
+                self.assertAlmostEqual(xxra,xx,5)
+                self.assertAlmostEqual(yyra,yy,5)
             else:
                 self.assertTrue(numpy.isnan(xx))
                 self.assertTrue(numpy.isnan(yy))
