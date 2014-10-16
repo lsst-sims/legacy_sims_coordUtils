@@ -132,8 +132,8 @@ class astrometryUnitTest(unittest.TestCase):
         """
 
         #these are just values shown heuristically to give an actual chip name
-        ra = numpy.array([3.568263669914])
-        dec = numpy.array([-0.593605445572])
+        ra = numpy.array([3.51])
+        dec = numpy.array([-0.54186227])
         xPupil = numpy.array([-0.000262243770])
         yPupil = numpy.array([0.000199467792])
 

@@ -616,12 +616,7 @@ class AstrometryBase(object):
         #correct for rotation of the telescope
         x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
         y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
-        
-        print '\n'
-        print 'bore ',boreRA,boreDec
-        print 'ra/dec ',ra_obj, dec_obj
-        print 'x,y ',x_out,y_out
-        
+
         return numpy.array([x_out, y_out])
 
     def calculateGnomonicProjection(self, ra_in, dec_in):
@@ -733,7 +728,6 @@ class CameraCoords(AstrometryBase):
         for x, y in zip(xPupil, yPupil):
             cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
             detList = self.camera.findDetectors(cp)
-            print 'detList ',detList,cp
             if len(detList) > 1:
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
