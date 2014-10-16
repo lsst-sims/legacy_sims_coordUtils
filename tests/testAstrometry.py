@@ -636,13 +636,13 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[3][2],5.479759402150099490e+00,6)
 
     def testRefractionCoefficients(self):
-        output=self.cat.refractionCoefficients()
+        output=self.cat.refractionCoefficients(wavelength=5000.0)
 
         self.assertAlmostEqual(output[0],2.295817926320665320e-04,6)
         self.assertAlmostEqual(output[1],-2.385964632924575670e-07,6)
 
     def testApplyRefraction(self):
-        coeffs=self.cat.refractionCoefficients()
+        coeffs=self.cat.refractionCoefficients(wavelength = 5000.0)
 
         output=self.cat.applyRefraction(0.25*numpy.pi,coeffs[0],coeffs[1])
 
