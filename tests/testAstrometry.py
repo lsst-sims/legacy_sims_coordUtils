@@ -385,7 +385,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.412362765815005972e-01,6)
         self.assertAlmostEqual(output[1][2],2.662034339930458571e-01,6)
 
-    @unittest.skip("sfd")
     def testApplyProperMotion(self):
 
         ra=numpy.zeros((3),dtype=float)
