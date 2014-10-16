@@ -416,15 +416,8 @@ class astrometryUnitTest(unittest.TestCase):
         v_rad[2]=-3.225459751425886452e+02
 
         ep=2.001040286039033845e+03
-        mjd=2.018749109074271473e+03
-        obs_metadata=ObservationMetaData(mjd=mjd,
-                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
-                                     boundLength=0.05)
 
-        obs_metadata.assignPhoSimMetaData(self.metadata)
-        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-
-        output=cat.applyProperMotion(ra,dec,pm_ra,pm_dec,parallax,v_rad,EP0=ep)
+        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec,parallax,v_rad,EP0=ep)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
         self.assertAlmostEqual(output[1][0],5.198769294314042888e-01,6)
