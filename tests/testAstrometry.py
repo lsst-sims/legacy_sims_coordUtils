@@ -469,7 +469,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1][2],2.758053025017753179e-01,6)
 
     def testApplyMeanApparentPlace(self):
-
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
         pm_ra=numpy.zeros((3),dtype=float)
@@ -506,9 +505,15 @@ class astrometryUnitTest(unittest.TestCase):
 
         ep=2.001040286039033845e+03
         mjd=2.018749109074271473e+03
+        obs_metadata=ObservationMetaData(mjd=mjd,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
 
-        output=self.cat.applyMeanApparentPlace(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
-              parallax = parallax,v_rad = v_rad, Epoch0=ep, MJD=mjd)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
+        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+
+        output=cat.applyMeanApparentPlace(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
+              parallax = parallax,v_rad = v_rad, Epoch0=ep)
 
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6)
         self.assertAlmostEqual(output[1][0],5.309044018653210628e-01,6)
