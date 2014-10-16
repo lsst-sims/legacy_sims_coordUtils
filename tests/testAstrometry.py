@@ -48,12 +48,6 @@ from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
-# Create test databases
-if os.path.exists('AstrometryTestDatabase.db'):
-    print "deleting database"
-    os.unlink('AstrometryTestDatabase.db')
-makeStarTestDB(filename='AstrometryTestDatabase.db',
-       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
 class AstrometryTestStars(myTestStars):
     dbAddress = 'sqlite:///AstrometryTestDatabase.db'
@@ -88,26 +82,44 @@ class astrometryUnitTest(unittest.TestCase):
     querying the database) because SLALIB was originally run on values that did not correspond
     to any particular Opsim run.
     """
-
-    starDBObject = AstrometryTestStars()
-    obs_metadata=ObservationMetaData(mjd=50984.371741,
+    
+    @classmethod
+    def setUpClass(cls):
+        # Create test databases
+        if os.path.exists('AstrometryTestDatabase.db'):
+            print "deleting database"
+            os.unlink('AstrometryTestDatabase.db')
+        makeStarTestDB(filename='AstrometryTestDatabase.db',
+                      size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+    
+    def setUp(self):
+        self.starDBObject = AstrometryTestStars()
+        self.obs_metadata=ObservationMetaData(mjd=50984.371741,
                                      boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                      boundLength=0.05)
-    metadata={}
+        self.metadata={}
 
-    #below are metadata values that need to be set in order for
-    #get_skyToFocalPlane to work.  If we had been querying the database,
-    #these would be set to meaningful values.  Because we are generating
-    #an artificial set of inputs that must comport to the baseline SLALIB
-    #inputs, these are set arbitrarily by hand
-    metadata['Unrefracted_RA'] = (200.0, float)
-    metadata['Unrefracted_Dec'] = (-30.0, float)
-    metadata['Opsim_rotskypos'] = (1.0, float)
+        #below are metadata values that need to be set in order for
+        #get_skyToFocalPlane to work.  If we had been querying the database,
+        #these would be set to meaningful values.  Because we are generating
+        #an artificial set of inputs that must comport to the baseline SLALIB
+        #inputs, these are set arbitrarily by hand
+        self.metadata['Unrefracted_RA'] = (200.0, float)
+        self.metadata['Unrefracted_Dec'] = (-30.0, float)
+        self.metadata['Opsim_rotskypos'] = (1.0, float)
 
-    obs_metadata.assignPhoSimMetaData(metadata)
+        self.obs_metadata.assignPhoSimMetaData(self.metadata)
+        self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
+        self.tol=1.0e-5
+    
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('AstrometryTestDatabase.db'):
+            os.unlink('AstrometryTestDatabase.db')
 
-    cat=testCatalog(starDBObject,obs_metadata=obs_metadata)
-    tol=1.0e-5
+    def tearDown(self):
+        del self.cat
+        del self.obs_metadata
 
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
