@@ -250,18 +250,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         obs_metadata=ObservationMetaData(mjd=50984.371741,boundType='circle',unrefractedRA=200.0,
                                          unrefractedDec=-30.0,boundLength=0.05,site=testSite)
-        metadata={}
 
-        #below are metadata values that need to be set in order for
-        #get_skyToFocalPlane to work.  If we had been querying the database,
-        #these would be set to meaningful values.  Because we are generating
-        #an artificial set of inputs that must comport to the baseline SLALIB
-        #inputs, these are set arbitrarily by hand
-        metadata['Unrefracted_RA'] = (200.0, float)
-        metadata['Unrefracted_Dec'] = (-30.0, float)
-        metadata['Opsim_rotskypos'] = (1.0, float)
-
-        obs_metadata.assignPhoSimMetaData(metadata)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
 
         cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
 
@@ -625,12 +615,8 @@ class astrometryUnitTest(unittest.TestCase):
         obs_metadata=ObservationMetaData(mjd=mjd,
                                      boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                      boundLength=0.05)
-        metadata={}
-        metadata['Unrefracted_RA'] = (200.0, float)
-        metadata['Unrefracted_Dec'] = (-30.0, float)
-        metadata['Opsim_rotskypos'] = (1.0, float)
 
-        obs_metadata.assignPhoSimMetaData(metadata)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
         cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
  
         output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True,
