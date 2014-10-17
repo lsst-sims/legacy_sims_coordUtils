@@ -5,7 +5,7 @@ pySLALIB v 1.0.2
 
 There will be some difference, as the two libraries are based on slightly
 different conventions (for example, the prenut routine which calculates
-the matrix of precession and nutation is based on the IAU 2006A/2000
+the matrix of precession and nutation is based on the IAU 2006/2000A
 standard in PALPY and on SF2001 in pySLALIB; however, the two outputs
 still agree to within one part in 10^5)
 
@@ -365,9 +365,13 @@ class astrometryUnitTest(unittest.TestCase):
         ra[2]=7.740864769302191473e-01
         dec[2]=2.758053025017753179e-01
 
-        #the MJD kwarg in applyPrecession below is a hold-over from
+        #The MJD kwarg in applyPrecession below is a hold-over from
         #a misunderstanding in the API for the pal.prenut() back
-        #when we generated the test data
+        #when we generated the test data.  We passed a julian epoch
+        #(in years) when PAL actually wanted an MJD.  The underlying
+        #code has been fixed.  This test still passes a julian
+        #epoch so that it will give the same results as the control
+        #SLALIB run.
         output=self.cat.applyPrecession(ra,dec, MJD=pal.epj(2000.0))
 
         self.assertAlmostEqual(output[0][0],2.514361575034799401e+00,6)
@@ -409,7 +413,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         ep=2.001040286039033845e+03
 
-        #I am passing pm_dec/numpy.cos(dec) because that is the input that
+        #This test passes pm_dec/numpy.cos(dec) because that is the input that
         #was used when the baseline data was generated with SLALIB
         output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),parallax,v_rad,EP0=ep)
 
@@ -525,6 +529,11 @@ class astrometryUnitTest(unittest.TestCase):
 
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
+
+        #we need to pass wv as the effective wavelength for methods that
+        #calculate refraction because, when the control SLALIB runs were
+        #done we misinterpreted the units of wavelength to be Angstroms
+        #rather than microns.
         wv = 5000.0
 
         ra[0]=2.549091039839124218e+00
