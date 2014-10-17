@@ -156,9 +156,6 @@ class AstrometryBase(object):
                           EP0=2000.0):
         """Applies proper motion between two epochs.
 
-        Note pm_ra is measured in sky velocity (cos(dec)*dRa/dt).
-        PAL assumes dRa/dt
-
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
         (radians/year), parallax (arcsec), v_rad (km/sec, positive if receding),
         EP0 (Julian years)
@@ -197,10 +194,15 @@ class AstrometryBase(object):
         # Generate Julian epoch from MJD
         #
         #TODO do we actually want proper motion measured against
-        #obs_metadata.mjd (is it clear what time system we should
-        #be using)
+        #obs_metadata.mjd (it is unclear what time system we should
+        #be using; just that the argument passed to pal.pmVector should be in julian years)
         julianEpoch = pal.epj(self.obs_metadata.mjd)
-        raOut, decOut = pal.pmVector(ra,dec,pm_ra,pm_dec/numpy.cos(dec),parallax,v_rad, EP0, julianEpoch)
+
+        #The pm_dec argument passed to pmVector used to be pm_dec/cos(dec).
+        #I have done away with that, since PAL expects the user to pass in
+        #proper motion in radians/per year.  I leave it to the user to perform
+        #whatever coordinate transformations are appropriate to the data.
+        raOut, decOut = pal.pmVector(ra,dec,pm_ra,pm_dec,parallax,v_rad, EP0, julianEpoch)
 
         return raOut,decOut
 

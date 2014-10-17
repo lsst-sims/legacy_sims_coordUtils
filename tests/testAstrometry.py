@@ -409,7 +409,9 @@ class astrometryUnitTest(unittest.TestCase):
 
         ep=2.001040286039033845e+03
 
-        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec,parallax,v_rad,EP0=ep)
+        #I am passing pm_dec/numpy.cos(dec) because that is the input that
+        #was used when the baseline data was generated with SLALIB
+        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),parallax,v_rad,EP0=ep)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
         self.assertAlmostEqual(output[1][0],5.198769294314042888e-01,6)
