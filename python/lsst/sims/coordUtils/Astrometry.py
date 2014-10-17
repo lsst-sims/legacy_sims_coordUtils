@@ -124,7 +124,7 @@ class AstrometryBase(object):
         units:  ra_in (radians), dec_in (radians)
 
         The precession-nutation matrix is calculated by the pal.prenut method
-        which uses the IAU 2006A/2000 model
+        which uses the IAU 2006/2000A model
 
         @param [in] ra
 
@@ -239,8 +239,7 @@ class AstrometryBase(object):
          v_rad=None, Epoch0=2000.0):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
-        Uses PAL mappa routines
-        Recomputers precession and nutation
+        Uses PAL mappa routine, which computes precession and nutation
 
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
         (radians/year), parallax (arcsec), v_rad (km/sec; positive if receding),
@@ -257,7 +256,7 @@ class AstrometryBase(object):
 
         @param [in] pm_ra is ra proper motion in radians/year
 
-        @param [in] pm_dec is dec proper motoin in radians/year
+        @param [in] pm_dec is dec proper motion in radians/year
 
         @param [in] parallax in arcseconds
 
@@ -265,11 +264,9 @@ class AstrometryBase(object):
 
         @param [in] Epoch0 is epoch in Julian years
 
-        @param [in] MJD is modified Julian date in Julian years
+        @param [out] raOut is corrected ra in radians
 
-        @param [out] raOut is corrected ra
-
-        @param [out] decOut is corrected dec
+        @param [out] decOut is corrected dec in radians
 
         """
 
@@ -303,13 +300,13 @@ class AstrometryBase(object):
         #
         #date (MJD)
         #
-        #TODO This mjd should be the Barycentric Dynamical Tyime
+        #TODO This mjd should be the Barycentric Dynamical Time
         prms=pal.mappa(Epoch0, self.obs_metadata.mjd)
 
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
         #
-        #Taken from the palpy source code:
+        #Taken from the palpy source code (palMap.c which calls both palMappa and palMapqk):
         #The accuracy is sub-milliarcsecond, limited by the
         #precession-nutation model (see palPrenut for details).
 
@@ -355,10 +352,14 @@ class AstrometryBase(object):
 
         # Correct site longitude for polar motion slaPolmo
         #
-        # As of 4 February 2014, I am not sure what to make of this comment.
-        # It appears that aoppa corrects for polar motion.
-        # This could mean that the call to slaPolmo is unnecessary...
-
+        #17 October 2014
+        #  palAop.c (which calls Aoppa and Aopqk, as we do here) says
+        #  *     - The azimuths etc produced by the present routine are with
+        #  *       respect to the celestial pole.  Corrections to the terrestrial
+        #  *       pole can be computed using palPolmo.
+        #
+        #currently, palPolmo is not implemented in PAL
+        #I have filed an issue with the PAL team to change that.
 
         # TODO NEED UT1 - UTC to be kept as a function of date.
         # Requires a look up of the IERS tables (-0.9<dut1<0.9)
@@ -521,7 +522,9 @@ class AstrometryBase(object):
         Note that mjd is the UT1 time expressed as an MJD
         """
 
-        #TODO gmsta wants UT1 expressed as mjd
+        #TODO the arguments of palGmsta are
+        # - the UT1 date expressed as an MJD
+        # - the UT1 time (fraction of a day)
         D = pal.gmsta(mjd, 0.)
         D += long
         D = D%(2.*math.pi)
@@ -531,11 +534,13 @@ class AstrometryBase(object):
         """
         Converts from equatorial to horizon coordinates
 
-        @param [in] ra is hour angle in radians
+        @param [in] ra is in radians
 
         @param [in] dec is declination in radians
 
-        @param [out] returns elevation angle and azimuth in that order
+        @param [in] mjd is the date
+
+        @param [out] returns elevation angle and azimuth in that order (radians)
 
         """
 
