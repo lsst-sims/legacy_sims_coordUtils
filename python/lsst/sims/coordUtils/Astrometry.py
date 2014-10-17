@@ -892,6 +892,12 @@ class AstrometryStars(AstrometryBase):
         Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
 
         """
+
+        #TODO
+        #are we going to store proper motion in raw radians per year
+        #or in sky motion = cos(dec) * (radians per year)
+        #PAL asks for radians per year inputs
+
         pr=self.column_by_name('properMotionRa') #in radians per year
         pd=self.column_by_name('properMotionDec') #in radians per year
         px=self.column_by_name('parallax') #in arcseconds
