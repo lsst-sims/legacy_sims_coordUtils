@@ -5,6 +5,7 @@ import palpy as pal
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.catalogs.generation.db import haversine
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
@@ -612,9 +613,13 @@ class AstrometryBase(object):
         #see en.wikipedia.org/wiki/Haversine_formula
         #Phi is latitude on the sphere (declination)
         #Lambda is longitude on the sphere (RA)
-        h = 2.0*numpy.arcsin(numpy.sqrt(numpy.sin(0.5 * dPhi)**2 + numpy.cos(boreDec) *
-               numpy.cos(dec_obj) * (numpy.sin(0.5 * dLambda))**2))
-
+        #
+        #Now that there is a haversine method in 
+        #sims_catalogs_generation/.../db/obsMetadataUtils.py
+        #I am using that function so that we only have one
+        #haversine formula floating around the stack
+        h = haversine(ra_obj, dec_obj, boreRA, boreDec)
+        
         #demand that the Euclidean distance on the pupil matches
         #the haversine distance on the sphere
         dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
