@@ -320,8 +320,9 @@ class AstrometryBase(object):
 
         return raOut,decOut
 
-    def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,  \
-                               altAzHr=False, wavelength=0.5):
+
+    def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,
+                               altAzHr=False, wavelength=0.5, obs_metadata = None):
         """Calculate the Mean Observed Place
 
         Uses PAL aoppa routines
@@ -353,8 +354,12 @@ class AstrometryBase(object):
 
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call applyMeanObservedPlace; self.obs_metadata.mjd is None")
+        if obs_metadata is None:
+            if hasattr(self,'obs_metadata'):
+                obs_metadata = self.obs_metadata
+
+            if self.obs_metadata is None:
+                raise RuntimeError("Cannot call applyMeanObservedPlace without an obs_metadata")
 
         # Correct site longitude for polar motion slaPolmo
         #
@@ -382,30 +387,30 @@ class AstrometryBase(object):
         #the UTC time expressed as an MJD.  It is not clear to me
         #how to actually calculate that.
         if (includeRefraction == True):
-            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
-                            self.site.longitude,
-                            self.site.latitude,
-                            self.site.height,
-                            self.site.xPolar,
-                            self.site.yPolar,
-                            self.site.meanTemperature,
-                            self.site.meanPressure,
-                            self.site.meanHumidity,
+            obsPrms=pal.aoppa(obs_metadata.mjd, dut,
+                            obs_metadata.site.longitude,
+                            obs_metadata.site.latitude,
+                            obs_metadata.site.height,
+                            obs_metadata.site.xPolar,
+                            obs_metadata.site.yPolar,
+                            obs_metadata.site.meanTemperature,
+                            obs_metadata.site.meanPressure,
+                            obs_metadata.site.meanHumidity,
                             wavelength ,
-                            self.site.lapseRate)
+                            obs_metadata.site.lapseRate)
         else:
             #we can discard refraction by setting pressure and humidity to zero
-            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
-                            self.site.longitude,
-                            self.site.latitude,
-                            self.site.height,
-                            self.site.xPolar,
-                            self.site.yPolar,
-                            self.site.meanTemperature,
+            obsPrms=pal.aoppa(obs_metadata.mjd, dut,
+                            obs_metadata.site.longitude,
+                            obs_metadata.site.latitude,
+                            obs_metadata.site.height,
+                            obs_metadata.site.xPolar,
+                            obs_metadata.site.yPolar,
+                            obs_metadata.site.meanTemperature,
                             0.0,
                             0.0,
                             wavelength ,
-                            self.site.lapseRate)
+                            obs_metadata.site.lapseRate)
 
         #pal.aopqk does an apparent to observed place
         #correction
@@ -429,8 +434,8 @@ class AstrometryBase(object):
             #
             #pal.de2h converts equatorial to horizon coordinates
             #
-            az, el = pal.de2hVector(hourAngle,decOut,self.site.latitude)
-            return raOut, decOut, el, az
+            az, alt = pal.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
+            return raOut, decOut, alt, az
         return raOut, decOut
 
     def correctCoordinates(self, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
@@ -631,7 +636,8 @@ class AstrometryBase(object):
                    Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD=obs_metadata.mjd)
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD=obs_metadata.mjd,
+                                                      obs_metadata=obs_metadata)
 
         #we should now have the true tangent point for the gnomonic projection
         dPhi = decObj - boreDec
