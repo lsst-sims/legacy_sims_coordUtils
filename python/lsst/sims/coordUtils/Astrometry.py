@@ -283,16 +283,16 @@ class AstrometryBase(object):
             raise ValueError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
                             % (len(ra),len(dec)))
 
-        if pm_ra == None:
+        if pm_ra is None:
             pm_ra=numpy.zeros(len(ra))
 
-        if pm_dec == None:
+        if pm_dec is None:
             pm_dec=numpy.zeros(len(ra))
 
-        if v_rad == None:
+        if v_rad is None:
             v_rad=numpy.zeros(len(ra))
 
-        if parallax == None:
+        if parallax is None:
             parallax=numpy.zeros(len(ra))
 
         # Define star independent mean to apparent place parameters
