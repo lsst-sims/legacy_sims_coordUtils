@@ -433,8 +433,8 @@ class AstrometryBase(object):
             return raOut, decOut, el, az
         return raOut, decOut
 
-    def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None,
-             includeRefraction = True):
+    def correctCoordinates(self, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+             includeRefraction=True):
         """
         correct coordinates for all possible effects.
 
@@ -567,8 +567,8 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
-    def calculatePupilCoordinates(self, raObj, decObj, raPointing = None, decPointing = None,
-                                  epoch = None, mjd = None, rotSkyPos = None):
+    def calculatePupilCoordinates(self, raObj, decObj, raPointing=None, decPointing=None,
+                                  epoch=None, mjd=None, rotSkyPos=None):
         """
         @param [in] ra_obj is a numpy array of RAs in radians
 
@@ -757,8 +757,8 @@ class CameraCoords(AstrometryBase):
     camera = None
 
     def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None,
-                     raPointing = None, decPointing = None, epoch = None, mjd = None,
-                     rotSkyPos = None):
+                     raPointing=None, decPointing=None, epoch=None, mjd=None,
+                     rotSkyPos=None):
         """
         @param [in] xPupil a numpy array of x pupil coordinates
 
@@ -816,7 +816,7 @@ class CameraCoords(AstrometryBase):
 
         return numpy.asarray(chipNames)
 
-    def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames = None,
+    def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
                                   raPointing=None, decPointing=None, mjd=None, epoch=None, rotSkyPos=None):
         """
         Get the pixel positions (or nan if not on a chip) for all objects in the catalog
