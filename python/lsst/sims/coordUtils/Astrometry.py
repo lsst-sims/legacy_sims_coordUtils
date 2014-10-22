@@ -843,8 +843,12 @@ class CameraCoords(AstrometryBase):
 
         """
 
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
+        if not camera:
+            if hasattr(self, 'camera'):
+                camera = self.camera
+
+            if not camera:
+                raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
 
         specifiedPupil = False
         specifiedRaDec = False
