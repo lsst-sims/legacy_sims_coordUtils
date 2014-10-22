@@ -776,13 +776,19 @@ class CameraCoords(AstrometryBase):
         @param [in] rotSkyPos is the angle relating the orientation of the telescope to the sky
         (see phoSim documentation; optional)
 
+                The optional arguments are there to be passed to calculatePupilCoordinates if you choose
+                to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
+                not set, calculatePupilCoordinates will try to set them from obs_metadata and db_obj,
+                assuming that this routine is being called from an InstanceCatalog daughter class.
+                If that is not the case, an exception will be raised.
+
+        @param [in] camera is an afwCameraGeom object that specifies the attributes of the camera.
+        If it is not set, this routine will try to set it from self.camera assuming that the code
+        is in an InstanceCatalog daughter class.  If that is not the case, an exception will be
+        raised
+
         @param [out] a numpy array of chip names
 
-        The optional arguments are there to be passed to calculatePupilCoordinates if you choose
-        to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
-        not set, calculatePupilCoordinates will try to set them from obs_metadata and db_obj,
-        assuming that this routine is being called from an InstanceCatalog daughter class.
-        If that is not the case, an exception will be raised.
         """
         specifiedPupil = (xPupil is not None and yPupil is not None)
         specifiedRaDec = (ra is not None and dec is not None)
@@ -851,13 +857,19 @@ class CameraCoords(AstrometryBase):
         @param [in] rotSkyPos is the angle relating the orientation of the telescope to the sky
         (see phoSim documentation; optional)
 
+            The optional arguments above are there to be passed to calculatePupilCoordinates if you choose
+            to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
+            not set, calculatePupilCoordinates will try to set them from obs_metadata and db_obj,
+            assuming that this routine is being called from an InstanceCatalog daughter class.
+            If that is not the case, an exception will be raised.
+
+        @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
+        This is an optional argument to be passed to findChipName; if it is None, findChipName
+        will try to set it from self.camera, assuming that the code is in an InstanceCatalog
+        daughter class.  If this is not so, an exception will be raised.
+
         @param [out] a numpy array of pixel coordinates
 
-        The optional arguments are there to be passed to calculatePupilCoordinates if you choose
-        to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
-        not set, calculatePupilCoordinates will try to set them from obs_metadata and db_obj,
-        assuming that this routine is being called from an InstanceCatalog daughter class.
-        If that is not the case, an exception will be raised.
         """
 
         if not self.camera:
