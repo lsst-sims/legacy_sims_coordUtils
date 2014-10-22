@@ -47,7 +47,7 @@ def makeObservationMetaData():
 
     obs_metadata = ObservationMetaData(boundType = 'circle', unrefractedRA = numpy.degrees(centerRA),
                                        unrefractedDec = numpy.degrees(centerDec), boundLength = 2.0*radius,
-                                       phoSimMetadata=phoSimMetadata)
+                                       phoSimMetadata=phoSimMetadata, site=testSite)
 
     return obs_metadata
 
