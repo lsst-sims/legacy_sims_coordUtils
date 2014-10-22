@@ -758,7 +758,7 @@ class CameraCoords(AstrometryBase):
 
     def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None,
                      raPointing=None, decPointing=None, epoch=None, mjd=None,
-                     rotSkyPos=None):
+                     rotSkyPos=None, camera=None):
         """
         @param [in] xPupil a numpy array of x pupil coordinates
 
@@ -800,12 +800,17 @@ class CameraCoords(AstrometryBase):
                                                             epoch=epoch,
                                                             rotSkyPos=rotSkyPos)
 
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
+        if not camera:
+            if hasattr(self, 'camera'):
+                camera = self.camera
+
+            if not camera:
+                raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
+
         chipNames = []
         for x, y in zip(xPupil, yPupil):
-            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            detList = self.camera.findDetectors(cp)
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            detList = camera.findDetectors(cp)
             if len(detList) > 1:
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
@@ -817,7 +822,8 @@ class CameraCoords(AstrometryBase):
         return numpy.asarray(chipNames)
 
     def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
-                                  raPointing=None, decPointing=None, mjd=None, epoch=None, rotSkyPos=None):
+                                  raPointing=None, decPointing=None, mjd=None, epoch=None, rotSkyPos=None,
+                                  camera=None):
         """
         Get the pixel positions (or nan if not on a chip) for all objects in the catalog
 
@@ -875,7 +881,7 @@ class CameraCoords(AstrometryBase):
                                                             mjd=mjd, epoch=epoch, rotSkyPos=rotSkyPos)
 
         if chipNames is None:
-            chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil)
+            chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
 
         xPix = []
         yPix = []
