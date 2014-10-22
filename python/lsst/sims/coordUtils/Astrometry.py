@@ -628,10 +628,11 @@ class AstrometryBase(object):
         inDec=numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
 
         x, y = self.applyMeanApparentPlace(inRA, inDec,
-                   Epoch0 = epoch, MJD = obs_metadata.mjd)
+                   Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = obs_metadata.mjd)
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD=obs_metadata.mjd)
+
         #we should now have the true tangent point for the gnomonic projection
         dPhi = decObj - boreDec
         dLambda = raObj - boreRA
