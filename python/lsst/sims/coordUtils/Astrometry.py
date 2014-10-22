@@ -567,7 +567,8 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
-    def calculatePupilCoordinates(self, ra_obj, dec_obj):
+    def calculatePupilCoordinates(self, raObj, decObj, raPointing = None, decPointing = None,
+                                  epoch = None, mjd = None, rotSkyPos = None):
         """
         @param [in] ra_obj is a numpy array of RAs in radians
 
@@ -587,33 +588,50 @@ class AstrometryBase(object):
         h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call get_skyToPupil; obs_metadata.mjd is None")
+        if mjd is None:
+            if hasattr(self, 'obs_metadata'):
+                mjd = self.obs_metadata.mjd
 
-        if self.db_obj.epoch is None:
-            raise ValueError("in Astrometry.py cannot call get_skyToPupil; db_obj epoch is None")
+            if mjd is None:
+                raise ValueError("in Astrometry.py cannot call get_skyToPupil; mjd is None")
 
-        if self.rotSkyPos is None:
-            #there is no observation data on which to base astrometry
-            raise ValueError("Cannot calculate x_pupil, y_pupil without rotSkyPos in obs_metadata")
+        if epoch is None:
+            if hasattr(self, 'db_obj'):
+                epoch = self.db_obj.epoch
 
-        if self.unrefractedRA is None or self.unrefractedDec is None:
-            raise ValueError("Cannot calculate x_pupil, y_pupil without unrefracted RA, Dec in obs_metadata")
+            if epoch is None:
+                raise ValueError("in Astrometry.py cannot call get_skyToPupil; epoch is None")
 
-        theta = -numpy.radians(self.rotSkyPos)
+        if rotSkyPos is None:
+            if hasattr(self, 'rotSkyPos'):
+                rotSkyPos = self.rotSkyPos
+
+            if rotSkyPos is None:
+                raise ValueError("Cannot calculate x_pupil or y_pupil without rotSkyPos")
+
+        if raPointing is None or decPointing is None:
+            if hasattr(self, 'unrefractedRA') and hasattr(self, 'unrefractedDec'):
+                raPointing = self.unrefractedRA
+                decPointing = self.unrefractedDec
+
+            if raPointing is None or decPointing is None:
+                raise ValueError("Cannot calculate x_pupil, y_pupil without raPointing, decPointing")
+
+        theta = -numpy.radians(rotSkyPos)
 
         #correct for precession and nutation
 
-        inRA=numpy.array([numpy.radians(self.unrefractedRA)])
-        inDec=numpy.array([numpy.radians(self.unrefractedDec)])
+        inRA=numpy.array([numpy.radians(raPointing)])
+        inDec=numpy.array([numpy.radians(decPointing)])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0 = self.db_obj.epoch)
+        x, y = self.applyMeanApparentPlace(inRA, inDec,
+                   Epoch0 = epoch, MJD = mjd)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y)
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = mjd)
         #we should now have the true tangent point for the gnomonic projection
-        dPhi = dec_obj - boreDec
-        dLambda = ra_obj - boreRA
+        dPhi = decObj - boreDec
+        dLambda = raObj - boreRA
 
         #see en.wikipedia.org/wiki/Haversine_formula
         #Phi is latitude on the sphere (declination)
@@ -624,7 +642,7 @@ class AstrometryBase(object):
         #I am using that function so that we only have one
         #haversine formula floating around the stack
         h = haversine(ra_obj, dec_obj, boreRA, boreDec)
-        
+
         #demand that the Euclidean distance on the pupil matches
         #the haversine distance on the sphere
         dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
@@ -708,16 +726,23 @@ class AstrometryBase(object):
         in the pupil.
         """
 
-        ra_obj = self.column_by_name('raObserved')
-        dec_obj = self.column_by_name('decObserved')
+        raObj = self.column_by_name('raObserved')
+        decObj = self.column_by_name('decObserved')
 
-        return self.calculatePupilCoordinates(ra_obj, dec_obj)
+        return self.calculatePupilCoordinates(raObj, decObj,
+                                              raPointing = self.unrefractedRA,
+                                              decPointing = self.unrefractedDec,
+                                              epoch = self.db_obj.epoch,
+                                              mjd = self.obs_metadata.mjd,
+                                              rotSkyPos = self.rotSkyPos)
 
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
     camera = None
 
-    def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None):
+    def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None,
+                     raPointing = None, decPointing = None, epoch = None, mjd = None,
+                     rotSkyPos = None):
         """
         @param [in] xPupil a numpy array of x pupil coordinates
 
@@ -735,7 +760,11 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec)
+            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec, raPointing=raPointing,
+                                                            decPointing=decPointing,
+                                                            mjd=mjd,
+                                                            epoch=epoch,
+                                                            rotSkyPos=rotSkyPos)
 
         if not self.camera:
             raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
@@ -753,7 +782,8 @@ class CameraCoords(AstrometryBase):
 
         return numpy.asarray(chipNames)
 
-    def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames = None):
+    def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames = None,
+                                  raPointing=None, decPointing=None, mjd=None, epoch=None, rotSkyPos=None):
         """
         Get the pixel positions (or nan if not on a chip) for all objects in the catalog
 
@@ -786,7 +816,9 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec)
+            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec,
+                                                            raPointing=raPointing, decPointing=decPointing,
+                                                            mjd=mjd, epoch=epoch, rotSkyPos=rotSkyPos)
 
         if chipNames is None:
             chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil)
@@ -806,7 +838,8 @@ class CameraCoords(AstrometryBase):
             yPix.append(detPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
 
-    def calculateFocalPlaneCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None):
+    def calculateFocalPlaneCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None,
+                                       raPointing=None, decPointing=None, mjd=None, epoch=None, rotSkyPos=None):
         """
         Get the focal plane coordinates for all objects in the catalog.
 
@@ -833,7 +866,9 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra,dec)
+            xPupil, yPupil = self.calculatePupilCoordinates(ra ,dec,
+                                                            raPointing=raPointing, decPointing=decPointing,
+                                                            mjd=mjd, epoch=epoch, rotSkyPos=rotSkyPos)
 
         xPix = []
         yPix = []
@@ -847,7 +882,7 @@ class CameraCoords(AstrometryBase):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        return self.findChipName(xPupil = xPupil, yPupil = yPupil)
+        return self.findChipName(xPupil=xPupil, yPupil=yPupil)
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
