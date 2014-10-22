@@ -574,17 +574,11 @@ class AstrometryBase(object):
 
         @param [in] dec_obj is a numpy array of Decs in radians
 
-        @param [in] raPointing is the mean RA of the telescope pointing in radians (optional)
-
-        @param [in] decPointing is the mean Dec of the telescope poingint in radians (optional)
+        @param [in] obs_metadata is an ObservationMetaData object containing information
+        about the telescope pointing
 
         @param [in] epoch is the julian epoch of the mean equinox used for the coordinate
         transforations (in years; optional)
-
-        @param [in] mjd is the MJD of the telescope pointing (optional)
-
-        @param [in] rotSkyPos is the angle relating the orientation of the telescope to
-        the sky (see the phoSim documentation; optional)
 
         @param [out] a numpy array in which the first row is the x pupil coordinate and the second
         row is the y pupil coordinate
@@ -593,7 +587,7 @@ class AstrometryBase(object):
         in the pupil.
 
         If any of the optional arguments are missing, this routine will try to set them
-        from obs_metadata or db_obj, assuming this is being called from an InstanceCatalog
+        from self, assuming this is being called from an InstanceCatalog
         daughter class.  If that is not the case, an exception will be raised.
 
         This routine will use the haversine formula to calculate the arc distance h
@@ -751,21 +745,15 @@ class CameraCoords(AstrometryBase):
 
         @param [in] yPupil a numpy array of y pupil coordinates
 
-        @param [in] raPointing is the mean RA of the telescope pointing in radians (optional)
-
-        @param [in] decPointing is the mean Dec of the telescope pointing in radians (optional)
+        @param [in] obs_metadata is an ObservationMetaData object describing the telescope
+        pointing (optional)
 
         @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
         (in years; optional)
 
-        @param [in] mjd is the MJD of the telescope pointing (optional)
-
-        @param [in] rotSkyPos is the angle relating the orientation of the telescope to the sky
-        (see phoSim documentation; optional)
-
                 The optional arguments are there to be passed to calculatePupilCoordinates if you choose
                 to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
-                not set, calculatePupilCoordinates will try to set them from obs_metadata and db_obj,
+                not set, calculatePupilCoordinates will try to set them from self and db_obj,
                 assuming that this routine is being called from an InstanceCatalog daughter class.
                 If that is not the case, an exception will be raised.
 
@@ -827,21 +815,15 @@ class CameraCoords(AstrometryBase):
         to find the array.  The option exists for the user to specify chipNames, just in case the user
         has already called findChipName for some reason.
 
-        @param [in] raPointing is the mean RA of the telescope pointing in radians (optional)
-
-        @param [in] decPointing is the mean Dec of the telescope pointing in radians (optional)
+        @param [in] obs_metadata is an ObservationMetaData object describing the telescope pointing
+        (optional)
 
         @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
         (in years; optional)
 
-        @param [in] mjd is the MJD of the telescope pointing (optional)
-
-        @param [in] rotSkyPos is the angle relating the orientation of the telescope to the sky
-        (see phoSim documentation; optional)
-
             The optional arguments above are there to be passed to calculatePupilCoordinates if you choose
             to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
-            not set, calculatePupilCoordinates will try to set them from obs_metadata and db_obj,
+            not set, calculatePupilCoordinates will try to set them from self and db_obj,
             assuming that this routine is being called from an InstanceCatalog daughter class.
             If that is not the case, an exception will be raised.
 
@@ -903,24 +885,18 @@ class CameraCoords(AstrometryBase):
 
         @param [in] alternatively, one can specify numpy arrays of ra and dec (in radians)
 
-        @param [in] raPointing is the mean RA of the telescope pointing in radians (optional)
-
-        @param [in] decPointing is the mean Dec of the telescope pointing in radians (optional)
+        @param [in] obs_metadata is an ObservationMetaData object describing the telescope
+        pointing (optional)
 
         @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
         (in years; optional)
-
-        @param [in] mjd is the MJD of the telescope pointing (optional)
-
-        @param [in] rotSkyPos is the angle relating the orientation of the telescope to the sky
-        (see phoSim documentation; optional)
 
         @param [out] a numpy array in which the first row is the x pixel coordinates
         and the second row is the y pixel coordinates
 
         The optional arguments are there to be passed to calculatePupilCoordinates if you choose
         to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
-        not set, calculatePupilCoordinates will try to set them from obs_metadata and db_obj,
+        not set, calculatePupilCoordinates will try to set them from self and db_obj,
         assuming that this routine is being called from an InstanceCatalog daughter class.
         If that is not the case, an exception will be raised.
         """
