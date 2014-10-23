@@ -1,4 +1,5 @@
 import numpy
+import os
 from collections import OrderedDict
 import lsst.afw.cameraGeom.testUtils as testUtils
 from lsst.sims.catalogs.generation.db import ObservationMetaData, \
@@ -8,6 +9,10 @@ from lsst.sims.coordUtils import CameraCoords
 
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
+from lsst.afw.cameraGeom.cameraConfig import CameraConfig
+from lsst.afw.cameraGeom.cameraFactory import makeCameraFromPath
+from lsst.afw.table import AmpInfoCatalog
+from astropy.io import fits
 
 """
 Using cameraGeomExample.py in afw, we ought to be able to make an LSST-like
@@ -29,6 +34,13 @@ the other method will be a getter that will actually perform the calculations
 I suspect we should just split all of the astrometry methods
 
 """
+
+def convertAmpNames(rawName):
+   name = rawName.replace(':','')
+   name = name.replace(',','')
+   name = name.replace(' ','')
+   name = name.replace('S','_S')
+   return name
 
 def makeObservationMetaData():
     #create the ObservationMetaData object
@@ -55,13 +67,16 @@ def makeObservationMetaData():
     return obs_metadata
 
 epoch = 2000.0
-camera = testUtils.CameraWrapper(isLsstLike=True).camera
 obs_metadata = makeObservationMetaData()
 
-myCamCoords = CameraCoords()
+filedir = os.path.join(os.getenv('OBS_LSSTSIM_DIR'), 'description/camera/')
+filename = os.path.join(filedir, 'camera.py')
+myCameraConfig = CameraConfig()
+myCameraConfig.load(filename)
 
-print numpy.radians(obs_metadata.unrefractedRA),numpy.radians(obs_metadata.unrefractedDec)
-print '\n'
+camera = makeCameraFromPath(myCameraConfig, filedir, convertAmpNames)
+
+myCamCoords = CameraCoords()
 
 rap, decp = myCamCoords.applyMeanApparentPlace(numpy.array([numpy.radians(obs_metadata.unrefractedRA)]),
                                                numpy.array([numpy.radians(obs_metadata.unrefractedDec)]),
@@ -71,37 +86,4 @@ ra, dec = myCamCoords.applyMeanObservedPlace(rap,
                                             decp,
                                             obs_metadata=obs_metadata)
 
-print ra
-print dec
-print '\n'
 print myCamCoords.findChipName(ra=ra, dec=dec, epoch=epoch, camera=camera, obs_metadata=obs_metadata)
-
-for det in camera:
-    print det.getBBox()
-    print det.getBBox().getMin()
-    print det.getBBox().getMax()
-
-#cp = camera.makeCameraPoint(afwGeom.Point2D(-0.000262243770,0.000199467792), PUPIL)
-
-cp = camera.makeCameraPoint(afwGeom.Point2D(0,0), PUPIL)
-
-print dir(cp)
-print cp.getPoint()
-nativePoint=camera._transformSingleSys(cp, camera._nativeCameraSys)
-print nativePoint.getPoint()
-for det in camera:
-    cameraSys = det.makeCameraSys(PIXELS)
-    detPoint = det.transform(nativePoint, cameraSys)
-    print detPoint.getPoint(), det.getName()
-
-
-#cp = camera.makeCameraPoint(afwGeom.Point2D(-0.0002,0.0002), PUPIL)
-detList = camera.findDetectors(cp)
-for det in detList:
-   print det.getName()
-
-xpix, ypix = myCamCoords.calculatePixelCoordinates(xPupil=numpy.array([0.]), 
-                                                   yPupil=numpy.array([0.]), obs_metadata=obs_metadata,
-                                                   camera=camera)
-
-print xpix, ypix
