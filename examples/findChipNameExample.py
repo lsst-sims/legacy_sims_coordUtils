@@ -69,7 +69,7 @@ rap, decp = myCamCoords.applyMeanApparentPlace(numpy.array([numpy.radians(obs_me
 
 ra, dec = myCamCoords.applyMeanObservedPlace(rap,
                                             decp,
-                                            MJD=obs_metadata.mjd, obs_metadata=obs_metadata)
+                                            obs_metadata=obs_metadata)
 
 print ra
 print dec
