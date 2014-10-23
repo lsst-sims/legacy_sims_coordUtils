@@ -5,6 +5,7 @@ import palpy as pal
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.sims.catalogs.measures.instance import compound
+from lsst.sims.catalogs.generation.db import haversine
 
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
@@ -17,6 +18,7 @@ class AstrometryBase(object):
         Reads in the ra and dec from the data base and returns columns with galactic
         longitude and latitude.
 
+        All angles are in radians
         """
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
@@ -32,9 +34,11 @@ class AstrometryBase(object):
 
         @param [in] longitude is the input longitudinal coordinate
 
-        @param [in] latitutde is the input latitudinal coordinate
+        @param [in] latitude is the input latitudinal coordinate
 
         @param [out] a list of the (three-dimensional) cartesian coordinates on a unit sphere
+
+        All angles are in radians
         """
 
         cosDec = numpy.cos(latitude)
@@ -51,6 +55,7 @@ class AstrometryBase(object):
 
         @param [out] returns longitude and latitude
 
+        All angles are in radians
         """
 
         rad = numpy.sqrt(xyz[:][0]*xyz[:][0] + xyz[:][1]*xyz[:][1] + xyz[:][2]*xyz[:][2])
@@ -73,6 +78,7 @@ class AstrometryBase(object):
 
         @param [out] D the angular separation in radians
 
+        All angles are in radians
         '''
         D = pal.dsep (long1, lat1, long2, lat2)
         return D
@@ -119,7 +125,7 @@ class AstrometryBase(object):
         units:  ra_in (radians), dec_in (radians)
 
         The precession-nutation matrix is calculated by the pal.prenut method
-        which uses the IAU 2006A/2000 model
+        which uses the IAU 2006/2000A model
 
         @param [in] ra
 
@@ -131,11 +137,13 @@ class AstrometryBase(object):
 
         """
 
-        # Generate Julian epoch from MJD
-        julianEpoch = pal.epj(MJD)
-
         # Determine the precession and nutation
-        rmat=pal.prenut(EP0, julianEpoch)
+        #pal.prenut takes the julian epoch for the mean coordinates
+        #and the MJD for the the true coordinates
+        #
+        #TODO it is not specified what this MJD should be (i.e. in which
+        #time system it should be reckoned)
+        rmat=pal.prenut(EP0, MJD)
 
         # Apply rotation matrix
         xyz = self.sphericalToCartesian(ra,dec)
@@ -145,11 +153,8 @@ class AstrometryBase(object):
         return raOut,decOut
 
     def applyProperMotion(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, \
-                          EP0=2000.0, MJD=2015.0):
+                          EP0=2000.0):
         """Applies proper motion between two epochs.
-
-        Note pm_ra is measured in sky velocity (cos(dec)*dRa/dt).
-        PAL assumes dRa/dt
 
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
         (radians/year), parallax (arcsec), v_rad (km/sec, positive if receding),
@@ -166,15 +171,13 @@ class AstrometryBase(object):
 
         @param [in] pm_ra is ra proper motion in radians/year
 
-        @param [in] pm_dec is dec proper motoin in radians/year
+        @param [in] pm_dec is dec proper motion in radians/year
 
         @param [in] parallax in arcseconds
 
         @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
 
         @param [in] EP0 is epoch in Julian years
-
-        @param [in] MJD is modified Julian date in Julian years
 
         @param [out] raOut is corrected ra
 
@@ -189,14 +192,26 @@ class AstrometryBase(object):
         #so that pal.Pm returns meaningful values
 
         # Generate Julian epoch from MJD
+        #
+        #TODO do we actually want proper motion measured against
+        #obs_metadata.mjd (it is unclear what time system we should
+        #be using; just that the argument passed to pal.pmVector should be in julian years)
         julianEpoch = pal.epj(self.obs_metadata.mjd)
-        raOut, decOut = pal.pmVector(ra,dec,pm_ra,pm_dec/numpy.cos(dec),parallax,v_rad, EP0, julianEpoch)
+
+        #The pm_dec argument passed to pmVector used to be pm_dec/cos(dec).
+        #I have done away with that, since PAL expects the user to pass in
+        #proper motion in radians/per year.  I leave it to the user to perform
+        #whatever coordinate transformations are appropriate to the data.
+        raOut, decOut = pal.pmVector(ra,dec,pm_ra,pm_dec,parallax,v_rad, EP0, julianEpoch)
 
         return raOut,decOut
 
     @staticmethod
     def equatorialToGalactic(ra, dec):
-        '''Convert RA,Dec (J2000) to Galactic Coordinates'''
+        '''Convert RA,Dec (J2000) to Galactic Coordinates
+
+        All angles are in radians
+        '''
         gLong = numpy.zeros(len(ra))
         gLat = numpy.zeros(len(ra))
 
@@ -209,7 +224,10 @@ class AstrometryBase(object):
 
     @staticmethod
     def galacticToEquatorial(gLong, gLat):
-        '''Convert Galactic Coordinates to RA, dec (J2000)'''
+        '''Convert Galactic Coordinates to RA, dec (J2000)
+
+        All angles are in radians
+        '''
         ra = numpy.zeros(len(gLong))
         dec = numpy.zeros(len(gLong))
 
@@ -221,11 +239,10 @@ class AstrometryBase(object):
         return ra, dec
 
     def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-         v_rad=None, Epoch0=2000.0, MJD=2015.0):
+         v_rad=None, Epoch0=2000.0):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
-        Uses PAL mappa routines
-        Recomputers precession and nutation
+        Uses PAL mappa routine, which computes precession and nutation
 
         units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
         (radians/year), parallax (arcsec), v_rad (km/sec; positive if receding),
@@ -242,7 +259,7 @@ class AstrometryBase(object):
 
         @param [in] pm_ra is ra proper motion in radians/year
 
-        @param [in] pm_dec is dec proper motoin in radians/year
+        @param [in] pm_dec is dec proper motion in radians/year
 
         @param [in] parallax in arcseconds
 
@@ -250,13 +267,14 @@ class AstrometryBase(object):
 
         @param [in] Epoch0 is epoch in Julian years
 
-        @param [in] MJD is modified Julian date in Julian years
+        @param [out] raOut is corrected ra in radians
 
-        @param [out] raOut is corrected ra
-
-        @param [out] decOut is corrected dec
+        @param [out] decOut is corrected dec in radians
 
         """
+
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call applyMeanApparentPlace; self.obs_metadata.mjd is None")
 
         if len(ra) != len(dec):
             raise ValueError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
@@ -279,20 +297,28 @@ class AstrometryBase(object):
         #needed to correct RA and Dec
         #e.g the Earth barycentric and heliocentric position and velocity,
         #the precession-nutation matrix, etc.
-        prms=pal.mappa(Epoch0, MJD)
+        #
+        #arguments of pal.mappa are:
+        #epoch of mean equinox to be used (Julian)
+        #
+        #date (MJD)
+        #
+        #TODO This mjd should be the Barycentric Dynamical Time
+        prms=pal.mappa(Epoch0, self.obs_metadata.mjd)
 
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
         #
-        #Assuming that everything has propermotion, radial velocity, and parallax
-        #is accurate to 10^-5 radians
+        #Taken from the palpy source code (palMap.c which calls both palMappa and palMapqk):
+        #The accuracy is sub-milliarcsecond, limited by the
+        #precession-nutation model (see palPrenut for details).
 
         raOut,decOut = pal.mapqkVector(ra,dec,pm_ra,pm_dec,parallax,v_rad,prms)
 
         return raOut,decOut
 
-    def applyMeanObservedPlace(self, ra, dec, MJD = 2015., includeRefraction = True,  \
-                               altAzHr=False, wavelength=5000.):
+    def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,  \
+                               altAzHr=False, wavelength=0.5):
         """Calculate the Mean Observed Place
 
         Uses PAL aoppa routines
@@ -303,22 +329,40 @@ class AstrometryBase(object):
 
         This will call pal.aopqk which accounts for refraction and diurnal aberration
 
-        @param [out] raOut is corrected ra
+        @param [in] ra is geocentric apparent RA (radians)
 
-        @param [out] decOut is corrected dec
+        @param [in] dec is geocentric apparent Dec (radians)
 
-        @param [out] alt is altitude angle (only returned if altAzHr == True)
+        @param [in] includeRefraction is a boolean to turn refraction on and off
 
-        @param [out] az is azimuth angle (only returned if altAzHr == True)
+        @param [in] altAzHr is a boolean indicating whether or not to return altitude
+        and azimuth
+
+        @param [in] wavelength is effective wavelength in microns
+
+        @param [out] raOut is corrected ra (radians)
+
+        @param [out] decOut is corrected dec (radians)
+
+        @param [out] alt is altitude angle (only returned if altAzHr == True) (radians)
+
+        @param [out] az is azimuth angle (only returned if altAzHr == True) (radians)
 
         """
 
+        if self.obs_metadata.mjd is None:
+            raise ValueError("in Astrometry.py cannot call applyMeanObservedPlace; self.obs_metadata.mjd is None")
+
         # Correct site longitude for polar motion slaPolmo
         #
-        # As of 4 February 2014, I am not sure what to make of this comment.
-        # It appears that aoppa corrects for polar motion.
-        # This could mean that the call to slaPolmo is unnecessary...
-
+        #17 October 2014
+        #  palAop.c (which calls Aoppa and Aopqk, as we do here) says
+        #  *     - The azimuths etc produced by the present routine are with
+        #  *       respect to the celestial pole.  Corrections to the terrestrial
+        #  *       pole can be computed using palPolmo.
+        #
+        #currently, palPolmo is not implemented in PAL
+        #I have filed an issue with the PAL team to change that.
 
         # TODO NEED UT1 - UTC to be kept as a function of date.
         # Requires a look up of the IERS tables (-0.9<dut1<0.9)
@@ -331,8 +375,11 @@ class AstrometryBase(object):
         #i.e. it calculates geodetic latitude, magnitude of diurnal aberration,
         #refraction coefficients and the like based on data about the observation site
         #
+        #TODO: pal.aoppa requires as its first argument
+        #the UTC time expressed as an MJD.  It is not clear to me
+        #how to actually calculate that.
         if (includeRefraction == True):
-            obsPrms=pal.aoppa(MJD, dut,
+            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
                             self.site.longitude,
                             self.site.latitude,
                             self.site.height,
@@ -345,7 +392,7 @@ class AstrometryBase(object):
                             self.site.lapseRate)
         else:
             #we can discard refraction by setting pressure and humidity to zero
-            obsPrms=pal.aoppa(MJD, dut,
+            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
                             self.site.longitude,
                             self.site.latitude,
                             self.site.height,
@@ -367,6 +414,7 @@ class AstrometryBase(object):
         #
 
         azimuth, zenith, hourAngle, decOut, raOut = pal.aopqkVector(ra,dec,obsPrms)
+
         #
         #Note: this is a choke point.  Even the vectorized version of aopqk
         #is expensive (it takes about 0.006 seconds per call)
@@ -378,8 +426,8 @@ class AstrometryBase(object):
             #
             #pal.de2h converts equatorial to horizon coordinates
             #
-            az, alt = pal.de2hVector(hourAngle,decOut,self.site.latitude)
-            return raOut, decOut, alt, az
+            az, el = pal.de2hVector(hourAngle,decOut,self.site.latitude)
+            return raOut, decOut, el, az
         return raOut, decOut
 
     def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None,
@@ -416,28 +464,30 @@ class AstrometryBase(object):
         dec=self.column_by_name('decJ2000') #in radians
 
         ep0 = self.db_obj.epoch
-        mjd = self.obs_metadata.mjd
 
         ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
-                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0, MJD = mjd)
+                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0)
 
-        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, MJD = mjd,
+        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent,
                                                    includeRefraction = includeRefraction)
 
         return numpy.array([ra_out,dec_out])
 
-    def refractionCoefficients(self):
+    def refractionCoefficients(self, wavelength=0.5):
         """ Calculate the refraction using PAL's refco routine
 
         This calculates the refraction at 2 angles and derives a tanz and tan^3z
         coefficient for subsequent quick calculations. Good for zenith distances < 76 degrees
 
+        @param [in] wavelength is effective wavelength in microns
+
         One should call PAL refz to apply the coefficients calculated here
 
         """
-
-        wavelength = 5000.
         precision = 1.e-10
+
+        #TODO the latitude in refco needs to be astronomical latitude,
+        #not geodetic latitude
         _refcoOutput=pal.refco(self.site.height,
                         self.site.meanTemperature,
                         self.site.meanPressure,
@@ -471,7 +521,13 @@ class AstrometryBase(object):
     def calcLast(self, mjd, long):
         """
         Converts the date mjd+long into Greenwhich Mean Sidereal Time (in radians)
+
+        Note that mjd is the UT1 time expressed as an MJD
         """
+
+        #TODO the arguments of palGmsta are
+        # - the UT1 date expressed as an MJD
+        # - the UT1 time (fraction of a day)
         D = pal.gmsta(mjd, 0.)
         D += long
         D = D%(2.*math.pi)
@@ -481,11 +537,13 @@ class AstrometryBase(object):
         """
         Converts from equatorial to horizon coordinates
 
-        @param [in] ra is hour angle in radians
+        @param [in] ra is in radians
 
         @param [in] dec is declination in radians
 
-        @param [out] returns elevation angle and azimuth in that order
+        @param [in] mjd is the date
+
+        @param [out] returns elevation angle and azimuth in that order (radians)
 
         """
 
@@ -546,11 +604,10 @@ class AstrometryBase(object):
         inRA=numpy.array([numpy.radians(self.unrefractedRA)])
         inDec=numpy.array([numpy.radians(self.unrefractedDec)])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec,
-                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0 = self.db_obj.epoch)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y)
         #we should now have the true tangent point for the gnomonic projection
         dPhi = dec_obj - boreDec
         dLambda = ra_obj - boreRA
@@ -558,9 +615,13 @@ class AstrometryBase(object):
         #see en.wikipedia.org/wiki/Haversine_formula
         #Phi is latitude on the sphere (declination)
         #Lambda is longitude on the sphere (RA)
-        h = 2.0*numpy.arcsin(numpy.sqrt(numpy.sin(0.5 * dPhi)**2 + numpy.cos(boreDec) *
-               numpy.cos(dec_obj) * (numpy.sin(0.5 * dLambda))**2))
-
+        #
+        #Now that there is a haversine method in 
+        #sims_catalogs_generation/.../db/obsMetadataUtils.py
+        #I am using that function so that we only have one
+        #haversine formula floating around the stack
+        h = haversine(ra_obj, dec_obj, boreRA, boreDec)
+        
         #demand that the Euclidean distance on the pupil matches
         #the haversine distance on the sphere
         dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
@@ -611,11 +672,10 @@ class AstrometryBase(object):
         inRA=numpy.array([numpy.radians(self.unrefractedRA)])
         inDec=numpy.array([numpy.radians(self.unrefractedDec)])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec,
-                   Epoch0 = self.db_obj.epoch, MJD = self.obs_metadata.mjd)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=self.db_obj.epoch)
 
         #correct for refraction
-        trueRA, trueDec = self.applyMeanObservedPlace(x, y, MJD = self.obs_metadata.mjd)
+        trueRA, trueDec = self.applyMeanObservedPlace(x, y)
         #we should now have the true tangent point for the gnomonic projection
 
         #pal.ds2tp performs the gnomonic projection on ra_in and dec_in
@@ -832,6 +892,12 @@ class AstrometryStars(AstrometryBase):
         Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
 
         """
+
+        #TODO
+        #are we going to store proper motion in raw radians per year
+        #or in sky motion = cos(dec) * (radians per year)
+        #PAL asks for radians per year inputs
+
         pr=self.column_by_name('properMotionRa') #in radians per year
         pd=self.column_by_name('properMotionDec') #in radians per year
         px=self.column_by_name('parallax') #in arcseconds

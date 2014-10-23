@@ -5,7 +5,7 @@ pySLALIB v 1.0.2
 
 There will be some difference, as the two libraries are based on slightly
 different conventions (for example, the prenut routine which calculates
-the matrix of precession and nutation is based on the IAU 2006A/2000
+the matrix of precession and nutation is based on the IAU 2006/2000A
 standard in PALPY and on SF2001 in pySLALIB; however, the two outputs
 still agree to within one part in 10^5)
 
@@ -38,6 +38,7 @@ import unittest
 import warnings
 import sys
 import math
+import palpy as pal
 import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
@@ -47,12 +48,6 @@ from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
-# Create test databases
-if os.path.exists('AstrometryTestDatabase.db'):
-    print "deleting database"
-    os.unlink('AstrometryTestDatabase.db')
-makeStarTestDB(filename='AstrometryTestDatabase.db',
-       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
 class AstrometryTestStars(myTestStars):
     dbAddress = 'sqlite:///AstrometryTestDatabase.db'
@@ -87,27 +82,45 @@ class astrometryUnitTest(unittest.TestCase):
     querying the database) because SLALIB was originally run on values that did not correspond
     to any particular Opsim run.
     """
-
-    starDBObject = AstrometryTestStars()
-    obs_metadata=ObservationMetaData(mjd=50984.371741,
+    
+    @classmethod
+    def setUpClass(cls):
+        # Create test databases
+        if os.path.exists('AstrometryTestDatabase.db'):
+            print "deleting database"
+            os.unlink('AstrometryTestDatabase.db')
+        makeStarTestDB(filename='AstrometryTestDatabase.db',
+                      size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+    
+    def setUp(self):
+        self.starDBObject = AstrometryTestStars()
+        self.obs_metadata=ObservationMetaData(mjd=50984.371741,
                                      boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
                                      boundLength=0.05)
-    metadata={}
+        self.metadata={}
 
-    #below are metadata values that need to be set in order for
-    #get_skyToFocalPlane to work.  If we had been querying the database,
-    #these would be set to meaningful values.  Because we are generating
-    #an artificial set of inputs that must comport to the baseline SLALIB
-    #inputs, these are set arbitrarily by hand
-    metadata['Unrefracted_RA'] = (200.0, float)
-    metadata['Unrefracted_Dec'] = (-30.0, float)
-    metadata['Opsim_rotskypos'] = (1.0, float)
+        #below are metadata values that need to be set in order for
+        #get_skyToFocalPlane to work.  If we had been querying the database,
+        #these would be set to meaningful values.  Because we are generating
+        #an artificial set of inputs that must comport to the baseline SLALIB
+        #inputs, these are set arbitrarily by hand
+        self.metadata['Unrefracted_RA'] = (200.0, float)
+        self.metadata['Unrefracted_Dec'] = (-30.0, float)
+        self.metadata['Opsim_rotskypos'] = (1.0, float)
 
-    obs_metadata.assignPhoSimMetaData(metadata)
+        self.obs_metadata.assignPhoSimMetaData(self.metadata)
+        self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
+        self.tol=1.0e-5
+    
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('AstrometryTestDatabase.db'):
+            os.unlink('AstrometryTestDatabase.db')
 
-    cat=testCatalog(starDBObject,obs_metadata=obs_metadata)
-    tol=1.0e-5
-
+    def tearDown(self):
+        del self.cat
+        del self.obs_metadata
+    
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
 
@@ -118,8 +131,8 @@ class astrometryUnitTest(unittest.TestCase):
         """
 
         #these are just values shown heuristically to give an actual chip name
-        ra = numpy.array([3.568263669914])
-        dec = numpy.array([-0.593605445572])
+        ra = numpy.array([3.51])
+        dec = numpy.array([-0.54186227])
         xPupil = numpy.array([-0.000262243770])
         yPupil = numpy.array([0.000199467792])
 
@@ -141,6 +154,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertTrue(name[0] is not None)
 
         name = self.cat.findChipName(ra = ra, dec = dec)
+        xtest, ytest = self.cat.calculatePupilCoordinates(ra, dec )
         self.assertTrue(name[0] is not None)
 
         self.assertRaises(RuntimeError, self.cat.findChipName)
@@ -189,10 +203,10 @@ class astrometryUnitTest(unittest.TestCase):
                            baselineData['xPix'], baselineData['yPix']):
 
             if not numpy.isnan(xx) and not numpy.isnan(yy):
-                self.assertAlmostEqual(xxtest,xx,6)
-                self.assertAlmostEqual(yytest,yy,6)
-                self.assertAlmostEqual(xxra,xx,6)
-                self.assertAlmostEqual(yyra,yy,6)
+                self.assertAlmostEqual(xxtest,xx,5)
+                self.assertAlmostEqual(yytest,yy,5)
+                self.assertAlmostEqual(xxra,xx,5)
+                self.assertAlmostEqual(yyra,yy,5)
             else:
                 self.assertTrue(numpy.isnan(xx))
                 self.assertTrue(numpy.isnan(yy))
@@ -236,18 +250,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         obs_metadata=ObservationMetaData(mjd=50984.371741,boundType='circle',unrefractedRA=200.0,
                                          unrefractedDec=-30.0,boundLength=0.05,site=testSite)
-        metadata={}
 
-        #below are metadata values that need to be set in order for
-        #get_skyToFocalPlane to work.  If we had been querying the database,
-        #these would be set to meaningful values.  Because we are generating
-        #an artificial set of inputs that must comport to the baseline SLALIB
-        #inputs, these are set arbitrarily by hand
-        metadata['Unrefracted_RA'] = (200.0, float)
-        metadata['Unrefracted_Dec'] = (-30.0, float)
-        metadata['Opsim_rotskypos'] = (1.0, float)
-
-        obs_metadata.assignPhoSimMetaData(metadata)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
 
         cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
 
@@ -308,7 +312,6 @@ class astrometryUnitTest(unittest.TestCase):
             for j in range(3):
                 self.assertAlmostEqual(vv[j],xyz[j][i],7)
 
-
     def testAngularSeparation(self):
         arg1 = 7.853981633974482790e-01
         arg2 = 3.769911184307751517e-01
@@ -352,7 +355,15 @@ class astrometryUnitTest(unittest.TestCase):
         ra[2]=7.740864769302191473e-01
         dec[2]=2.758053025017753179e-01
 
-        output=self.cat.applyPrecession(ra,dec)
+        #The MJD kwarg in applyPrecession below is a hold-over from
+        #a misunderstanding in the API for the pal.prenut() back
+        #when we generated the test data.  We passed a julian epoch
+        #(in years) when PAL actually wanted an MJD.  The underlying
+        #code has been fixed.  This test still passes a julian
+        #epoch so that it will give the same results as the control
+        #SLALIB run.
+        output=self.cat.applyPrecession(ra,dec, MJD=pal.epj(2000.0))
+
         self.assertAlmostEqual(output[0][0],2.514361575034799401e+00,6)
         self.assertAlmostEqual(output[1][0], 5.306722463159389003e-01,6)
         self.assertAlmostEqual(output[0][1],8.224493314855578774e-01,6)
@@ -391,9 +402,10 @@ class astrometryUnitTest(unittest.TestCase):
         v_rad[2]=-3.225459751425886452e+02
 
         ep=2.001040286039033845e+03
-        mjd=2.018749109074271473e+03
 
-        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec,parallax,v_rad,EP0=ep,MJD=mjd)
+        #This test passes pm_dec/numpy.cos(dec) because that is the input that
+        #was used when the baseline data was generated with SLALIB
+        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),parallax,v_rad,EP0=ep)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
         self.assertAlmostEqual(output[1][0],5.198769294314042888e-01,6)
@@ -423,7 +435,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],2.829585540991265358e+00,6)
         self.assertAlmostEqual(output[1][2],-6.510790587552289788e-01,6)
 
-
     def testGalacticToEquatorial(self):
 
         lon=numpy.zeros((3),dtype=float)
@@ -446,7 +457,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1][2],2.758053025017753179e-01,6)
 
     def testApplyMeanApparentPlace(self):
-
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
         pm_ra=numpy.zeros((3),dtype=float)
@@ -483,9 +493,15 @@ class astrometryUnitTest(unittest.TestCase):
 
         ep=2.001040286039033845e+03
         mjd=2.018749109074271473e+03
+        obs_metadata=ObservationMetaData(mjd=mjd,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
 
-        output=self.cat.applyMeanApparentPlace(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
-              parallax = parallax,v_rad = v_rad, Epoch0=ep, MJD=mjd)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
+        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+
+        output=cat.applyMeanApparentPlace(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
+              parallax = parallax,v_rad = v_rad, Epoch0=ep)
 
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6)
         self.assertAlmostEqual(output[1][0],5.309044018653210628e-01,6)
@@ -504,6 +520,12 @@ class astrometryUnitTest(unittest.TestCase):
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
 
+        #we need to pass wv as the effective wavelength for methods that
+        #calculate refraction because, when the control SLALIB runs were
+        #done we misinterpreted the units of wavelength to be Angstroms
+        #rather than microns.
+        wv = 5000.0
+
         ra[0]=2.549091039839124218e+00
         dec[0]=5.198752733024248895e-01
         ra[1]=4.346687836824714712e-01
@@ -512,8 +534,14 @@ class astrometryUnitTest(unittest.TestCase):
         dec[2]=2.758053025017753179e-01
 
         mjd=2.018749109074271473e+03
+        obs_metadata=ObservationMetaData(mjd=mjd,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd)
+        obs_metadata.assignPhoSimMetaData(self.metadata)
+        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+
+        output=cat.applyMeanObservedPlace(ra,dec, wavelength=wv)
 
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
@@ -523,9 +551,9 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
         self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
-
-        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd,altAzHr=True)
-
+        
+        output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True, wavelength=wv)
+        
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
         self.assertAlmostEqual(output[2][0],1.168920017932007643e-01,6)
@@ -541,7 +569,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[2][2],5.275840601437552513e-01,6)
         self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd,includeRefraction=False)
+        output=cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
+                                               wavelength=wv)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
         self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
@@ -552,7 +581,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
         self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd,includeRefraction=False,altAzHr=True)
+        output=cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
+                                               altAzHr=True, wavelength=wv)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
         self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
@@ -569,7 +599,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[2][2],5.271912536356709866e-01,6)
         self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
 
-
     def testMeanObservedPlace_NoRefraction(self):
 
         ra=numpy.zeros((3),dtype=float)
@@ -583,8 +612,14 @@ class astrometryUnitTest(unittest.TestCase):
         dec[2]=2.758053025017753179e-01
 
         mjd=2.018749109074271473e+03
+        obs_metadata=ObservationMetaData(mjd=mjd,
+                                     boundType='circle',unrefractedRA=200.0,unrefractedDec=-30.0,
+                                     boundLength=0.05)
 
-        output=self.cat.applyMeanObservedPlace(ra,dec,MJD=mjd,altAzHr=True,
+        obs_metadata.assignPhoSimMetaData(self.metadata)
+        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+ 
+        output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True,
                  includeRefraction = False)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
@@ -597,13 +632,13 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[3][2],5.479759402150099490e+00,6)
 
     def testRefractionCoefficients(self):
-        output=self.cat.refractionCoefficients()
+        output=self.cat.refractionCoefficients(wavelength=5000.0)
 
         self.assertAlmostEqual(output[0],2.295817926320665320e-04,6)
         self.assertAlmostEqual(output[1],-2.385964632924575670e-07,6)
 
     def testApplyRefraction(self):
-        coeffs=self.cat.refractionCoefficients()
+        coeffs=self.cat.refractionCoefficients(wavelength = 5000.0)
 
         output=self.cat.applyRefraction(0.25*numpy.pi,coeffs[0],coeffs[1])
 
