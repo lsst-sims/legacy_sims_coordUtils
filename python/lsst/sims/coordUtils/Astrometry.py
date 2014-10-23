@@ -242,7 +242,7 @@ class AstrometryBase(object):
         return ra, dec
 
     def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-         v_rad=None, Epoch0=2000.0, MJD = None):
+                               v_rad=None, Epoch0=2000.0, MJD = None):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
         Uses PAL mappa routine, which computes precession and nutation
@@ -279,7 +279,7 @@ class AstrometryBase(object):
         if MJD is None:
             if hasattr(self, 'obs_metadata'):
                 MJD = self.obs_metadata.mjd
-            
+
             if MJD is None:
                 raise ValueError("in Astrometry.py cannot call applyMeanApparentPlace; mjd is None")
 
@@ -636,8 +636,7 @@ class AstrometryBase(object):
         inRA=numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
         inDec=numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec,
-                   Epoch0=epoch, MJD=obs_metadata.mjd)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
         boreRA, boreDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
