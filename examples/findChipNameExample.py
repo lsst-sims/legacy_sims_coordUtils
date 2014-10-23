@@ -78,12 +78,15 @@ camera = makeCameraFromPath(myCameraConfig, filedir, convertAmpNames)
 
 myCamCoords = CameraCoords()
 
-rap, decp = myCamCoords.applyMeanApparentPlace(numpy.array([numpy.radians(obs_metadata.unrefractedRA)]),
-                                               numpy.array([numpy.radians(obs_metadata.unrefractedDec)]),
-                                               Epoch0=epoch, MJD=obs_metadata.mjd)
+nsamples = 10
+numpy.random.seed(32)
+rr = numpy.radians(2.0)*numpy.random.sample(nsamples)
+theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
 
-ra, dec = myCamCoords.applyMeanObservedPlace(rap,
-                                            decp,
-                                            obs_metadata=obs_metadata)
+ra = numpy.radians(obs_metadata.unrefractedRA) + rr*numpy.cos(theta)
+dec = numpy.radians(obs_metadata.unrefractedDec) + rr*numpy.sin(theta)
 
-print myCamCoords.findChipName(ra=ra, dec=dec, epoch=epoch, camera=camera, obs_metadata=obs_metadata)
+chipNames = myCamCoords.findChipName(ra=ra, dec=dec, epoch=epoch, camera=camera, obs_metadata=obs_metadata)
+
+for (rr,dd,nn) in zip(ra,dec,chipNames):
+    print rr,dd,nn
