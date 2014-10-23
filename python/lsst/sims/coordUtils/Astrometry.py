@@ -268,7 +268,10 @@ class AstrometryBase(object):
 
         @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
 
-        @param [in] Epoch0 is epoch in Julian years
+        @param [in] Epoch0 is the julian epoch (in years) of the equinox against which to
+        measure RA
+
+        @param[in] MJD is the date of the observation
 
         @param [out] raOut is corrected ra in radians
 
@@ -347,6 +350,10 @@ class AstrometryBase(object):
         and azimuth
 
         @param [in] wavelength is effective wavelength in microns
+
+        @param [in] obs_metadata is an ObservationMetaData characterizing the
+        observation (optional; if not included, the code will try to set it from
+        self assuming it is in an InstanceCatalog daughter class)
 
         @param [out] raOut is corrected ra (radians)
 
