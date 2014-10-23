@@ -6,6 +6,9 @@ from lsst.sims.catalogs.generation.db import ObservationMetaData, \
                                              altAzToRaDec, Site
 from lsst.sims.coordUtils import CameraCoords
 
+import lsst.afw.geom as afwGeom
+from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
+
 """
 Using cameraGeomExample.py in afw, we ought to be able to make an LSST-like
 camera object
@@ -51,5 +54,54 @@ def makeObservationMetaData():
 
     return obs_metadata
 
+epoch = 2000.0
 camera = testUtils.CameraWrapper(isLsstLike=True).camera
 obs_metadata = makeObservationMetaData()
+
+myCamCoords = CameraCoords()
+
+print numpy.radians(obs_metadata.unrefractedRA),numpy.radians(obs_metadata.unrefractedDec)
+print '\n'
+
+rap, decp = myCamCoords.applyMeanApparentPlace(numpy.array([numpy.radians(obs_metadata.unrefractedRA)]),
+                                               numpy.array([numpy.radians(obs_metadata.unrefractedDec)]),
+                                               Epoch0=epoch, MJD=obs_metadata.mjd)
+
+ra, dec = myCamCoords.applyMeanObservedPlace(rap,
+                                            decp,
+                                            MJD=obs_metadata.mjd, obs_metadata=obs_metadata)
+
+print ra
+print dec
+print '\n'
+print myCamCoords.findChipName(ra=ra, dec=dec, epoch=epoch, camera=camera, obs_metadata=obs_metadata)
+
+for det in camera:
+    print det.getBBox()
+    print det.getBBox().getMin()
+    print det.getBBox().getMax()
+
+#cp = camera.makeCameraPoint(afwGeom.Point2D(-0.000262243770,0.000199467792), PUPIL)
+
+cp = camera.makeCameraPoint(afwGeom.Point2D(0,0), PUPIL)
+
+print dir(cp)
+print cp.getPoint()
+nativePoint=camera._transformSingleSys(cp, camera._nativeCameraSys)
+print nativePoint.getPoint()
+for det in camera:
+    cameraSys = det.makeCameraSys(PIXELS)
+    detPoint = det.transform(nativePoint, cameraSys)
+    print detPoint.getPoint(), det.getName()
+
+
+#cp = camera.makeCameraPoint(afwGeom.Point2D(-0.0002,0.0002), PUPIL)
+detList = camera.findDetectors(cp)
+for det in detList:
+   print det.getName()
+
+xpix, ypix = myCamCoords.calculatePixelCoordinates(xPupil=numpy.array([0.]), 
+                                                   yPupil=numpy.array([0.]), obs_metadata=obs_metadata,
+                                                   camera=camera)
+
+print xpix, ypix
