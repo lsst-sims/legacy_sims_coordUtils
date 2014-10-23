@@ -242,7 +242,7 @@ class AstrometryBase(object):
         return ra, dec
 
     def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-         v_rad=None, Epoch0=2000.0):
+         v_rad=None, Epoch0=2000.0, MJD = None):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
         Uses PAL mappa routine, which computes precession and nutation
@@ -276,8 +276,12 @@ class AstrometryBase(object):
 
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call applyMeanApparentPlace; self.obs_metadata.mjd is None")
+        if MJD is None:
+            if hasattr(self, 'obs_metadata'):
+                MJD = self.obs_metadata.mjd
+            
+            if MJD is None:
+                raise ValueError("in Astrometry.py cannot call applyMeanApparentPlace; mjd is None")
 
         if len(ra) != len(dec):
             raise ValueError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
@@ -307,7 +311,7 @@ class AstrometryBase(object):
         #date (MJD)
         #
         #TODO This mjd should be the Barycentric Dynamical Time
-        prms=pal.mappa(Epoch0, self.obs_metadata.mjd)
+        prms=pal.mappa(Epoch0, MJD)
 
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
@@ -636,8 +640,7 @@ class AstrometryBase(object):
                    Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y, MJD=obs_metadata.mjd,
-                                                      obs_metadata=obs_metadata)
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
 
         #we should now have the true tangent point for the gnomonic projection
         dPhi = decObj - boreDec
@@ -651,7 +654,7 @@ class AstrometryBase(object):
         #sims_catalogs_generation/.../db/obsMetadataUtils.py
         #I am using that function so that we only have one
         #haversine formula floating around the stack
-        h = haversine(ra_obj, dec_obj, boreRA, boreDec)
+        h = haversine(raObj, decObj, boreRA, boreDec)
 
         #demand that the Euclidean distance on the pupil matches
         #the haversine distance on the sphere
