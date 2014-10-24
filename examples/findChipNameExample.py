@@ -1,3 +1,10 @@
+"""
+This script demonstrates how to use the stand-alone findChipName method.
+The ObservationMetaData is a cartoon generated from nonsense data in the
+makeObservationMetaData() method (utilities are used to make sure that the
+RA, Dec, Alt, Az are all self-consistent).
+"""
+
 import numpy
 import os
 from collections import OrderedDict
