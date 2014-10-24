@@ -271,7 +271,10 @@ class AstrometryBase(object):
         @param [in] Epoch0 is the julian epoch (in years) of the equinox against which to
         measure RA
 
-        @param[in] MJD is the date of the observation
+        @param[in] MJD is the date of the observation (optional; if None, the code will
+        try to set it from self.obs_metadata assuming that this method is being called
+        by an InstanceCatalog daughter class.  If that is not the case, an exception
+        will be raised.)
 
         @param [out] raOut is corrected ra in radians
 
@@ -353,7 +356,8 @@ class AstrometryBase(object):
 
         @param [in] obs_metadata is an ObservationMetaData characterizing the
         observation (optional; if not included, the code will try to set it from
-        self assuming it is in an InstanceCatalog daughter class)
+        self assuming it is in an InstanceCatalog daughter class.  If that is not
+        the case, an exception will be raised.)
 
         @param [out] raOut is corrected ra (radians)
 
@@ -586,12 +590,14 @@ class AstrometryBase(object):
     def calculatePupilCoordinates(self, raObj, decObj,
                                   obs_metadata=None, epoch=None):
         """
-        @param [in] ra_obj is a numpy array of RAs in radians
+        @param [in] raObj is a numpy array of RAs in radians
 
-        @param [in] dec_obj is a numpy array of Decs in radians
+        @param [in] decObj is a numpy array of Decs in radians
 
         @param [in] obs_metadata is an ObservationMetaData object containing information
-        about the telescope pointing
+        about the telescope pointing (optional; if None, the code will try to set it
+        from self assuming that this method is being called from an InstanceCatalog
+        daughter class.  If that is not the case, an exception will be raised.)
 
         @param [in] epoch is the julian epoch of the mean equinox used for the coordinate
         transforations (in years; optional)
@@ -601,10 +607,6 @@ class AstrometryBase(object):
 
         Take an input RA and dec from the sky and convert it to coordinates
         in the pupil.
-
-        If any of the optional arguments are missing, this routine will try to set them
-        from self, assuming this is being called from an InstanceCatalog
-        daughter class.  If that is not the case, an exception will be raised.
 
         This routine will use the haversine formula to calculate the arc distance h
         between the bore sight and the object.  It will convert this into pupil coordinates
@@ -911,14 +913,15 @@ class CameraCoords(AstrometryBase):
         @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
         (in years; optional)
 
+            The optional arguments are there to be passed to calculatePupilCoordinates if you choose
+            to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
+            not set, calculatePupilCoordinates will try to set them from self and db_obj,
+            assuming that this routine is being called from an InstanceCatalog daughter class.
+            If that is not the case, an exception will be raised.
+
         @param [out] a numpy array in which the first row is the x pixel coordinates
         and the second row is the y pixel coordinates
 
-        The optional arguments are there to be passed to calculatePupilCoordinates if you choose
-        to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
-        not set, calculatePupilCoordinates will try to set them from self and db_obj,
-        assuming that this routine is being called from an InstanceCatalog daughter class.
-        If that is not the case, an exception will be raised.
         """
 
         specifiedPupil = (xPupil is not None and yPupil is not None)
