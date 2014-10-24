@@ -453,13 +453,17 @@ class AstrometryBase(object):
             return raOut, decOut, alt, az
         return raOut, decOut
 
-    def correctCoordinates(self, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
-             includeRefraction=True):
+    def correctCoordinates(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+             obs_metadata=None, epoch=None, includeRefraction=True):
         """
         correct coordinates for all possible effects.
 
         included are precession-nutation, aberration, proper motion, parallax, refraction,
         radial velocity, diurnal aberration,
+
+        @param [in] ra is the unrefracted RA in radians
+
+        @param [in] dec is the unrefracted Dec in radians
 
         @param [in] pm_ra is proper motion in RA (radians)
 
@@ -469,6 +473,16 @@ class AstrometryBase(object):
 
         @param [in] v_rad is radial velocity (km/s)
 
+        @param [in] obs_metadata is an ObservationMetaData object describing the
+        telescope pointing.  If it is None, the code will try to set it from self
+        assuming that this method is being called from within an InstanceCatalog
+        daughter class.  If that is not the case, an exception will be raised
+
+        @param [in] epoch is the julian epoch (in years) against which the mean
+        equinoxes are measured.  If it is None, the code will try to set it from
+        self.db_obj, assuming that the code is being called from an InstanceCatalog
+        daughter class.  If that is not the case, an exception will be raised.
+
         @param [in] includeRefraction toggles whether or not to correct for refraction
 
         @param [out] ra_out RA corrected for all included effects
@@ -477,21 +491,27 @@ class AstrometryBase(object):
 
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call correctCoordinates; self.obs_metadata.mjd is none")
+        if obs_metadata is None:
+            if hasattr(self, 'obs_metadata'):
+                obs_metadata = self.obs_metadata
+            
+            if obs_metadata is None:
+                raise ValueError("in Astrometry.py cannot call correctCoordinates; obs_metadata is none")
 
-        if self.db_obj.epoch is None:
-            raise ValueError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
+            if obs_metadata.mjd is None:
+                raise ValueError("in Astrometry.py cannot call correctCoordinates; obs_metadata.mjd is none")
 
-        ra=self.column_by_name('raJ2000') #in radians
-        dec=self.column_by_name('decJ2000') #in radians
+        if epoch is None:
+            if hasattr(self, 'db_obj'):
+                epoch = self.db_obj.epoch
 
-        ep0 = self.db_obj.epoch
+            if epoch is None:
+                raise ValueError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
 
         ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
-                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0)
+                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
 
-        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent,
+        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
                                                    includeRefraction = includeRefraction)
 
         return numpy.array([ra_out,dec_out])
@@ -979,7 +999,9 @@ class AstrometryGalaxies(AstrometryBase):
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
-        return self.correctCoordinates(includeRefraction = False)
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
+        return self.correctCoordinates(ra, dec, includeRefraction = False)
 
 
     @compound('raObserved','decObserved')
@@ -987,8 +1009,9 @@ class AstrometryGalaxies(AstrometryBase):
         """
         get coordinates corrected for everything
         """
-
-        return self.correctCoordinates()
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
+        return self.correctCoordinates(ra, dec)
 
 
 class AstrometryStars(AstrometryBase):
@@ -1007,12 +1030,14 @@ class AstrometryStars(AstrometryBase):
         #or in sky motion = cos(dec) * (radians per year)
         #PAL asks for radians per year inputs
 
-        pr=self.column_by_name('properMotionRa') #in radians per year
-        pd=self.column_by_name('properMotionDec') #in radians per year
-        px=self.column_by_name('parallax') #in arcseconds
-        rv=self.column_by_name('radialVelocity') #in km/s; positive if receding
+        pr = self.column_by_name('properMotionRa') #in radians per year
+        pd = self.column_by_name('properMotionDec') #in radians per year
+        px = self.column_by_name('parallax') #in arcseconds
+        rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
 
-        return self.correctCoordinates(pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
+        return self.correctCoordinates(ra, dec, pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
                      includeRefraction = includeRefraction)
 
 
