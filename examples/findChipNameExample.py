@@ -1,18 +1,12 @@
 import numpy
 import os
 from collections import OrderedDict
-import lsst.afw.cameraGeom.testUtils as testUtils
 from lsst.sims.catalogs.generation.db import ObservationMetaData, \
                                              calcObsDefaults, getRotTelPos, \
                                              altAzToRaDec, Site
 from lsst.sims.coordUtils import CameraCoords
-
-import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom.cameraConfig import CameraConfig
 from lsst.afw.cameraGeom.cameraFactory import makeCameraFromPath
-from lsst.afw.table import AmpInfoCatalog
-from astropy.io import fits
 
 def convertAmpNames(rawName):
    #This method takes the names of detectors as stored in a CameraConfig object
