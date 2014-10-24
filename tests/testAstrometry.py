@@ -296,14 +296,14 @@ class astrometryUnitTest(unittest.TestCase):
 
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
-    
+
     def testIndependentFindChipName(self):
         """
         Test that calling FindchipName independent of a catalog object works,
         i.e. that if a user specifies an ObservationMetaData by hand, the code
         will use that ObservationMetaData
         """
-        
+
         myObs_metadata = makeObservationMetaData()
         myCameraCoords = CameraCoords()
         myCamera = makeLSSTcamera()
@@ -322,7 +322,7 @@ class astrometryUnitTest(unittest.TestCase):
         dec = numpy.radians(myObs_metadata.unrefractedDec) + rr*numpy.sin(theta)
         print raCentral, decCentral
         chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata, camera=myCamera)
-        
+
         chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=self.cat.db_obj.epoch,
                                                     obs_metadata=myObs_metadata,
                                                     camera = myCamera)
