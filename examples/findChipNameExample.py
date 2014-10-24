@@ -68,7 +68,6 @@ def makeObservationMetaData():
 epoch = 2000.0
 obs_metadata = makeObservationMetaData()
 
-
 myCamCoords = CameraCoords()
 
 camera = makeLSSTcamera()
