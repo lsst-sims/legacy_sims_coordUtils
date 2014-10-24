@@ -39,14 +39,69 @@ import warnings
 import sys
 import math
 import palpy as pal
+from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import ObservationMetaData, Site
+from lsst.sims.catalogs.generation.db import ObservationMetaData, Site, getRotTelPos, \
+                                             altAzToRaDec, calcObsDefaults
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
+from lsst.afw.cameraGeom.cameraConfig import CameraConfig
+from lsst.afw.cameraGeom.cameraFactory import makeCameraFromPath
+
+def makeObservationMetaData():
+    #create a cartoon ObservationMetaData object
+    mjd = 52000.0
+    alt = numpy.pi/2.0
+    az = 0.0
+    band = 'r'
+    testSite = Site()
+    centerRA, centerDec = altAzToRaDec(alt,az,testSite.longitude,testSite.latitude,mjd)
+    rotTel = getRotTelPos(az, centerDec, testSite.latitude, 0.0)
+
+    obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band, 
+                 testSite.longitude, testSite.latitude)
+
+    obsDict['Opsim_expmjd'] = mjd
+    radius = 0.1
+    phoSimMetadata = OrderedDict([
+                      (k, (obsDict[k],numpy.dtype(type(obsDict[k])))) for k in obsDict])
+
+    obs_metadata = ObservationMetaData(boundType = 'circle', unrefractedRA = numpy.degrees(centerRA),
+                                       unrefractedDec = numpy.degrees(centerDec), boundLength = 2.0*radius,
+                                       phoSimMetadata=phoSimMetadata, site=testSite)
+
+    return obs_metadata
+
+def convertAmpNames(rawName):
+   #This method takes the names of detectors as stored in a CameraConfig object
+   #and converts them into the roots of the fits files storing amplifier information
+
+   name = rawName.replace(':','')
+   name = name.replace(',','')
+   name = name.replace(' ','')
+   name = name.replace('S','_S')
+   return name
+
+def makeLSSTcamera():
+    filedir = os.path.join(os.getenv('OBS_LSSTSIM_DIR'), 'description/camera/')
+    #this directory contains camera.py, which describes the lay out of
+    #detectors on the LSST camera, as well as fits files that describe
+    #the amplifiers on those detectors
+
+    filename = os.path.join(filedir, 'camera.py')
+    myCameraConfig = CameraConfig()
+    myCameraConfig.load(filename)
+    #converts the camera.py file into a CameraConfig object
+
+    camera = makeCameraFromPath(myCameraConfig, filedir, convertAmpNames)
+    #reads in the CameraConfig file as well as the fits files describing the
+    #amplifiers and makes an afwCameraGeom.Camera object out of them
+
+    return camera
 
 
 class AstrometryTestStars(myTestStars):
@@ -241,6 +296,61 @@ class astrometryUnitTest(unittest.TestCase):
 
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
+    
+    def testIndependentFindChipName(self):
+        """
+        Test that calling FindchipName independent of a catalog object works,
+        i.e. that if a user specifies an ObservationMetaData by hand, the code
+        will use that ObservationMetaData
+        """
+        
+        myObs_metadata = makeObservationMetaData()
+        myCameraCoords = CameraCoords()
+        myCamera = makeLSSTcamera()
+
+        #generate some random RA and Decs to find chips for
+        nsamples = 100
+        numpy.random.seed(32)
+        raIn = numpy.array([numpy.radians(myObs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(myObs_metadata.unrefractedDec)])
+        raCentral, decCentral = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=2000.0, obs_metadata=myObs_metadata)
+
+        rr = numpy.radians(2.0)*numpy.random.sample(nsamples)
+        theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
+        ra = numpy.radians(myObs_metadata.unrefractedRA) + rr*numpy.cos(theta)
+        dec = numpy.radians(myObs_metadata.unrefractedDec) + rr*numpy.sin(theta)
+        print raCentral, decCentral
+        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata, camera=myCamera)
+        
+        chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=self.cat.db_obj.epoch,
+                                                    obs_metadata=myObs_metadata,
+                                                    camera = myCamera)
+        print chipNamesControl
+        for (n1, n2) in zip(chipNamesControl, chipNamesTest):
+            self.assertEqual(n1, n2)
+
+        #now vary the epoch
+        epoch = 1500.0
+        raIn = numpy.array([numpy.radians(myObs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(myObs_metadata.unrefractedDec)])
+        raCentral, decCentral = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=epoch, obs_metadata=myObs_metadata)
+
+        rr = numpy.radians(2.0)*numpy.random.sample(nsamples)
+        theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
+        ra = raCentral + rr*numpy.cos(theta)
+        dec = decCentral + rr*numpy.sin(theta)
+        print raCentral, decCentral
+        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata,
+                                                 epoch=epoch, camera=myCamera)
+
+        chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=epoch,
+                                                    obs_metadata=myObs_metadata,
+                                                    camera=myCamera)
+        print chipNamesControl
+        for (n1, n2) in zip(chipNamesControl, chipNamesTest):
+            self.assertEqual(n1, n2)
 
     def testPassingOfSite(self):
         """
