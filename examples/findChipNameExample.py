@@ -74,10 +74,11 @@ myCamCoords = CameraCoords()
 camera = makeLSSTcamera()
 
 nsamples = 10
+
+#generate some random RA and Decs to find chips for
 numpy.random.seed(32)
 rr = numpy.radians(2.0)*numpy.random.sample(nsamples)
 theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
-
 ra = numpy.radians(obs_metadata.unrefractedRA) + rr*numpy.cos(theta)
 dec = numpy.radians(obs_metadata.unrefractedDec) + rr*numpy.sin(theta)
 
