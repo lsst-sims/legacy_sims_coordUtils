@@ -21,6 +21,23 @@ def convertAmpNames(rawName):
    name = name.replace('S','_S')
    return name
 
+def makeLSSTcamera():
+    filedir = os.path.join(os.getenv('OBS_LSSTSIM_DIR'), 'description/camera/')
+    #this directory contains camera.py, which describes the lay out of
+    #detectors on the LSST camera, as well as fits files that describe
+    #the amplifiers on those detectors
+
+    filename = os.path.join(filedir, 'camera.py')
+    myCameraConfig = CameraConfig()
+    myCameraConfig.load(filename)
+    #converts the camera.py file into a CameraConfig object
+
+    camera = makeCameraFromPath(myCameraConfig, filedir, convertAmpNames)
+    #reads in the CameraConfig file as well as the fits files describing the
+    #amplifiers and makes an afwCameraGeom.Camera object out of them
+
+    return camera
+
 def makeObservationMetaData():
     #create the ObservationMetaData object
     mjd = 52000.0
@@ -48,14 +65,10 @@ def makeObservationMetaData():
 epoch = 2000.0
 obs_metadata = makeObservationMetaData()
 
-filedir = os.path.join(os.getenv('OBS_LSSTSIM_DIR'), 'description/camera/')
-filename = os.path.join(filedir, 'camera.py')
-myCameraConfig = CameraConfig()
-myCameraConfig.load(filename)
-
-camera = makeCameraFromPath(myCameraConfig, filedir, convertAmpNames)
 
 myCamCoords = CameraCoords()
+
+camera = makeLSSTcamera()
 
 nsamples = 10
 numpy.random.seed(32)
