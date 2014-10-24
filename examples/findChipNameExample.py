@@ -15,6 +15,9 @@ from lsst.afw.table import AmpInfoCatalog
 from astropy.io import fits
 
 def convertAmpNames(rawName):
+   #This method takes the names of detectors as stored in a CameraConfig object
+   #and converts them into the roots of the fits files storing amplifier information
+
    name = rawName.replace(':','')
    name = name.replace(',','')
    name = name.replace(' ','')
