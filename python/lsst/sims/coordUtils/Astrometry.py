@@ -494,7 +494,7 @@ class AstrometryBase(object):
         if obs_metadata is None:
             if hasattr(self, 'obs_metadata'):
                 obs_metadata = self.obs_metadata
-            
+
             if obs_metadata is None:
                 raise ValueError("in Astrometry.py cannot call correctCoordinates; obs_metadata is none")
 
