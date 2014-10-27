@@ -430,6 +430,78 @@ class astrometryUnitTest(unittest.TestCase):
             if n2 is not None or n3 is not None:
                 self.assertNotEqual(n2, n3)
 
+    def testIndependentFocalPlaneCoordinates(self):
+        """
+        Test to make sure that calculateFocalPlaneCoordinates returns the correct answer
+        when you pass in an obs_metadata by hand
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        myCameraCoords = CameraCoords()
+        
+        #generate some random RA and Decs to find chips for
+        nsamples = 100
+        numpy.random.seed(32)
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
+
+        control = self.cat.calculateFocalPlaneCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata)
+        test = myCameraCoords.calculateFocalPlaneCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata,
+                                                             epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        shouldBeWrong = self.cat.calculateFocalPlaneCoordinates(ra=ra, dec=dec)
+
+        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
+            self.assertEqual(cc[0], tt[0])
+            self.assertEqual(cc[1], tt[1])
+            self.assertNotEqual(ss[0], tt[0])
+            self.assertNotEqual(ss[1], tt[1])
+
+    def testIndependentPixelCoordinates(self):
+        """
+        Test to make sure that calculateFocalPlaneCoordinates returns the correct answer
+        when you pass in an obs_metadata by hand
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        myCameraCoords = CameraCoords()
+        
+        #generate some random RA and Decs to find chips for
+        nsamples = 100
+        numpy.random.seed(32)
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
+
+        control = self.cat.calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata)
+        test = myCameraCoords.calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata,
+                                                             epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        shouldBeWrong = self.cat.calculatePixelCoordinates(ra=ra, dec=dec)
+
+        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
+            self.assertEqual(cc[0], tt[0])
+            self.assertEqual(cc[1], tt[1])
+            self.assertNotEqual(ss[0], tt[0])
+            self.assertNotEqual(ss[1], tt[1])
+
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to
