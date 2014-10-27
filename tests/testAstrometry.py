@@ -49,8 +49,6 @@ from lsst.sims.catalogs.generation.db import ObservationMetaData, Site, getRotTe
 from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
-from lsst.afw.cameraGeom.cameraConfig import CameraConfig
-from lsst.afw.cameraGeom.cameraFactory import makeCameraFromPath
 
 def makeObservationMetaData():
     #create a cartoon ObservationMetaData object
