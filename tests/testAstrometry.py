@@ -46,7 +46,7 @@ import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import ObservationMetaData, Site, getRotTelPos, \
                                              altAzToRaDec, calcObsDefaults
-from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
+from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -173,6 +173,36 @@ class astrometryUnitTest(unittest.TestCase):
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
         os.unlink("starsTestOutput.txt")
+
+    def testAstrometryExceptions(self):
+        """
+        Test to make sure that stand-alone astrometry methods raise an exception when they are called without
+        the necessary arguments
+        """
+        obs_metadata = makeObservationMetaData()
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
+        myAstrometry = AstrometryBase()
+        
+        raShort = numpy.array([1.0])
+        decShort = numpy.array([1.0])
+        
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, dec)
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, decShort)
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, raShort, dec)
+        test=myAstrometry.applyMeanApparentPlace(ra, dec, MJD=obs_metadata.mjd)
+        
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec)
+        test = myAstrometry.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
+        
+        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
+        test = myAstrometry.correctCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0)
+        test = myAstrometry.calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
 
     def testCameraCoordsExceptions(self):
         """
