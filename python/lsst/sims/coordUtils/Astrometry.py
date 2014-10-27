@@ -914,16 +914,16 @@ class CameraCoords(AstrometryBase):
                 xPix.append(numpy.nan)
                 yPix.append(numpy.nan)
                 continue
-            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            det = self.camera[name]
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            det = camera[name]
             cs = det.makeCameraSys(PIXELS)
-            detPoint = self.camera.transform(cp, cs)
+            detPoint = camera.transform(cp, cs)
             xPix.append(detPoint.getPoint().getX())
             yPix.append(detPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
 
     def calculateFocalPlaneCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None,
-                                       obs_metadata=None, epoch=None):
+                                       obs_metadata=None, epoch=None, camera=None):
         """
         Get the focal plane coordinates for all objects in the catalog.
 
@@ -959,8 +959,12 @@ class CameraCoords(AstrometryBase):
         if specifiedPupil and specifiedRaDec:
             raise RuntimeError("You cannot specify both pupil and equaltorial coordinates when calling calculateFocalPlaneCoordinates")
 
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
+        if not camera:
+            if hasattr(self, 'camera'):
+                camera = self.camera
+
+            if not camera:
+                raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
 
         if specifiedRaDec:
             xPupil, yPupil = self.calculatePupilCoordinates(ra ,dec,
@@ -969,8 +973,8 @@ class CameraCoords(AstrometryBase):
         xPix = []
         yPix = []
         for x, y in zip(xPupil, yPupil):
-            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            fpPoint = self.camera.transform(cp, FOCAL_PLANE)
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            fpPoint = camera.transform(cp, FOCAL_PLANE)
             xPix.append(fpPoint.getPoint().getX())
             yPix.append(fpPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
