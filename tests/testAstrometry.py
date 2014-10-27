@@ -306,8 +306,9 @@ class astrometryUnitTest(unittest.TestCase):
 
         myObs_metadata = makeObservationMetaData()
         myCameraCoords = CameraCoords()
-        myCamera = makeLSSTcamera()
-
+        #myCamera = makeLSSTcamera()
+        myCamera = self.cat.camera
+        
         #generate some random RA and Decs to find chips for
         nsamples = 100
         numpy.random.seed(32)
@@ -316,10 +317,10 @@ class astrometryUnitTest(unittest.TestCase):
         raCentral, decCentral = myCameraCoords.correctCoordinates(raIn, decIn,
                                                                    epoch=2000.0, obs_metadata=myObs_metadata)
 
-        rr = numpy.radians(2.0)*numpy.random.sample(nsamples)
+        rr = 0.0004*numpy.random.sample(nsamples)
         theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
-        ra = numpy.radians(myObs_metadata.unrefractedRA) + rr*numpy.cos(theta)
-        dec = numpy.radians(myObs_metadata.unrefractedDec) + rr*numpy.sin(theta)
+        ra = raCentral + rr*numpy.cos(theta)
+        dec = decCentral + rr*numpy.sin(theta)
         print raCentral, decCentral
         chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata, camera=myCamera)
 
@@ -337,7 +338,7 @@ class astrometryUnitTest(unittest.TestCase):
         raCentral, decCentral = myCameraCoords.correctCoordinates(raIn, decIn,
                                                                    epoch=epoch, obs_metadata=myObs_metadata)
 
-        rr = numpy.radians(2.0)*numpy.random.sample(nsamples)
+        rr = 0.0004*numpy.random.sample(nsamples)
         theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
         ra = raCentral + rr*numpy.cos(theta)
         dec = decCentral + rr*numpy.sin(theta)

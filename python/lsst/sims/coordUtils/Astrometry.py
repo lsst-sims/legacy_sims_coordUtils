@@ -828,6 +828,13 @@ class CameraCoords(AstrometryBase):
             cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
             detList = camera.findDetectors(cp)
             if len(detList) > 1:
+                cpTrans = camera.transform(cp, FOCAL_PLANE)
+                print dir(cpTrans)
+                print cpTrans.getPoint()
+                for dd in detList:
+                    #print dir(dd)
+                    print dd.getName()
+                    print dd.getCorners(FOCAL_PLANE)
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
             if not detList:
