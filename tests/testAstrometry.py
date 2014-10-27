@@ -174,7 +174,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.cat.write_catalog("starsTestOutput.txt")
         os.unlink("starsTestOutput.txt")
 
-    def testExceptions(self):
+    def testCameraCoordsExceptions(self):
         """
         Test to make sure that focal plane methods raise exceptions when coordinates are improperly
         specified.
@@ -210,6 +210,28 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, self.cat.findChipName)
         self.assertRaises(RuntimeError, self.cat.findChipName, xPupil = xPupil, yPupil = yPupil,
                   ra = ra, dec = dec)
+
+        myCameraCoords = CameraCoords()
+        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec,
+                          obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec, epoch=2000.0,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec, camera=self.cat.camera,
+                          obs_metadata=self.obs_metadata)
+
+        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
+                          obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec, epoch=2000.0,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
+                          camera=self.cat.camera, obs_metadata=self.obs_metadata)
+
+        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                          obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                          epoch=2000.0, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                          camera=self.cat.camera, obs_metadata=self.obs_metadata)
 
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
