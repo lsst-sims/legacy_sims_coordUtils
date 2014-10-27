@@ -76,34 +76,6 @@ def makeObservationMetaData():
 
     return obs_metadata
 
-def convertAmpNames(rawName):
-   #This method takes the names of detectors as stored in a CameraConfig object
-   #and converts them into the roots of the fits files storing amplifier information
-
-   name = rawName.replace(':','')
-   name = name.replace(',','')
-   name = name.replace(' ','')
-   name = name.replace('S','_S')
-   return name
-
-def makeLSSTcamera():
-    filedir = os.path.join(os.getenv('OBS_LSSTSIM_DIR'), 'description/camera/')
-    #this directory contains camera.py, which describes the lay out of
-    #detectors on the LSST camera, as well as fits files that describe
-    #the amplifiers on those detectors
-
-    filename = os.path.join(filedir, 'camera.py')
-    myCameraConfig = CameraConfig()
-    myCameraConfig.load(filename)
-    #converts the camera.py file into a CameraConfig object
-
-    camera = makeCameraFromPath(myCameraConfig, filedir, convertAmpNames)
-    #reads in the CameraConfig file as well as the fits files describing the
-    #amplifiers and makes an afwCameraGeom.Camera object out of them
-
-    return camera
-
-
 class AstrometryTestStars(myTestStars):
     dbAddress = 'sqlite:///AstrometryTestDatabase.db'
 
@@ -306,7 +278,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         myObs_metadata = makeObservationMetaData()
         myCameraCoords = CameraCoords()
-        #myCamera = makeLSSTcamera()
         myCamera = self.cat.camera
         
         #generate some random RA and Decs to find chips for
@@ -321,13 +292,13 @@ class astrometryUnitTest(unittest.TestCase):
         theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
         ra = raCentral + rr*numpy.cos(theta)
         dec = decCentral + rr*numpy.sin(theta)
-        print raCentral, decCentral
+
         chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata, camera=myCamera)
 
         chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=self.cat.db_obj.epoch,
                                                     obs_metadata=myObs_metadata,
                                                     camera = myCamera)
-        print chipNamesControl
+
         for (n1, n2) in zip(chipNamesControl, chipNamesTest):
             self.assertEqual(n1, n2)
 
@@ -342,14 +313,14 @@ class astrometryUnitTest(unittest.TestCase):
         theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
         ra = raCentral + rr*numpy.cos(theta)
         dec = decCentral + rr*numpy.sin(theta)
-        print raCentral, decCentral
+
         chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata,
                                                  epoch=epoch, camera=myCamera)
 
         chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=epoch,
                                                     obs_metadata=myObs_metadata,
                                                     camera=myCamera)
-        print chipNamesControl
+
         for (n1, n2) in zip(chipNamesControl, chipNamesTest):
             self.assertEqual(n1, n2)
 

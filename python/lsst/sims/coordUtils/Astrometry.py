@@ -4,6 +4,7 @@ import math
 import palpy as pal
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
+from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.catalogs.generation.db import haversine
 
@@ -780,6 +781,10 @@ class CameraCoords(AstrometryBase):
     def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None,
                      obs_metadata=None, epoch=None, camera=None):
         """
+        Return the names of science detectors that see the object specified by
+        either (xPupil, yPupil) or (ra, dec).  Note: this method does not return
+        the name of guide, focus, or wavefront detectors
+
         @param [in] xPupil a numpy array of x pupil coordinates
 
         @param [in] yPupil a numpy array of y pupil coordinates
@@ -801,7 +806,7 @@ class CameraCoords(AstrometryBase):
         is in an InstanceCatalog daughter class.  If that is not the case, an exception will be
         raised
 
-        @param [out] a numpy array of chip names
+        @param [out] a numpy array of chip names (science detectors only)
 
         """
         specifiedPupil = (xPupil is not None and yPupil is not None)
@@ -826,15 +831,8 @@ class CameraCoords(AstrometryBase):
         chipNames = []
         for x, y in zip(xPupil, yPupil):
             cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            detList = camera.findDetectors(cp)
+            detList = [dd for dd in camera.findDetectors(cp) if dd.getType()==SCIENCE]
             if len(detList) > 1:
-                cpTrans = camera.transform(cp, FOCAL_PLANE)
-                print dir(cpTrans)
-                print cpTrans.getPoint()
-                for dd in detList:
-                    #print dir(dd)
-                    print dd.getName()
-                    print dd.getCorners(FOCAL_PLANE)
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
             if not detList:
