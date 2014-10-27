@@ -280,32 +280,10 @@ class astrometryUnitTest(unittest.TestCase):
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
 
-    def testIndependentMeanApparentPlace(self):
+    def testIndependentMethods(self):
         """
-        Test that calling applyMeanApparentPlace with an MJD specified by hand
-        will result in the correct outputs
-        """
-
-        obs_metadata = makeObservationMetaData()
-        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
-        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
-        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
-        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
-
-        control = self.cat.applyMeanApparentPlace(ra, dec,
-                                                  pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                                  v_rad=v_rad, MJD=obs_metadata.mjd)
-        test = testCat.applyMeanApparentPlace(ra, dec,
-                                              pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                              v_rad=v_rad)
-        for (cc,tt) in zip(control, test):
-            self.assertEqual(cc[0],tt[0])
-            self.assertEqual(cc[1],tt[1])
-
-    def testIndependentMeanObservedPlace(self):
-        """
-        Test that calling applyMeanObservedtPlace with an ObservationMetaData specified by hand
+        Test that calling applyMeanApparentPlace, applyMeanObservedPlace,
+        correctCoordinates, with observation data specified byhand
         will result in the correct outputs
         """
 
@@ -318,11 +296,42 @@ class astrometryUnitTest(unittest.TestCase):
         testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
         ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
 
+        control = self.cat.applyMeanApparentPlace(ra, dec,
+                                                  pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                                  v_rad=v_rad, MJD=obs_metadata.mjd)
+        test = testCat.applyMeanApparentPlace(ra, dec,
+                                              pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                              v_rad=v_rad)
+        shouldBeWrong = self.cat.applyMeanApparentPlace(ra, dec,
+                                                        pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                                        v_rad=v_rad)
+        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
+            self.assertEqual(cc[0], tt[0])
+            self.assertEqual(cc[1], tt[1])
+            self.assertNotEqual(ss[0], tt[0])
+            self.assertNotEqual(ss[1], tt[1])
+
         control = self.cat.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
         test = testCat.applyMeanObservedPlace(ra, dec)
-        for (cc, tt) in zip(control, test):
-            self.assertEqual(cc[0],tt[0])
-            self.assertEqual(cc[1],tt[1])
+        shouldBeWrong = self.cat.applyMeanObservedPlace(ra, dec)
+        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
+            self.assertEqual(cc[0], tt[0])
+            self.assertEqual(cc[1], tt[1])
+            self.assertNotEqual(ss[0], tt[0])
+            self.assertNotEqual(ss[1], tt[1])
+
+        control = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                              v_rad=v_rad, obs_metadata=obs_metadata)
+        test = testCat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                          v_rad=v_rad)
+        shouldBeWrong = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                                    v_rad=v_rad)
+
+        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
+            self.assertEqual(cc[0], tt[0])
+            self.assertNotEqual(ss[0], tt[0])
+            self.assertEqual(cc[1], tt[1])
+            self.assertNotEqual(ss[1], tt[1])
 
     def testIndependentFindChipName(self):
         """
