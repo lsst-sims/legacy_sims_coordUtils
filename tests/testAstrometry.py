@@ -248,6 +248,8 @@ class astrometryUnitTest(unittest.TestCase):
                           camera=self.cat.camera)
         self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec, camera=self.cat.camera,
                           obs_metadata=self.obs_metadata)
+        test = myCameraCoords.findChipName(ra=ra, dec=dec, camera=self.cat.camera, epoch=2000.0,
+                                           obs_metadata=self.obs_metadata)
 
         self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
@@ -255,6 +257,8 @@ class astrometryUnitTest(unittest.TestCase):
                           camera=self.cat.camera)
         self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
                           camera=self.cat.camera, obs_metadata=self.obs_metadata)
+        test = myCameraCoords.calculatePixelCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
+                                                        obs_metadata=self.obs_metadata, epoch=2000.0)
 
         self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
@@ -262,6 +266,8 @@ class astrometryUnitTest(unittest.TestCase):
                           epoch=2000.0, camera=self.cat.camera)
         self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                           camera=self.cat.camera, obs_metadata=self.obs_metadata)
+        test = myCameraCoords.calculateFocalPlaneCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
+                                                             obs_metadata=self.obs_metadata, epoch=2000.0)
 
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
