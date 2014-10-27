@@ -337,10 +337,38 @@ class astrometryUnitTest(unittest.TestCase):
 
         for (cc, tt, ss) in zip(control, test, shouldBeWrong):
             self.assertEqual(cc[0], tt[0])
-            self.assertNotEqual(ss[0], tt[0])
             self.assertEqual(cc[1], tt[1])
+            self.assertNotEqual(ss[0], tt[0])
             self.assertNotEqual(ss[1], tt[1])
 
+    def testIndpendentPupilCoords(self):
+        """
+        Test that calling calculatePupilCoordinates, with observation data specified by and
+        will result in the correct outputs
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                          makeRandomSample(raCenter = numpy.radians(obs_metadata.unrefractedRA),
+                                           decCenter = numpy.radians(obs_metadata.unrefractedDec),
+                                           radius = 2.0)
+        
+        raObj, decObj = testCat.correctCoordinates(ra, dec)
+        control = self.cat.calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata)
+        test = testCat.calculatePupilCoordinates(raObj, decObj)
+        shouldBeWrong = self.cat.calculatePupilCoordinates(raObj, decObj)
+        for (cc, tt ,ss) in zip(control, test, shouldBeWrong):
+            self.assertEqual(cc[0], tt[0])
+            self.assertEqual(cc[1], tt[1])
+            self.assertNotEqual(ss[1], tt[1])
+            self.assertNotEqual(ss[0], tt[0])
+        
     def testIndependentFindChipName(self):
         """
         Test that calling FindchipName independent of a catalog object works,
