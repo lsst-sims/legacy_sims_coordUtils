@@ -7,6 +7,9 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.catalogs.generation.db import haversine
 
+__all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
+           "CameraCoords"]
+
 class AstrometryBase(object):
     """Collection of astrometry routines that operate on numpy arrays"""
 
