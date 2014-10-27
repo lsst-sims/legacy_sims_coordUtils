@@ -206,7 +206,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
         dummy_obs_metadata = makeObservationMetaData()
-        dummy_obs_metadata.site = None
+        dummy_obs_metadata.mjd = None
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0,
                           obs_metadata=dummy_obs_metadata)
 
