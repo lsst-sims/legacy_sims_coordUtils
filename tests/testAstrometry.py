@@ -56,7 +56,8 @@ def makeObservationMetaData():
     alt = numpy.pi/2.0
     az = 0.0
     band = 'r'
-    testSite = Site()
+    testSite = Site(latitude=0.5, longitude=1.1, height=3000, meanTemperature=260.0,
+                    meanPressure = 725.0, lapseRate=0.005)
     centerRA, centerDec = altAzToRaDec(alt,az,testSite.longitude,testSite.latitude,mjd)
     rotTel = getRotTelPos(az, centerDec, testSite.latitude, 0.0)
 
