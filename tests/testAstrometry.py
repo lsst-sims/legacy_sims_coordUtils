@@ -291,7 +291,7 @@ class astrometryUnitTest(unittest.TestCase):
     def testIndependentAstrometryMethods(self):
         """
         Test that calling applyMeanApparentPlace, applyMeanObservedPlace,
-        correctCoordinates, with observation data specified byhand
+        correctCoordinates, with observation data specified by hand
         will result in the correct outputs
         """
 
