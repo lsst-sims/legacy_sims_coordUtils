@@ -374,7 +374,7 @@ class AstrometryBase(object):
             if hasattr(self,'obs_metadata'):
                 obs_metadata = self.obs_metadata
 
-            if self.obs_metadata is None:
+            if obs_metadata is None:
                 raise RuntimeError("Cannot call applyMeanObservedPlace without an obs_metadata")
 
         # Correct site longitude for polar motion slaPolmo
