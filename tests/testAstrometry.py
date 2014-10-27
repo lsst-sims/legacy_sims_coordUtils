@@ -75,11 +75,19 @@ def makeObservationMetaData():
 
     return obs_metadata
 
-def makeRandomSample():
+def makeRandomSample(raCenter=None, decCenter=None, radius=None):
     nsamples=100
     numpy.random.seed(32)
-    ra = numpy.random.sample(nsamples)*2.0*numpy.pi
-    dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
+
+    if raCenter is None or decCenter is None or radius is None:
+        ra = numpy.random.sample(nsamples)*2.0*numpy.pi
+        dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
+    else:
+        rr = numpy.random.sample(nsamples)*radius
+        theta = numpy.random.sample(nsamples)*2.0*numpy.pi
+        ra = raCenter + rr*numpy.cos(theta)
+        dec = decCenter + rr*numpy.cos(theta)
+
     pm_ra = (numpy.random.sample(nsamples)-0.5)*0.1
     pm_dec = (numpy.random.sample(nsamples)-0.5)*0.1
     parallax = numpy.random.sample(nsamples)*0.01
@@ -280,7 +288,7 @@ class astrometryUnitTest(unittest.TestCase):
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
 
-    def testIndependentMethods(self):
+    def testIndependentAstrometryMethods(self):
         """
         Test that calling applyMeanApparentPlace, applyMeanObservedPlace,
         correctCoordinates, with observation data specified byhand
