@@ -197,16 +197,41 @@ class astrometryUnitTest(unittest.TestCase):
         test=myAstrometry.applyMeanApparentPlace(ra, dec, MJD=obs_metadata.mjd)
 
         self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.site = None
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec,
+                          obs_metadata=dummy_obs_metadata)
         test = myAstrometry.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
 
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.site = None
+        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0,
+                          obs_metadata=dummy_obs_metadata)
+
         test = myAstrometry.correctCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
 
         self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
                           obs_metadata=obs_metadata)
         self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
                           epoch=2000.0)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.rotSkyPos = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.unrefractedRA = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.unrefractedDec = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.mjd = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
         test = myAstrometry.calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
 
     def testCameraCoordsExceptions(self):

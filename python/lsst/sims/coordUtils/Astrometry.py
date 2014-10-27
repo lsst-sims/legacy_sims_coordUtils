@@ -377,6 +377,9 @@ class AstrometryBase(object):
             if obs_metadata is None:
                 raise RuntimeError("Cannot call applyMeanObservedPlace without an obs_metadata")
 
+        if not hasattr(obs_metadata, 'site') or obs_metadata.site is None:
+            raise RuntimeError("Cannot call applyMeanObservedPlace: obs_metadata has no site info")
+
         # Correct site longitude for polar motion slaPolmo
         #
         #17 October 2014
