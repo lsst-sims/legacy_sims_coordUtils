@@ -190,7 +190,7 @@ class AstrometryBase(object):
         """
 
         if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
+            raise RuntimeError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
 
         px = numpy.where(parallax<0.00045, 0.00045, parallax)
         #so that pal.Pm returns meaningful values
@@ -288,10 +288,10 @@ class AstrometryBase(object):
                 MJD = self.obs_metadata.mjd
 
             if MJD is None:
-                raise ValueError("in Astrometry.py cannot call applyMeanApparentPlace; mjd is None")
+                raise RuntimeError("in Astrometry.py cannot call applyMeanApparentPlace; mjd is None")
 
         if len(ra) != len(dec):
-            raise ValueError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
+            raise RuntimeError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
                             % (len(ra),len(dec)))
 
         if pm_ra is None:
@@ -497,17 +497,17 @@ class AstrometryBase(object):
                 obs_metadata = self.obs_metadata
 
             if obs_metadata is None:
-                raise ValueError("in Astrometry.py cannot call correctCoordinates; obs_metadata is none")
+                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata is none")
 
             if obs_metadata.mjd is None:
-                raise ValueError("in Astrometry.py cannot call correctCoordinates; obs_metadata.mjd is none")
+                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata.mjd is none")
 
         if epoch is None:
             if hasattr(self, 'db_obj'):
                 epoch = self.db_obj.epoch
 
             if epoch is None:
-                raise ValueError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
+                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
 
         ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
                  pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
@@ -642,23 +642,23 @@ class AstrometryBase(object):
                 obs_metadata = self.obs_metadata
 
             if obs_metadata is None:
-                raise ValueError("in Astrometry.py cannot calculate x_pupil, y_pupil without obs_metadata")
+                raise RuntimeError("in Astrometry.py cannot calculate x_pupil, y_pupil without obs_metadata")
 
         if epoch is None:
             if hasattr(self, 'db_obj'):
                 epoch = self.db_obj.epoch
 
             if epoch is None:
-                raise ValueError("in Astrometry.py cannot call get_skyToPupil; epoch is None")
+                raise RuntimeError("in Astrometry.py cannot call get_skyToPupil; epoch is None")
 
         if obs_metadata.rotSkyPos is None:
-            raise ValueError("Cannot calculate x_pupil or y_pupil without rotSkyPos")
+            raise RuntimeError("Cannot calculate x_pupil or y_pupil without rotSkyPos")
 
         if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
-            raise ValueError("Cannot calculate x_pupil, y_pupil without unrefractedRA, unrefractedDec")
+            raise RuntimeError("Cannot calculate x_pupil, y_pupil without unrefractedRA, unrefractedDec")
 
         if obs_metadata.mjd is None:
-            raise ValueError("Cannot calculate x_pupil, y_pupil without mjd")
+            raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd")
 
         theta = -numpy.radians(obs_metadata.rotSkyPos)
 
@@ -713,20 +713,20 @@ class AstrometryBase(object):
         """
 
         if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call get_gnomonicProjection; obs_metadata.mjd is None")
+            raise RuntimeError("in Astrometry.py cannot call get_gnomonicProjection; obs_metadata.mjd is None")
 
         if self.db_obj.epoch is None:
-            raise ValueError("in Astrometry.py cannot call get_gnomonicProjection; db_obj.epoch is None")
+            raise RuntimeError("in Astrometry.py cannot call get_gnomonicProjection; db_obj.epoch is None")
 
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
 
         if self.rotSkyPos is None:
             #there is no observation meta data on which to base astrometry
-            raise ValueError("Cannot calculate [x,y]_focal_nominal without rotSkyPos obs_metadata")
+            raise RuntimeError("Cannot calculate [x,y]_focal_nominal without rotSkyPos obs_metadata")
 
         if self.unrefractedRA is None or self.unrefractedDec is None:
-            raise ValueError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
+            raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
 
         theta = -numpy.radians(self.rotSkyPos)
 
