@@ -499,8 +499,8 @@ class AstrometryBase(object):
             if obs_metadata is None:
                 raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata is none")
 
-            if obs_metadata.mjd is None:
-                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata.mjd is none")
+        if obs_metadata.mjd is None:
+            raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata.mjd is none")
 
         if epoch is None:
             if hasattr(self, 'db_obj'):
