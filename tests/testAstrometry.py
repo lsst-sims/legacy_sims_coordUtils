@@ -75,6 +75,18 @@ def makeObservationMetaData():
 
     return obs_metadata
 
+def makeRandomSample():
+    nsamples=100
+    numpy.random.seed(32)
+    ra = numpy.random.sample(nsamples)*2.0*numpy.pi
+    dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
+    pm_ra = (numpy.random.sample(nsamples)-0.5)*0.1
+    pm_dec = (numpy.random.sample(nsamples)-0.5)*0.1
+    parallax = numpy.random.sample(nsamples)*0.01
+    v_rad = numpy.random.sample(nsamples)*1000.0
+
+    return ra, dec, pm_ra, pm_dec, parallax, v_rad
+
 class AstrometryTestStars(myTestStars):
     dbAddress = 'sqlite:///AstrometryTestDatabase.db'
 
@@ -279,14 +291,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
         self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
         testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-        nsamples=100
-        numpy.random.seed(32)
-        ra = numpy.random.sample(nsamples)*2.0*numpy.pi
-        dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
-        pm_ra = (numpy.random.sample(nsamples)-0.5)*0.1
-        pm_dec = (numpy.random.sample(nsamples)-0.5)*0.1
-        parallax = numpy.random.sample(nsamples)*0.01
-        v_rad = numpy.random.sample(nsamples)*1000.0
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
 
         control = self.cat.applyMeanApparentPlace(ra, dec,
                                                   pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
@@ -311,10 +316,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
         self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
         testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-        nsamples=100
-        numpy.random.seed(32)
-        ra = numpy.random.sample(nsamples)*2.0*numpy.pi
-        dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
 
         control = self.cat.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
         test = testCat.applyMeanObservedPlace(ra, dec)
