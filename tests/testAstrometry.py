@@ -376,26 +376,29 @@ class astrometryUnitTest(unittest.TestCase):
         will use that ObservationMetaData
         """
 
-        myObs_metadata = makeObservationMetaData()
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
         myCameraCoords = CameraCoords()
         
         #generate some random RA and Decs to find chips for
         nsamples = 100
         numpy.random.seed(32)
-        raIn = numpy.array([numpy.radians(myObs_metadata.unrefractedRA)])
-        decIn = numpy.array([numpy.radians(myObs_metadata.unrefractedDec)])
-        raCentral, decCentral = myCameraCoords.correctCoordinates(raIn, decIn,
-                                                                   epoch=2000.0, obs_metadata=myObs_metadata)
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=2000.0, obs_metadata=obs_metadata)
 
-        rr = 0.0004*numpy.random.sample(nsamples)
-        theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
-        ra = raCentral + rr*numpy.cos(theta)
-        dec = decCentral + rr*numpy.sin(theta)
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
 
-        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata)
+        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=obs_metadata)
 
         chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=self.cat.db_obj.epoch,
-                                                    obs_metadata=myObs_metadata,
+                                                    obs_metadata=obs_metadata,
                                                     camera = self.cat.camera)
         shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec)
 
@@ -406,21 +409,19 @@ class astrometryUnitTest(unittest.TestCase):
 
         #now vary the epoch
         epoch = 1500.0
-        raIn = numpy.array([numpy.radians(myObs_metadata.unrefractedRA)])
-        decIn = numpy.array([numpy.radians(myObs_metadata.unrefractedDec)])
-        raCentral, decCentral = myCameraCoords.correctCoordinates(raIn, decIn,
-                                                                   epoch=epoch, obs_metadata=myObs_metadata)
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=epoch, obs_metadata=obs_metadata)
 
-        rr = 0.0004*numpy.random.sample(nsamples)
-        theta = 2.0*numpy.pi*numpy.random.sample(nsamples)
-        ra = raCentral + rr*numpy.cos(theta)
-        dec = decCentral + rr*numpy.sin(theta)
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
 
-        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata,
+        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=obs_metadata,
                                                  epoch=epoch)
 
         chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=epoch,
-                                                    obs_metadata=myObs_metadata,
+                                                    obs_metadata=obs_metadata,
                                                     camera=self.cat.camera)
         shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec, epoch=epoch)
 
