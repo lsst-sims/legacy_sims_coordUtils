@@ -6,6 +6,5 @@ setupRequired(throughputs)
 setupRequired(palpy)
 setupRequired(pyfits)
 setupRequired(afw)
-setupRequired(obs_lsstSim)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
