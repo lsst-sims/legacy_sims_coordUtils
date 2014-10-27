@@ -298,6 +298,30 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(cc[0],tt[0],6)
             self.assertAlmostEqual(cc[1],tt[1],6)
 
+    def testIndependentMeanObservedPlace(self):
+        """
+        Test that calling applyMeanObservedtPlace with an ObservationMetaData specified by hand
+        will result in the correct outputs
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+        nsamples=100
+        numpy.random.seed(32)
+        ra = numpy.random.sample(nsamples)*2.0*numpy.pi
+        dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
+
+        control = self.cat.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
+        test = testCat.applyMeanObservedPlace(ra, dec)
+        for (cc, tt) in zip(control, test):
+            self.assertEqual(cc[0],tt[0])
+            self.assertEqual(cc[1],tt[1])
+
     def testIndependentFindChipName(self):
         """
         Test that calling FindchipName independent of a catalog object works,
