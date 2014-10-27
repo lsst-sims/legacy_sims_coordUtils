@@ -76,6 +76,8 @@ def makeObservationMetaData():
     return obs_metadata
 
 def makeRandomSample(raCenter=None, decCenter=None, radius=None):
+    #create a random sample of object data
+
     nsamples=100
     numpy.random.seed(32)
 
