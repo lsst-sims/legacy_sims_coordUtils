@@ -295,8 +295,8 @@ class astrometryUnitTest(unittest.TestCase):
                                               pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
                                               v_rad=v_rad)
         for (cc,tt) in zip(control, test):
-            self.assertAlmostEqual(cc[0],tt[0],6)
-            self.assertAlmostEqual(cc[1],tt[1],6)
+            self.assertEqual(cc[0],tt[0])
+            self.assertEqual(cc[1],tt[1])
 
     def testIndependentMeanObservedPlace(self):
         """
