@@ -61,7 +61,7 @@ def makeObservationMetaData():
     centerRA, centerDec = altAzToRaDec(alt,az,testSite.longitude,testSite.latitude,mjd)
     rotTel = getRotTelPos(az, centerDec, testSite.latitude, 0.0)
 
-    obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band, 
+    obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band,
                  testSite.longitude, testSite.latitude)
 
     obsDict['Opsim_expmjd'] = mjd
@@ -163,6 +163,11 @@ class astrometryUnitTest(unittest.TestCase):
         self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         self.tol=1.0e-5
 
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('AstrometryTestDatabase.db'):
+            os.unlink('AstrometryTestDatabase.db')
+
     def tearDown(self):
         del self.starDBObject
         del self.cat
@@ -182,18 +187,18 @@ class astrometryUnitTest(unittest.TestCase):
         obs_metadata = makeObservationMetaData()
         ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
         myAstrometry = AstrometryBase()
-        
+
         raShort = numpy.array([1.0])
         decShort = numpy.array([1.0])
-        
+
         self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, dec)
         self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, decShort)
         self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, raShort, dec)
         test=myAstrometry.applyMeanApparentPlace(ra, dec, MJD=obs_metadata.mjd)
-        
+
         self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec)
         test = myAstrometry.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
-        
+
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
         test = myAstrometry.correctCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
@@ -416,7 +421,7 @@ class astrometryUnitTest(unittest.TestCase):
                           makeRandomSample(raCenter = numpy.radians(obs_metadata.unrefractedRA),
                                            decCenter = numpy.radians(obs_metadata.unrefractedDec),
                                            radius = 2.0)
-        
+
         raObj, decObj = testCat.correctCoordinates(ra, dec)
         control = self.cat.calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata)
         test = testCat.calculatePupilCoordinates(raObj, decObj)
@@ -426,7 +431,7 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertEqual(cc[1], tt[1])
             self.assertNotEqual(ss[1], tt[1])
             self.assertNotEqual(ss[0], tt[0])
-        
+
     def testIndependentFindChipName(self):
         """
         Test that calling FindchipName independent of a catalog object works,
@@ -441,7 +446,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
         self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
         myCameraCoords = CameraCoords()
-        
+
         #generate some random RA and Decs to find chips for
         nsamples = 100
         numpy.random.seed(32)
@@ -501,7 +506,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
         self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
         myCameraCoords = CameraCoords()
-        
+
         #generate some random RA and Decs to find chips for
         nsamples = 100
         numpy.random.seed(32)
@@ -537,7 +542,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
         self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
         myCameraCoords = CameraCoords()
-        
+
         #generate some random RA and Decs to find chips for
         nsamples = 100
         numpy.random.seed(32)
