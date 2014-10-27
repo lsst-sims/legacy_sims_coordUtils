@@ -267,6 +267,36 @@ class astrometryUnitTest(unittest.TestCase):
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
 
+    def testIndependentMeanApparentPlace(self):
+        """
+        Test that calling applyMeanApparentPlace with an MJD specified by hand
+        will result in the correct outputs
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+        nsamples=100
+        numpy.random.seed(32)
+        ra = numpy.random.sample(nsamples)*2.0*numpy.pi
+        dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
+        pm_ra = (numpy.random.sample(nsamples)-0.5)*0.1
+        pm_dec = (numpy.random.sample(nsamples)-0.5)*0.1
+        parallax = numpy.random.sample(nsamples)*0.01
+        v_rad = numpy.random.sample(nsamples)*1000.0
+
+        control = self.cat.applyMeanApparentPlace(ra, dec,
+                                                  pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                                  v_rad=v_rad, MJD=obs_metadata.mjd)
+        test = testCat.applyMeanApparentPlace(ra, dec,
+                                              pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                              v_rad=v_rad)
+        for (cc,tt) in zip(control, test):
+            self.assertAlmostEqual(cc[0],tt[0],6)
+            self.assertAlmostEqual(cc[1],tt[1],6)
+
     def testIndependentFindChipName(self):
         """
         Test that calling FindchipName independent of a catalog object works,
