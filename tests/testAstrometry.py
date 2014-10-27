@@ -378,7 +378,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         myObs_metadata = makeObservationMetaData()
         myCameraCoords = CameraCoords()
-        myCamera = self.cat.camera
         
         #generate some random RA and Decs to find chips for
         nsamples = 100
@@ -393,14 +392,17 @@ class astrometryUnitTest(unittest.TestCase):
         ra = raCentral + rr*numpy.cos(theta)
         dec = decCentral + rr*numpy.sin(theta)
 
-        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata, camera=myCamera)
+        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata)
 
         chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=self.cat.db_obj.epoch,
                                                     obs_metadata=myObs_metadata,
-                                                    camera = myCamera)
+                                                    camera = self.cat.camera)
+        shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec)
 
-        for (n1, n2) in zip(chipNamesControl, chipNamesTest):
+        for (n1, n2, n3) in zip(chipNamesControl, chipNamesTest, shouldBeWrong):
             self.assertEqual(n1, n2)
+            if n2 is not None or n3 is not None:
+                self.assertNotEqual(n2, n3)
 
         #now vary the epoch
         epoch = 1500.0
@@ -415,14 +417,17 @@ class astrometryUnitTest(unittest.TestCase):
         dec = decCentral + rr*numpy.sin(theta)
 
         chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=myObs_metadata,
-                                                 epoch=epoch, camera=myCamera)
+                                                 epoch=epoch)
 
         chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=epoch,
                                                     obs_metadata=myObs_metadata,
-                                                    camera=myCamera)
+                                                    camera=self.cat.camera)
+        shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec, epoch=epoch)
 
-        for (n1, n2) in zip(chipNamesControl, chipNamesTest):
+        for (n1, n2, n3) in zip(chipNamesControl, chipNamesTest, shouldBeWrong):
             self.assertEqual(n1, n2)
+            if n2 is not None or n3 is not None:
+                self.assertNotEqual(n2, n3)
 
     def testPassingOfSite(self):
         """
