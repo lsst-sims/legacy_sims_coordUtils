@@ -91,6 +91,11 @@ class astrometryUnitTest(unittest.TestCase):
             os.unlink('AstrometryTestDatabase.db')
         makeStarTestDB(filename='AstrometryTestDatabase.db',
                       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('AstrometryTestDatabase.db'):
+            os.unlink('AstrometryTestDatabase.db')
     
     def setUp(self):
         self.starDBObject = AstrometryTestStars()
@@ -111,15 +116,12 @@ class astrometryUnitTest(unittest.TestCase):
         self.obs_metadata.assignPhoSimMetaData(self.metadata)
         self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         self.tol=1.0e-5
-    
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists('AstrometryTestDatabase.db'):
-            os.unlink('AstrometryTestDatabase.db')
 
     def tearDown(self):
         del self.cat
         del self.obs_metadata
+        del self.metadata
+        del self.tol
     
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
