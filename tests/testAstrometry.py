@@ -125,6 +125,7 @@ class astrometryUnitTest(unittest.TestCase):
     
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
+        os.unlink("starsTestOutput.txt")
 
     def testExceptions(self):
         """
