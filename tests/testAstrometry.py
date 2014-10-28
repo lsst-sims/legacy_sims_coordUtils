@@ -118,6 +118,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.tol=1.0e-5
 
     def tearDown(self):
+        del self.starDBObject
         del self.cat
         del self.obs_metadata
         del self.metadata
