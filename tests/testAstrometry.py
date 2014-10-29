@@ -82,7 +82,7 @@ class astrometryUnitTest(unittest.TestCase):
     querying the database) because SLALIB was originally run on values that did not correspond
     to any particular Opsim run.
     """
-    
+
     @classmethod
     def setUpClass(cls):
         # Create test databases
@@ -91,7 +91,12 @@ class astrometryUnitTest(unittest.TestCase):
             os.unlink('AstrometryTestDatabase.db')
         makeStarTestDB(filename='AstrometryTestDatabase.db',
                       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
-    
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('AstrometryTestDatabase.db'):
+            os.unlink('AstrometryTestDatabase.db')
+
     def setUp(self):
         self.starDBObject = AstrometryTestStars()
         self.obs_metadata=ObservationMetaData(mjd=50984.371741,
@@ -111,18 +116,17 @@ class astrometryUnitTest(unittest.TestCase):
         self.obs_metadata.assignPhoSimMetaData(self.metadata)
         self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         self.tol=1.0e-5
-    
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists('AstrometryTestDatabase.db'):
-            os.unlink('AstrometryTestDatabase.db')
 
     def tearDown(self):
+        del self.starDBObject
         del self.cat
         del self.obs_metadata
-    
+        del self.metadata
+        del self.tol
+
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
+        os.unlink("starsTestOutput.txt")
 
     def testExceptions(self):
         """
@@ -551,9 +555,9 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
         self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
-        
+
         output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True, wavelength=wv)
-        
+
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
         self.assertAlmostEqual(output[2][0],1.168920017932007643e-01,6)
@@ -618,7 +622,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         obs_metadata.assignPhoSimMetaData(self.metadata)
         cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
- 
+
         output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True,
                  includeRefraction = False)
 
