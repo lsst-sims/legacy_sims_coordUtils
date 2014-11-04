@@ -177,23 +177,48 @@ class astrometryUnitTest(unittest.TestCase):
         del self.metadata
         del self.tol
 
+    def isNanOrNone(self, value):
+        """
+        Returns True if value is None or nan.  False otherwise.
+        """
+
+        if value is None:
+           return True
+        elif not isinstance(value,str) and numpy.isnan(value):
+            return True
+
+        return False
+
     def compareTestControlAndWrong(self, test, control, wrong):
         """
-        param [in] test is a numpy array of 2d points
+        param [in] test is an array
 
-        param [in] control is a numpy array of 2d points
+        param [in] control is an array
 
-        param [in] wrong is a numpy array of 2d points
+        param [in] wrong is an array
 
         This method verifies that test and control are identical and that test
         and wrong are not
         """
 
         for (tt, cc, ww) in zip(test, control, wrong):
-            self.assertEqual(tt[0], cc[0])
-            self.assertEqual(tt[1], cc[1])
-            self.assertNotEqual(tt[0], ww[0])
-            self.assertNotEqual(tt[1], ww[1])
+            if '__getitem__' in dir(tt) and not isinstance(tt,str):
+                for (t, c, w) in zip(tt, cc, ww):
+                    if not self.isNanOrNone(t):
+                        self.assertEqual(t, c)
+                    else:
+                        self.assertTrue(self.isNanOrNone(c))
+                    
+                    if not self.isNanOrNone(t) or not self.isNanOrNone(w):
+                        self.assertNotEqual(t, w)
+            else:
+                if not self.isNanOrNone(tt):
+                    self.assertEqual(tt, cc)
+                else:
+                    self.assertTrue(self.isNanOrNone(cc))
+                
+                if not self.isNanOrNone(tt) or not self.isNanOrNone(ww):
+                    self.assertNotEqual(tt, ww)
 
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
@@ -498,11 +523,8 @@ class astrometryUnitTest(unittest.TestCase):
                                                     obs_metadata=obs_metadata,
                                                     camera = self.cat.camera)
         shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec)
-
-        for (n1, n2, n3) in zip(chipNamesControl, chipNamesTest, shouldBeWrong):
-            self.assertEqual(n1, n2)
-            if n2 is not None or n3 is not None:
-                self.assertNotEqual(n2, n3)
+        
+        self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
 
         #now vary the epoch
         epoch = 1500.0
@@ -521,11 +543,8 @@ class astrometryUnitTest(unittest.TestCase):
                                                     obs_metadata=obs_metadata,
                                                     camera=self.cat.camera)
         shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec, epoch=epoch)
-
-        for (n1, n2, n3) in zip(chipNamesControl, chipNamesTest, shouldBeWrong):
-            self.assertEqual(n1, n2)
-            if n2 is not None or n3 is not None:
-                self.assertNotEqual(n2, n3)
+        
+        self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
 
     def testIndependentFocalPlaneCoordinates(self):
         """
@@ -557,11 +576,7 @@ class astrometryUnitTest(unittest.TestCase):
                                                              epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
         shouldBeWrong = self.cat.calculateFocalPlaneCoordinates(ra=ra, dec=dec)
 
-        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
-            self.assertEqual(cc[0], tt[0])
-            self.assertEqual(cc[1], tt[1])
-            self.assertNotEqual(ss[0], tt[0])
-            self.assertNotEqual(ss[1], tt[1])
+        self.compareTestControlAndWrong(control, test, shouldBeWrong)
 
     def testIndependentPixelCoordinates(self):
         """
@@ -593,12 +608,8 @@ class astrometryUnitTest(unittest.TestCase):
                                                              epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
         shouldBeWrong = self.cat.calculatePixelCoordinates(ra=ra, dec=dec)
 
-        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
-            self.assertEqual(cc[0], tt[0])
-            self.assertEqual(cc[1], tt[1])
-            self.assertNotEqual(ss[0], tt[0])
-            self.assertNotEqual(ss[1], tt[1])
-
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
+        
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to
