@@ -177,6 +177,24 @@ class astrometryUnitTest(unittest.TestCase):
         del self.metadata
         del self.tol
 
+    def compareTestControlAndWrong(self, test, control, wrong):
+        """
+        param [in] test is a numpy array of 2d points
+
+        param [in] control is a numpy array of 2d points
+
+        param [in] wrong is a numpy array of 2d points
+
+        This method verifies that test and control are identical and that test
+        and wrong are not
+        """
+
+        for (tt, cc, ww) in zip(test, control, wrong):
+            self.assertEqual(tt[0], cc[0])
+            self.assertEqual(tt[1], cc[1])
+            self.assertNotEqual(tt[0], ww[0])
+            self.assertNotEqual(tt[1], ww[1])
+
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
         os.unlink("starsTestOutput.txt")
@@ -403,20 +421,14 @@ class astrometryUnitTest(unittest.TestCase):
         shouldBeWrong = self.cat.applyMeanApparentPlace(ra, dec,
                                                         pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
                                                         v_rad=v_rad)
-        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
-            self.assertEqual(cc[0], tt[0])
-            self.assertEqual(cc[1], tt[1])
-            self.assertNotEqual(ss[0], tt[0])
-            self.assertNotEqual(ss[1], tt[1])
+
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
         control = self.cat.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
         test = testCat.applyMeanObservedPlace(ra, dec)
         shouldBeWrong = self.cat.applyMeanObservedPlace(ra, dec)
-        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
-            self.assertEqual(cc[0], tt[0])
-            self.assertEqual(cc[1], tt[1])
-            self.assertNotEqual(ss[0], tt[0])
-            self.assertNotEqual(ss[1], tt[1])
+        
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
         control = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
                                               v_rad=v_rad, obs_metadata=obs_metadata)
@@ -425,11 +437,8 @@ class astrometryUnitTest(unittest.TestCase):
         shouldBeWrong = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
                                                     v_rad=v_rad)
 
-        for (cc, tt, ss) in zip(control, test, shouldBeWrong):
-            self.assertEqual(cc[0], tt[0])
-            self.assertEqual(cc[1], tt[1])
-            self.assertNotEqual(ss[0], tt[0])
-            self.assertNotEqual(ss[1], tt[1])
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
+
 
     def testIndpendentPupilCoords(self):
         """
@@ -453,11 +462,9 @@ class astrometryUnitTest(unittest.TestCase):
         control = self.cat.calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata)
         test = testCat.calculatePupilCoordinates(raObj, decObj)
         shouldBeWrong = self.cat.calculatePupilCoordinates(raObj, decObj)
-        for (cc, tt ,ss) in zip(control, test, shouldBeWrong):
-            self.assertEqual(cc[0], tt[0])
-            self.assertEqual(cc[1], tt[1])
-            self.assertNotEqual(ss[1], tt[1])
-            self.assertNotEqual(ss[0], tt[0])
+        
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
+
 
     def testIndependentFindChipName(self):
         """
