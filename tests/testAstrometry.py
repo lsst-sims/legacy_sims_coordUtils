@@ -208,7 +208,7 @@ class astrometryUnitTest(unittest.TestCase):
                         self.assertEqual(t, c)
                     else:
                         self.assertTrue(self.isNanOrNone(c))
-                    
+
                     if not self.isNanOrNone(t) or not self.isNanOrNone(w):
                         self.assertNotEqual(t, w)
             else:
@@ -216,7 +216,7 @@ class astrometryUnitTest(unittest.TestCase):
                     self.assertEqual(tt, cc)
                 else:
                     self.assertTrue(self.isNanOrNone(cc))
-                
+
                 if not self.isNanOrNone(tt) or not self.isNanOrNone(ww):
                     self.assertNotEqual(tt, ww)
 
@@ -452,7 +452,7 @@ class astrometryUnitTest(unittest.TestCase):
         control = self.cat.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
         test = testCat.applyMeanObservedPlace(ra, dec)
         shouldBeWrong = self.cat.applyMeanObservedPlace(ra, dec)
-        
+
         self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
         control = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
@@ -487,7 +487,7 @@ class astrometryUnitTest(unittest.TestCase):
         control = self.cat.calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata)
         test = testCat.calculatePupilCoordinates(raObj, decObj)
         shouldBeWrong = self.cat.calculatePupilCoordinates(raObj, decObj)
-        
+
         self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
 
@@ -523,7 +523,7 @@ class astrometryUnitTest(unittest.TestCase):
                                                     obs_metadata=obs_metadata,
                                                     camera = self.cat.camera)
         shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec)
-        
+
         self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
 
         #now vary the epoch
@@ -543,7 +543,7 @@ class astrometryUnitTest(unittest.TestCase):
                                                     obs_metadata=obs_metadata,
                                                     camera=self.cat.camera)
         shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec, epoch=epoch)
-        
+
         self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
 
     def testIndependentFocalPlaneCoordinates(self):
@@ -609,7 +609,7 @@ class astrometryUnitTest(unittest.TestCase):
         shouldBeWrong = self.cat.calculatePixelCoordinates(ra=ra, dec=dec)
 
         self.compareTestControlAndWrong(test, control, shouldBeWrong)
-        
+
     def testPassingOfSite(self):
         """
         Test that site information is correctly passed to
