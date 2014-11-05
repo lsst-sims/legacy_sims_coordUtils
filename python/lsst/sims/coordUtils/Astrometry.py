@@ -4,6 +4,7 @@ import math
 import palpy as pal
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
+from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.catalogs.generation.db import haversine
 
@@ -189,7 +190,7 @@ class AstrometryBase(object):
         """
 
         if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
+            raise RuntimeError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
 
         px = numpy.where(parallax<0.00045, 0.00045, parallax)
         #so that pal.Pm returns meaningful values
@@ -242,7 +243,7 @@ class AstrometryBase(object):
         return ra, dec
 
     def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-         v_rad=None, Epoch0=2000.0):
+                               v_rad=None, Epoch0=2000.0, MJD = None):
         """Calculate the Mean Apparent Place given an Ra and Dec
 
         Uses PAL mappa routine, which computes precession and nutation
@@ -268,7 +269,13 @@ class AstrometryBase(object):
 
         @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
 
-        @param [in] Epoch0 is epoch in Julian years
+        @param [in] Epoch0 is the julian epoch (in years) of the equinox against which to
+        measure RA
+
+        @param[in] MJD is the date of the observation (optional; if None, the code will
+        try to set it from self.obs_metadata assuming that this method is being called
+        by an InstanceCatalog daughter class.  If that is not the case, an exception
+        will be raised.)
 
         @param [out] raOut is corrected ra in radians
 
@@ -276,23 +283,27 @@ class AstrometryBase(object):
 
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call applyMeanApparentPlace; self.obs_metadata.mjd is None")
+        if MJD is None:
+            if hasattr(self, 'obs_metadata'):
+                MJD = self.obs_metadata.mjd
+
+            if MJD is None:
+                raise RuntimeError("in Astrometry.py cannot call applyMeanApparentPlace; mjd is None")
 
         if len(ra) != len(dec):
-            raise ValueError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
+            raise RuntimeError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
                             % (len(ra),len(dec)))
 
-        if pm_ra == None:
+        if pm_ra is None:
             pm_ra=numpy.zeros(len(ra))
 
-        if pm_dec == None:
+        if pm_dec is None:
             pm_dec=numpy.zeros(len(ra))
 
-        if v_rad == None:
+        if v_rad is None:
             v_rad=numpy.zeros(len(ra))
 
-        if parallax == None:
+        if parallax is None:
             parallax=numpy.zeros(len(ra))
 
         # Define star independent mean to apparent place parameters
@@ -307,7 +318,7 @@ class AstrometryBase(object):
         #date (MJD)
         #
         #TODO This mjd should be the Barycentric Dynamical Time
-        prms=pal.mappa(Epoch0, self.obs_metadata.mjd)
+        prms=pal.mappa(Epoch0, MJD)
 
         #pal.mapqk does a quick mean to apparent place calculation using
         #the output of pal.mappa
@@ -320,8 +331,9 @@ class AstrometryBase(object):
 
         return raOut,decOut
 
-    def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,  \
-                               altAzHr=False, wavelength=0.5):
+
+    def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,
+                               altAzHr=False, wavelength=0.5, obs_metadata = None):
         """Calculate the Mean Observed Place
 
         Uses PAL aoppa routines
@@ -343,6 +355,11 @@ class AstrometryBase(object):
 
         @param [in] wavelength is effective wavelength in microns
 
+        @param [in] obs_metadata is an ObservationMetaData characterizing the
+        observation (optional; if not included, the code will try to set it from
+        self assuming it is in an InstanceCatalog daughter class.  If that is not
+        the case, an exception will be raised.)
+
         @param [out] raOut is corrected ra (radians)
 
         @param [out] decOut is corrected dec (radians)
@@ -353,8 +370,15 @@ class AstrometryBase(object):
 
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call applyMeanObservedPlace; self.obs_metadata.mjd is None")
+        if obs_metadata is None:
+            if hasattr(self,'obs_metadata'):
+                obs_metadata = self.obs_metadata
+
+            if obs_metadata is None:
+                raise RuntimeError("Cannot call applyMeanObservedPlace without an obs_metadata")
+
+        if not hasattr(obs_metadata, 'site') or obs_metadata.site is None:
+            raise RuntimeError("Cannot call applyMeanObservedPlace: obs_metadata has no site info")
 
         # Correct site longitude for polar motion slaPolmo
         #
@@ -382,30 +406,30 @@ class AstrometryBase(object):
         #the UTC time expressed as an MJD.  It is not clear to me
         #how to actually calculate that.
         if (includeRefraction == True):
-            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
-                            self.site.longitude,
-                            self.site.latitude,
-                            self.site.height,
-                            self.site.xPolar,
-                            self.site.yPolar,
-                            self.site.meanTemperature,
-                            self.site.meanPressure,
-                            self.site.meanHumidity,
+            obsPrms=pal.aoppa(obs_metadata.mjd, dut,
+                            obs_metadata.site.longitude,
+                            obs_metadata.site.latitude,
+                            obs_metadata.site.height,
+                            obs_metadata.site.xPolar,
+                            obs_metadata.site.yPolar,
+                            obs_metadata.site.meanTemperature,
+                            obs_metadata.site.meanPressure,
+                            obs_metadata.site.meanHumidity,
                             wavelength ,
-                            self.site.lapseRate)
+                            obs_metadata.site.lapseRate)
         else:
             #we can discard refraction by setting pressure and humidity to zero
-            obsPrms=pal.aoppa(self.obs_metadata.mjd, dut,
-                            self.site.longitude,
-                            self.site.latitude,
-                            self.site.height,
-                            self.site.xPolar,
-                            self.site.yPolar,
-                            self.site.meanTemperature,
+            obsPrms=pal.aoppa(obs_metadata.mjd, dut,
+                            obs_metadata.site.longitude,
+                            obs_metadata.site.latitude,
+                            obs_metadata.site.height,
+                            obs_metadata.site.xPolar,
+                            obs_metadata.site.yPolar,
+                            obs_metadata.site.meanTemperature,
                             0.0,
                             0.0,
                             wavelength ,
-                            self.site.lapseRate)
+                            obs_metadata.site.lapseRate)
 
         #pal.aopqk does an apparent to observed place
         #correction
@@ -429,17 +453,21 @@ class AstrometryBase(object):
             #
             #pal.de2h converts equatorial to horizon coordinates
             #
-            az, el = pal.de2hVector(hourAngle,decOut,self.site.latitude)
-            return raOut, decOut, el, az
+            az, alt = pal.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
+            return raOut, decOut, alt, az
         return raOut, decOut
 
-    def correctCoordinates(self, pm_ra = None, pm_dec = None, parallax = None, v_rad = None,
-             includeRefraction = True):
+    def correctCoordinates(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+             obs_metadata=None, epoch=None, includeRefraction=True):
         """
         correct coordinates for all possible effects.
 
         included are precession-nutation, aberration, proper motion, parallax, refraction,
         radial velocity, diurnal aberration,
+
+        @param [in] ra is the unrefracted RA in radians
+
+        @param [in] dec is the unrefracted Dec in radians
 
         @param [in] pm_ra is proper motion in RA (radians)
 
@@ -449,6 +477,16 @@ class AstrometryBase(object):
 
         @param [in] v_rad is radial velocity (km/s)
 
+        @param [in] obs_metadata is an ObservationMetaData object describing the
+        telescope pointing.  If it is None, the code will try to set it from self
+        assuming that this method is being called from within an InstanceCatalog
+        daughter class.  If that is not the case, an exception will be raised
+
+        @param [in] epoch is the julian epoch (in years) against which the mean
+        equinoxes are measured.  If it is None, the code will try to set it from
+        self.db_obj, assuming that the code is being called from an InstanceCatalog
+        daughter class.  If that is not the case, an exception will be raised.
+
         @param [in] includeRefraction toggles whether or not to correct for refraction
 
         @param [out] ra_out RA corrected for all included effects
@@ -457,21 +495,27 @@ class AstrometryBase(object):
 
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call correctCoordinates; self.obs_metadata.mjd is none")
+        if obs_metadata is None:
+            if hasattr(self, 'obs_metadata'):
+                obs_metadata = self.obs_metadata
 
-        if self.db_obj.epoch is None:
-            raise ValueError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
+            if obs_metadata is None:
+                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata is none")
 
-        ra=self.column_by_name('raJ2000') #in radians
-        dec=self.column_by_name('decJ2000') #in radians
+        if obs_metadata.mjd is None:
+            raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata.mjd is none")
 
-        ep0 = self.db_obj.epoch
+        if epoch is None:
+            if hasattr(self, 'db_obj'):
+                epoch = self.db_obj.epoch
+
+            if epoch is None:
+                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
 
         ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
-                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = ep0)
+                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
 
-        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent,
+        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
                                                    includeRefraction = includeRefraction)
 
         return numpy.array([ra_out,dec_out])
@@ -567,11 +611,20 @@ class AstrometryBase(object):
         sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
-    def calculatePupilCoordinates(self, ra_obj, dec_obj):
+    def calculatePupilCoordinates(self, raObj, decObj,
+                                  obs_metadata=None, epoch=None):
         """
-        @param [in] ra_obj is a numpy array of RAs in radians
+        @param [in] raObj is a numpy array of RAs in radians
 
-        @param [in] dec_obj is a numpy array of Decs in radians
+        @param [in] decObj is a numpy array of Decs in radians
+
+        @param [in] obs_metadata is an ObservationMetaData object containing information
+        about the telescope pointing (optional; if None, the code will try to set it
+        from self assuming that this method is being called from an InstanceCatalog
+        daughter class.  If that is not the case, an exception will be raised.)
+
+        @param [in] epoch is the julian epoch of the mean equinox used for the coordinate
+        transforations (in years; optional)
 
         @param [out] a numpy array in which the first row is the x pupil coordinate and the second
         row is the y pupil coordinate
@@ -587,33 +640,44 @@ class AstrometryBase(object):
         h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
         """
 
-        if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call get_skyToPupil; obs_metadata.mjd is None")
+        if obs_metadata is None:
+            if hasattr(self, 'obs_metadata'):
+                obs_metadata = self.obs_metadata
 
-        if self.db_obj.epoch is None:
-            raise ValueError("in Astrometry.py cannot call get_skyToPupil; db_obj epoch is None")
+            if obs_metadata is None:
+                raise RuntimeError("in Astrometry.py cannot calculate x_pupil, y_pupil without obs_metadata")
 
-        if self.rotSkyPos is None:
-            #there is no observation data on which to base astrometry
-            raise ValueError("Cannot calculate x_pupil, y_pupil without rotSkyPos in obs_metadata")
+        if epoch is None:
+            if hasattr(self, 'db_obj'):
+                epoch = self.db_obj.epoch
 
-        if self.unrefractedRA is None or self.unrefractedDec is None:
-            raise ValueError("Cannot calculate x_pupil, y_pupil without unrefracted RA, Dec in obs_metadata")
+            if epoch is None:
+                raise RuntimeError("in Astrometry.py cannot call get_skyToPupil; epoch is None")
 
-        theta = -numpy.radians(self.rotSkyPos)
+        if obs_metadata.rotSkyPos is None:
+            raise RuntimeError("Cannot calculate x_pupil or y_pupil without rotSkyPos")
+
+        if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
+            raise RuntimeError("Cannot calculate x_pupil, y_pupil without unrefractedRA, unrefractedDec")
+
+        if obs_metadata.mjd is None:
+            raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd")
+
+        theta = -numpy.radians(obs_metadata.rotSkyPos)
 
         #correct for precession and nutation
 
-        inRA=numpy.array([numpy.radians(self.unrefractedRA)])
-        inDec=numpy.array([numpy.radians(self.unrefractedDec)])
+        pointingRA=numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        pointingDec=numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0 = self.db_obj.epoch)
+        x, y = self.applyMeanApparentPlace(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y)
+        boreRA, boreDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
+
         #we should now have the true tangent point for the gnomonic projection
-        dPhi = dec_obj - boreDec
-        dLambda = ra_obj - boreRA
+        dPhi = decObj - boreDec
+        dLambda = raObj - boreRA
 
         #see en.wikipedia.org/wiki/Haversine_formula
         #Phi is latitude on the sphere (declination)
@@ -623,8 +687,8 @@ class AstrometryBase(object):
         #sims_catalogs_generation/.../db/obsMetadataUtils.py
         #I am using that function so that we only have one
         #haversine formula floating around the stack
-        h = haversine(ra_obj, dec_obj, boreRA, boreDec)
-        
+        h = haversine(raObj, decObj, boreRA, boreDec)
+
         #demand that the Euclidean distance on the pupil matches
         #the haversine distance on the sphere
         dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
@@ -652,20 +716,20 @@ class AstrometryBase(object):
         """
 
         if self.obs_metadata.mjd is None:
-            raise ValueError("in Astrometry.py cannot call get_gnomonicProjection; obs_metadata.mjd is None")
+            raise RuntimeError("in Astrometry.py cannot call get_gnomonicProjection; obs_metadata.mjd is None")
 
         if self.db_obj.epoch is None:
-            raise ValueError("in Astrometry.py cannot call get_gnomonicProjection; db_obj.epoch is None")
+            raise RuntimeError("in Astrometry.py cannot call get_gnomonicProjection; db_obj.epoch is None")
 
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
 
         if self.rotSkyPos is None:
             #there is no observation meta data on which to base astrometry
-            raise ValueError("Cannot calculate [x,y]_focal_nominal without rotSkyPos obs_metadata")
+            raise RuntimeError("Cannot calculate [x,y]_focal_nominal without rotSkyPos obs_metadata")
 
         if self.unrefractedRA is None or self.unrefractedDec is None:
-            raise ValueError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
+            raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
 
         theta = -numpy.radians(self.rotSkyPos)
 
@@ -708,22 +772,45 @@ class AstrometryBase(object):
         in the pupil.
         """
 
-        ra_obj = self.column_by_name('raObserved')
-        dec_obj = self.column_by_name('decObserved')
+        raObj = self.column_by_name('raObserved')
+        decObj = self.column_by_name('decObserved')
 
-        return self.calculatePupilCoordinates(ra_obj, dec_obj)
+        return self.calculatePupilCoordinates(raObj, decObj)
 
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
     camera = None
 
-    def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None):
+    def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None,
+                     obs_metadata=None, epoch=None, camera=None):
         """
+        Return the names of science detectors that see the object specified by
+        either (xPupil, yPupil) or (ra, dec).  Note: this method does not return
+        the name of guide, focus, or wavefront detectors
+
         @param [in] xPupil a numpy array of x pupil coordinates
 
         @param [in] yPupil a numpy array of y pupil coordinates
 
-        @param [out] a numpy array of chip names
+        @param [in] obs_metadata is an ObservationMetaData object describing the telescope
+        pointing (optional)
+
+        @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
+        (in years; optional)
+
+                The optional arguments are there to be passed to calculatePupilCoordinates if you choose
+                to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
+                not set, calculatePupilCoordinates will try to set them from self and db_obj,
+                assuming that this routine is being called from an InstanceCatalog daughter class.
+                If that is not the case, an exception will be raised.
+
+        @param [in] camera is an afwCameraGeom object that specifies the attributes of the camera.
+        If it is not set, this routine will try to set it from self.camera assuming that the code
+        is in an InstanceCatalog daughter class.  If that is not the case, an exception will be
+        raised
+
+        @param [out] a numpy array of chip names (science detectors only)
+
         """
         specifiedPupil = (xPupil is not None and yPupil is not None)
         specifiedRaDec = (ra is not None and dec is not None)
@@ -735,14 +822,19 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec)
+            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
 
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
+        if not camera:
+            if hasattr(self, 'camera'):
+                camera = self.camera
+
+            if not camera:
+                raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
+
         chipNames = []
         for x, y in zip(xPupil, yPupil):
-            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            detList = self.camera.findDetectors(cp)
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            detList = [dd for dd in camera.findDetectors(cp) if dd.getType()==SCIENCE]
             if len(detList) > 1:
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
@@ -753,7 +845,8 @@ class CameraCoords(AstrometryBase):
 
         return numpy.asarray(chipNames)
 
-    def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames = None):
+    def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
+                                  obs_metadata=None, epoch=None, camera=None):
         """
         Get the pixel positions (or nan if not on a chip) for all objects in the catalog
 
@@ -768,10 +861,34 @@ class CameraCoords(AstrometryBase):
         @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call findChipName
         to find the array.  The option exists for the user to specify chipNames, just in case the user
         has already called findChipName for some reason.
+
+        @param [in] obs_metadata is an ObservationMetaData object describing the telescope pointing
+        (optional)
+
+        @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
+        (in years; optional)
+
+            The optional arguments above are there to be passed to calculatePupilCoordinates if you choose
+            to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
+            not set, calculatePupilCoordinates will try to set them from self and db_obj,
+            assuming that this routine is being called from an InstanceCatalog daughter class.
+            If that is not the case, an exception will be raised.
+
+        @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
+        This is an optional argument to be passed to findChipName; if it is None, findChipName
+        will try to set it from self.camera, assuming that the code is in an InstanceCatalog
+        daughter class.  If this is not so, an exception will be raised.
+
+        @param [out] a numpy array of pixel coordinates
+
         """
 
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
+        if not camera:
+            if hasattr(self, 'camera'):
+                camera = self.camera
+
+            if not camera:
+                raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
 
         specifiedPupil = False
         specifiedRaDec = False
@@ -786,10 +903,12 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec)
+            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec,
+                                                            obs_metadata=obs_metadata,
+                                                            epoch=epoch)
 
         if chipNames is None:
-            chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil)
+            chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
 
         xPix = []
         yPix = []
@@ -798,15 +917,16 @@ class CameraCoords(AstrometryBase):
                 xPix.append(numpy.nan)
                 yPix.append(numpy.nan)
                 continue
-            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            det = self.camera[name]
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            det = camera[name]
             cs = det.makeCameraSys(PIXELS)
-            detPoint = self.camera.transform(cp, cs)
+            detPoint = camera.transform(cp, cs)
             xPix.append(detPoint.getPoint().getX())
             yPix.append(detPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
 
-    def calculateFocalPlaneCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None):
+    def calculateFocalPlaneCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None,
+                                       obs_metadata=None, epoch=None, camera=None):
         """
         Get the focal plane coordinates for all objects in the catalog.
 
@@ -816,8 +936,21 @@ class CameraCoords(AstrometryBase):
 
         @param [in] alternatively, one can specify numpy arrays of ra and dec (in radians)
 
+        @param [in] obs_metadata is an ObservationMetaData object describing the telescope
+        pointing (optional)
+
+        @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
+        (in years; optional)
+
+            The optional arguments are there to be passed to calculatePupilCoordinates if you choose
+            to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
+            not set, calculatePupilCoordinates will try to set them from self and db_obj,
+            assuming that this routine is being called from an InstanceCatalog daughter class.
+            If that is not the case, an exception will be raised.
+
         @param [out] a numpy array in which the first row is the x pixel coordinates
         and the second row is the y pixel coordinates
+
         """
 
         specifiedPupil = (xPupil is not None and yPupil is not None)
@@ -829,17 +962,22 @@ class CameraCoords(AstrometryBase):
         if specifiedPupil and specifiedRaDec:
             raise RuntimeError("You cannot specify both pupil and equaltorial coordinates when calling calculateFocalPlaneCoordinates")
 
-        if not self.camera:
-            raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
+        if not camera:
+            if hasattr(self, 'camera'):
+                camera = self.camera
+
+            if not camera:
+                raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra,dec)
+            xPupil, yPupil = self.calculatePupilCoordinates(ra ,dec,
+                                                            obs_metadata=obs_metadata, epoch=epoch)
 
         xPix = []
         yPix = []
         for x, y in zip(xPupil, yPupil):
-            cp = self.camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            fpPoint = self.camera.transform(cp, FOCAL_PLANE)
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            fpPoint = camera.transform(cp, FOCAL_PLANE)
             xPix.append(fpPoint.getPoint().getX())
             yPix.append(fpPoint.getPoint().getY())
         return numpy.array([xPix, yPix])
@@ -847,7 +985,7 @@ class CameraCoords(AstrometryBase):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        return self.findChipName(xPupil = xPupil, yPupil = yPupil)
+        return self.findChipName(xPupil=xPupil, yPupil=yPupil)
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
@@ -873,7 +1011,9 @@ class AstrometryGalaxies(AstrometryBase):
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
-        return self.correctCoordinates(includeRefraction = False)
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
+        return self.correctCoordinates(ra, dec, includeRefraction = False)
 
 
     @compound('raObserved','decObserved')
@@ -881,8 +1021,9 @@ class AstrometryGalaxies(AstrometryBase):
         """
         get coordinates corrected for everything
         """
-
-        return self.correctCoordinates()
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
+        return self.correctCoordinates(ra, dec)
 
 
 class AstrometryStars(AstrometryBase):
@@ -901,12 +1042,14 @@ class AstrometryStars(AstrometryBase):
         #or in sky motion = cos(dec) * (radians per year)
         #PAL asks for radians per year inputs
 
-        pr=self.column_by_name('properMotionRa') #in radians per year
-        pd=self.column_by_name('properMotionDec') #in radians per year
-        px=self.column_by_name('parallax') #in arcseconds
-        rv=self.column_by_name('radialVelocity') #in km/s; positive if receding
+        pr = self.column_by_name('properMotionRa') #in radians per year
+        pd = self.column_by_name('properMotionDec') #in radians per year
+        px = self.column_by_name('parallax') #in arcseconds
+        rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
+        ra = self.column_by_name('raJ2000')
+        dec = self.column_by_name('decJ2000')
 
-        return self.correctCoordinates(pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
+        return self.correctCoordinates(ra, dec, pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
                      includeRefraction = includeRefraction)
 
 

@@ -39,15 +39,63 @@ import warnings
 import sys
 import math
 import palpy as pal
+from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import ObservationMetaData, Site
-from lsst.sims.coordUtils.Astrometry import AstrometryStars, CameraCoords
+from lsst.sims.catalogs.generation.db import ObservationMetaData, Site, getRotTelPos, \
+                                             altAzToRaDec, calcObsDefaults
+from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
+def makeObservationMetaData():
+    #create a cartoon ObservationMetaData object
+    mjd = 52000.0
+    alt = numpy.pi/2.0
+    az = 0.0
+    band = 'r'
+    testSite = Site(latitude=0.5, longitude=1.1, height=3000, meanTemperature=260.0,
+                    meanPressure = 725.0, lapseRate=0.005)
+    centerRA, centerDec = altAzToRaDec(alt,az,testSite.longitude,testSite.latitude,mjd)
+    rotTel = getRotTelPos(az, centerDec, testSite.latitude, 0.0)
+
+    obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band,
+                 testSite.longitude, testSite.latitude)
+
+    obsDict['Opsim_expmjd'] = mjd
+    radius = 0.1
+    phoSimMetadata = OrderedDict([
+                      (k, (obsDict[k],numpy.dtype(type(obsDict[k])))) for k in obsDict])
+
+    obs_metadata = ObservationMetaData(boundType = 'circle', unrefractedRA = numpy.degrees(centerRA),
+                                       unrefractedDec = numpy.degrees(centerDec), boundLength = 2.0*radius,
+                                       phoSimMetadata=phoSimMetadata, site=testSite)
+
+    return obs_metadata
+
+def makeRandomSample(raCenter=None, decCenter=None, radius=None):
+    #create a random sample of object data
+
+    nsamples=100
+    numpy.random.seed(32)
+
+    if raCenter is None or decCenter is None or radius is None:
+        ra = numpy.random.sample(nsamples)*2.0*numpy.pi
+        dec = (numpy.random.sample(nsamples)-0.5)*numpy.pi
+    else:
+        rr = numpy.random.sample(nsamples)*radius
+        theta = numpy.random.sample(nsamples)*2.0*numpy.pi
+        ra = raCenter + rr*numpy.cos(theta)
+        dec = decCenter + rr*numpy.cos(theta)
+
+    pm_ra = (numpy.random.sample(nsamples)-0.5)*0.1
+    pm_dec = (numpy.random.sample(nsamples)-0.5)*0.1
+    parallax = numpy.random.sample(nsamples)*0.01
+    v_rad = numpy.random.sample(nsamples)*1000.0
+
+    return ra, dec, pm_ra, pm_dec, parallax, v_rad
 
 class AstrometryTestStars(myTestStars):
     dbAddress = 'sqlite:///AstrometryTestDatabase.db'
@@ -117,6 +165,11 @@ class astrometryUnitTest(unittest.TestCase):
         self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         self.tol=1.0e-5
 
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists('AstrometryTestDatabase.db'):
+            os.unlink('AstrometryTestDatabase.db')
+
     def tearDown(self):
         del self.starDBObject
         del self.cat
@@ -124,11 +177,113 @@ class astrometryUnitTest(unittest.TestCase):
         del self.metadata
         del self.tol
 
+    def isNanOrNone(self, value):
+        """
+        Returns True if value is None or nan.  False otherwise.
+        """
+
+        if value is None:
+           return True
+
+        try:
+            if numpy.isnan(value):
+                return True
+        except TypeError:
+            pass
+
+        return False
+
+    def compareTestControlAndWrong(self, test, control, wrong):
+        """
+        param [in] test is an array
+
+        param [in] control is an array
+
+        param [in] wrong is an array
+
+        This method verifies that test and control are identical and that test
+        and wrong are not
+        """
+
+        for (tt, cc, ww) in zip(test, control, wrong):
+            if '__iter__' in dir(tt):
+                for (t, c, w) in zip(tt, cc, ww):
+                    if not self.isNanOrNone(t):
+                        self.assertEqual(t, c)
+                    else:
+                        self.assertTrue(self.isNanOrNone(c))
+
+                    if not self.isNanOrNone(t) or not self.isNanOrNone(w):
+                        self.assertNotEqual(t, w)
+            else:
+                if not self.isNanOrNone(tt):
+                    self.assertEqual(tt, cc)
+                else:
+                    self.assertTrue(self.isNanOrNone(cc))
+
+                if not self.isNanOrNone(tt) or not self.isNanOrNone(ww):
+                    self.assertNotEqual(tt, ww)
+
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
         os.unlink("starsTestOutput.txt")
 
-    def testExceptions(self):
+    def testAstrometryExceptions(self):
+        """
+        Test to make sure that stand-alone astrometry methods raise an exception when they are called without
+        the necessary arguments
+        """
+        obs_metadata = makeObservationMetaData()
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
+        myAstrometry = AstrometryBase()
+
+        raShort = numpy.array([1.0])
+        decShort = numpy.array([1.0])
+
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, dec)
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, decShort)
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, raShort, dec)
+        test=myAstrometry.applyMeanApparentPlace(ra, dec, MJD=obs_metadata.mjd)
+
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.site = None
+        self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec,
+                          obs_metadata=dummy_obs_metadata)
+        test = myAstrometry.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
+
+        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.mjd = None
+        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0,
+                          obs_metadata=dummy_obs_metadata)
+
+        test = myAstrometry.correctCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.rotSkyPos = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.unrefractedRA = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.unrefractedDec = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.mjd = None
+        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        test = myAstrometry.calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+
+    def testCameraCoordsExceptions(self):
         """
         Test to make sure that focal plane methods raise exceptions when coordinates are improperly
         specified.
@@ -164,6 +319,34 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, self.cat.findChipName)
         self.assertRaises(RuntimeError, self.cat.findChipName, xPupil = xPupil, yPupil = yPupil,
                   ra = ra, dec = dec)
+
+        myCameraCoords = CameraCoords()
+        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec,
+                          obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec, epoch=2000.0,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec, camera=self.cat.camera,
+                          obs_metadata=self.obs_metadata)
+        test = myCameraCoords.findChipName(ra=ra, dec=dec, camera=self.cat.camera, epoch=2000.0,
+                                           obs_metadata=self.obs_metadata)
+
+        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
+                          obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec, epoch=2000.0,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
+                          camera=self.cat.camera, obs_metadata=self.obs_metadata)
+        test = myCameraCoords.calculatePixelCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
+                                                        obs_metadata=self.obs_metadata, epoch=2000.0)
+
+        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                          obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                          epoch=2000.0, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                          camera=self.cat.camera, obs_metadata=self.obs_metadata)
+        test = myCameraCoords.calculateFocalPlaneCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
+                                                             obs_metadata=self.obs_metadata, epoch=2000.0)
 
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
@@ -241,6 +424,193 @@ class astrometryUnitTest(unittest.TestCase):
 
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
+
+    def testIndependentAstrometryMethods(self):
+        """
+        Test that calling applyMeanApparentPlace, applyMeanObservedPlace,
+        correctCoordinates, with observation data specified by hand
+        will result in the correct outputs
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
+
+        control = self.cat.applyMeanApparentPlace(ra, dec,
+                                                  pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                                  v_rad=v_rad, MJD=obs_metadata.mjd)
+        test = testCat.applyMeanApparentPlace(ra, dec,
+                                              pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                              v_rad=v_rad)
+        shouldBeWrong = self.cat.applyMeanApparentPlace(ra, dec,
+                                                        pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                                        v_rad=v_rad)
+
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
+
+        control = self.cat.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
+        test = testCat.applyMeanObservedPlace(ra, dec)
+        shouldBeWrong = self.cat.applyMeanObservedPlace(ra, dec)
+
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
+
+        control = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                              v_rad=v_rad, obs_metadata=obs_metadata)
+        test = testCat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                          v_rad=v_rad)
+        shouldBeWrong = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
+                                                    v_rad=v_rad)
+
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
+
+    def testIndpendentPupilCoords(self):
+        """
+        Test that calling calculatePupilCoordinates, with observation data specified by and
+        will result in the correct outputs
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                          makeRandomSample(raCenter = numpy.radians(obs_metadata.unrefractedRA),
+                                           decCenter = numpy.radians(obs_metadata.unrefractedDec),
+                                           radius = 2.0)
+
+        raObj, decObj = testCat.correctCoordinates(ra, dec)
+        control = self.cat.calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata)
+        test = testCat.calculatePupilCoordinates(raObj, decObj)
+        shouldBeWrong = self.cat.calculatePupilCoordinates(raObj, decObj)
+
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
+
+    def testIndependentFindChipName(self):
+        """
+        Test that calling FindchipName independent of a catalog object works,
+        i.e. that if a user specifies an ObservationMetaData by hand, the code
+        will use that ObservationMetaData
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        myCameraCoords = CameraCoords()
+
+        #generate some random RA and Decs to find chips for
+        nsamples = 100
+        numpy.random.seed(32)
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
+
+        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=obs_metadata)
+
+        chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=self.cat.db_obj.epoch,
+                                                    obs_metadata=obs_metadata,
+                                                    camera = self.cat.camera)
+        shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec)
+
+        self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
+
+        #now vary the epoch
+        epoch = 1500.0
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=epoch, obs_metadata=obs_metadata)
+
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
+
+        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=obs_metadata,
+                                                 epoch=epoch)
+
+        chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=epoch,
+                                                    obs_metadata=obs_metadata,
+                                                    camera=self.cat.camera)
+        shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec, epoch=epoch)
+
+        self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
+
+    def testIndependentFocalPlaneCoordinates(self):
+        """
+        Test to make sure that calculateFocalPlaneCoordinates returns the correct answer
+        when you pass in an obs_metadata by hand
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        myCameraCoords = CameraCoords()
+
+        #generate some random RA and Decs to find chips for
+        nsamples = 100
+        numpy.random.seed(32)
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
+
+        control = self.cat.calculateFocalPlaneCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata)
+        test = myCameraCoords.calculateFocalPlaneCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata,
+                                                             epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        shouldBeWrong = self.cat.calculateFocalPlaneCoordinates(ra=ra, dec=dec)
+
+        self.compareTestControlAndWrong(control, test, shouldBeWrong)
+
+    def testIndependentPixelCoordinates(self):
+        """
+        Test to make sure that calculateFocalPlaneCoordinates returns the correct answer
+        when you pass in an obs_metadata by hand
+        """
+
+        obs_metadata = makeObservationMetaData()
+        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
+        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
+        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
+        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
+        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
+        myCameraCoords = CameraCoords()
+
+        #generate some random RA and Decs to find chips for
+        nsamples = 100
+        numpy.random.seed(32)
+        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
+        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
+                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
+                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
+
+        control = self.cat.calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata)
+        test = myCameraCoords.calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata,
+                                                             epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        shouldBeWrong = self.cat.calculatePixelCoordinates(ra=ra, dec=dec)
+
+        self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
     def testPassingOfSite(self):
         """
