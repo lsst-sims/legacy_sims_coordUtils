@@ -206,7 +206,7 @@ class astrometryUnitTest(unittest.TestCase):
         """
 
         for (tt, cc, ww) in zip(test, control, wrong):
-            if '__getitem__' in dir(tt) and not isinstance(tt,str):
+            if '__iter__' in dir(tt):
                 for (t, c, w) in zip(tt, cc, ww):
                     if not self.isNanOrNone(t):
                         self.assertEqual(t, c)
