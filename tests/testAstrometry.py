@@ -184,8 +184,12 @@ class astrometryUnitTest(unittest.TestCase):
 
         if value is None:
            return True
-        elif not isinstance(value,str) and numpy.isnan(value):
-            return True
+
+        try:
+            if numpy.isnan(value):
+                return True
+        except TypeError:
+            pass
 
         return False
 
