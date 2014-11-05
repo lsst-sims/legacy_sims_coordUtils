@@ -468,7 +468,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
-
     def testIndpendentPupilCoords(self):
         """
         Test that calling calculatePupilCoordinates, with observation data specified by and
@@ -493,7 +492,6 @@ class astrometryUnitTest(unittest.TestCase):
         shouldBeWrong = self.cat.calculatePupilCoordinates(raObj, decObj)
 
         self.compareTestControlAndWrong(test, control, shouldBeWrong)
-
 
     def testIndependentFindChipName(self):
         """
