@@ -469,9 +469,9 @@ class AstrometryBase(object):
 
         @param [in] dec is the unrefracted Dec in radians
 
-        @param [in] pm_ra is proper motion in RA (radians)
+        @param [in] pm_ra is proper motion in RA (radians/yr)
 
-        @param [in] pm_dec is proper motion in dec (radians)
+        @param [in] pm_dec is proper motion in dec (radians/yr)
 
         @param [in] parallax is parallax (arcseconds)
 
