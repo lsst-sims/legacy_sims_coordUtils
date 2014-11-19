@@ -1044,7 +1044,7 @@ class AstrometryStars(AstrometryBase):
 
         pr = self.column_by_name('properMotionRa') #in radians per year
         pd = self.column_by_name('properMotionDec') #in radians per year
-        px = self.column_by_name('parallax') #in arcseconds
+        px = self.column_by_name('parallax') * 0.001 #in arcseconds
         rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
