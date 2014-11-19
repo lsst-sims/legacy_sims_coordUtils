@@ -683,7 +683,7 @@ class AstrometryBase(object):
         #Phi is latitude on the sphere (declination)
         #Lambda is longitude on the sphere (RA)
         #
-        #Now that there is a haversine method in 
+        #Now that there is a haversine method in
         #sims_catalogs_generation/.../db/obsMetadataUtils.py
         #I am using that function so that we only have one
         #haversine formula floating around the stack
@@ -791,6 +791,10 @@ class CameraCoords(AstrometryBase):
         @param [in] xPupil a numpy array of x pupil coordinates
 
         @param [in] yPupil a numpy array of y pupil coordinates
+
+        @param [in] ra in radians (optional; should not specify both ra/dec and pupil coordinates)
+
+        @param [in] dec in radians (optional; should not specify both ra/dec and pupil coordinates)
 
         @param [in] obs_metadata is an ObservationMetaData object describing the telescope
         pointing (optional)
