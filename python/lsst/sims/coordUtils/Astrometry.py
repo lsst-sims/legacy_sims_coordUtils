@@ -469,9 +469,9 @@ class AstrometryBase(object):
 
         @param [in] dec is the unrefracted Dec in radians
 
-        @param [in] pm_ra is proper motion in RA (radians)
+        @param [in] pm_ra is proper motion in RA (radians/yr)
 
-        @param [in] pm_dec is proper motion in dec (radians)
+        @param [in] pm_dec is proper motion in dec (radians/yr)
 
         @param [in] parallax is parallax (arcseconds)
 
@@ -683,7 +683,7 @@ class AstrometryBase(object):
         #Phi is latitude on the sphere (declination)
         #Lambda is longitude on the sphere (RA)
         #
-        #Now that there is a haversine method in 
+        #Now that there is a haversine method in
         #sims_catalogs_generation/.../db/obsMetadataUtils.py
         #I am using that function so that we only have one
         #haversine formula floating around the stack
@@ -791,6 +791,10 @@ class CameraCoords(AstrometryBase):
         @param [in] xPupil a numpy array of x pupil coordinates
 
         @param [in] yPupil a numpy array of y pupil coordinates
+
+        @param [in] ra in radians (optional; should not specify both ra/dec and pupil coordinates)
+
+        @param [in] dec in radians (optional; should not specify both ra/dec and pupil coordinates)
 
         @param [in] obs_metadata is an ObservationMetaData object describing the telescope
         pointing (optional)
@@ -1044,7 +1048,7 @@ class AstrometryStars(AstrometryBase):
 
         pr = self.column_by_name('properMotionRa') #in radians per year
         pd = self.column_by_name('properMotionDec') #in radians per year
-        px = self.column_by_name('parallax') #in arcseconds
+        px = self.column_by_name('parallax') * 0.001 #in arcseconds (stored as milliarcseconds in database)
         rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
