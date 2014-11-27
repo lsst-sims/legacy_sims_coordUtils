@@ -667,8 +667,8 @@ class AstrometryBase(object):
 
         #correct for precession and nutation
 
-        pointingRA=numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
-        pointingDec=numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
+        pointingRA=numpy.array([obs_metadata.unrefractedRA])
+        pointingDec=numpy.array([obs_metadata.unrefractedDec])
 
         x, y = self.applyMeanApparentPlace(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
@@ -736,8 +736,8 @@ class AstrometryBase(object):
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
-        inRA=numpy.array([numpy.radians(self.unrefractedRA)])
-        inDec=numpy.array([numpy.radians(self.unrefractedDec)])
+        inRA=numpy.array([self.unrefractedRA])
+        inDec=numpy.array([self.unrefractedDec])
 
         x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=self.db_obj.epoch)
 
