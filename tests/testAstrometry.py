@@ -157,8 +157,8 @@ class astrometryUnitTest(unittest.TestCase):
         #these would be set to meaningful values.  Because we are generating
         #an artificial set of inputs that must comport to the baseline SLALIB
         #inputs, these are set arbitrarily by hand
-        self.metadata['Unrefracted_RA'] = (200.0, float)
-        self.metadata['Unrefracted_Dec'] = (-30.0, float)
+        self.metadata['Unrefracted_RA'] = (numpy.radians(200.0), float)
+        self.metadata['Unrefracted_Dec'] = (numpy.radians(-30.0), float)
         self.metadata['Opsim_rotskypos'] = (1.0, float)
 
         self.obs_metadata.assignPhoSimMetaData(self.metadata)
