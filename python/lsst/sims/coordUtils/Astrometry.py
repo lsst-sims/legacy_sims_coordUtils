@@ -817,6 +817,10 @@ class AstrometryBase(object):
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
     camera = None
+    allow_multiple_chips = False #this is a flag which, if true, would allow
+                                 #findChipName to return objects that land on
+                                 #multiple chips; only the first chip would be
+                                 #written to the catalog
 
     def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None,
                      obs_metadata=None, epoch=None, camera=None):
@@ -883,7 +887,7 @@ class CameraCoords(AstrometryBase):
         for x, y in zip(xPupil, yPupil):
             cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
             detList = [dd for dd in camera.findDetectors(cp) if dd.getType()==SCIENCE]
-            if len(detList) > 1:
+            if len(detList) > 1 and not self.allow_multiple_chips:
                 raise RuntimeError("This method does not know how to deal with cameras where points can be"+
                                    " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
             if not detList:
