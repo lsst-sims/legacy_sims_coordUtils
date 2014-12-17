@@ -510,7 +510,7 @@ class AstrometryBase(object):
                 epoch = self.db_obj.epoch
 
             if epoch is None:
-                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
+                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have not specified an epoch")
 
         ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
                  pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
