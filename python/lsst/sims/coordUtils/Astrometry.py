@@ -796,6 +796,13 @@ class CameraCoords(AstrometryBase):
 
         @param [in] dec in radians (optional; should not specify both ra/dec and pupil coordinates)
 
+        WARNING: if you are passing in RA and Dec, you should make sure they are corrected
+        for all of the astrometric quantities (precession, nutation, refraction, proper motion,
+        etc.) relevant to your problem.  The bore site will be corrected for these quantities
+        when calculating where on the focal plane your RA and Dec fall.  Thus, the result will
+        be wrong if you do not correct your RA and Dec before passing them in.  Consider using
+        the method AstrometryBase.correctCoordinates()
+
         @param [in] obs_metadata is an ObservationMetaData object describing the telescope
         pointing (optional)
 
