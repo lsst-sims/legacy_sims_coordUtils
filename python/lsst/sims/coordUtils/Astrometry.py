@@ -663,7 +663,7 @@ class AstrometryBase(object):
         if obs_metadata.mjd is None:
             raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd")
 
-        theta = -numpy.radians(obs_metadata.rotSkyPos)
+        theta = -obs_metadata.rotSkyPos
 
         #correct for precession and nutation
 
@@ -731,7 +731,7 @@ class AstrometryBase(object):
         if self.unrefractedRA is None or self.unrefractedDec is None:
             raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
 
-        theta = -numpy.radians(self.rotSkyPos)
+        theta = -self.rotSkyPos
 
         #correct RA and Dec for refraction, precession and nutation
         #
