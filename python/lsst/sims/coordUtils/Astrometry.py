@@ -510,7 +510,7 @@ class AstrometryBase(object):
                 epoch = self.db_obj.epoch
 
             if epoch is None:
-                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have no db_obj")
+                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have not specified an epoch")
 
         ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
                  pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
@@ -663,7 +663,7 @@ class AstrometryBase(object):
         if obs_metadata.mjd is None:
             raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd")
 
-        theta = -numpy.radians(obs_metadata.rotSkyPos)
+        theta = -obs_metadata.rotSkyPos
 
         #correct for precession and nutation
 
@@ -731,7 +731,7 @@ class AstrometryBase(object):
         if self.unrefractedRA is None or self.unrefractedDec is None:
             raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
 
-        theta = -numpy.radians(self.rotSkyPos)
+        theta = -self.rotSkyPos
 
         #correct RA and Dec for refraction, precession and nutation
         #
@@ -795,6 +795,13 @@ class CameraCoords(AstrometryBase):
         @param [in] ra in radians (optional; should not specify both ra/dec and pupil coordinates)
 
         @param [in] dec in radians (optional; should not specify both ra/dec and pupil coordinates)
+
+        WARNING: if you are passing in RA and Dec, you should make sure they are corrected
+        for all of the astrometric quantities (precession, nutation, refraction, proper motion,
+        etc.) relevant to your problem.  The bore site will be corrected for these quantities
+        when calculating where on the focal plane your RA and Dec fall.  Thus, the result will
+        be wrong if you do not correct your RA and Dec before passing them in.  Consider using
+        the method AstrometryBase.correctCoordinates()
 
         @param [in] obs_metadata is an ObservationMetaData object describing the telescope
         pointing (optional)
