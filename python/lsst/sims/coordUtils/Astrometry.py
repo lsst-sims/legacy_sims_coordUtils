@@ -191,10 +191,10 @@ class AstrometryBase(object):
 
         if self.obs_metadata.mjd is None:
             raise RuntimeError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
-        
-        parallaxArcsec=radiansToArcsec(parallax) 
+
+        parallaxArcsec=radiansToArcsec(parallax)
         #convert to Arcsec because that is what PAL expects
-           
+
         px = numpy.where(parallaxArcsec<0.00045, 00045, parallaxArcsec)
         #so that pal.Pm returns meaningful values
 

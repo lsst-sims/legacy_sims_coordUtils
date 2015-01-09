@@ -1078,7 +1078,7 @@ class astrometryUnitTest(unittest.TestCase):
         cat = parallaxTestCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         parallaxName = 'parallaxCatalog.sav'
         cat.write_catalog(parallaxName)
-        
+
         data = numpy.genfromtxt(parallaxName,delimiter=',')
         epoch = cat.db_obj.epoch
         mjd = cat.obs_metadata.mjd
@@ -1095,10 +1095,10 @@ class astrometryUnitTest(unittest.TestCase):
             dec_apparent = numpy.array([dec_apparent])
             raObserved, decObserved = cat.applyMeanObservedPlace(ra_apparent, dec_apparent,
                                                                  obs_metadata=cat.obs_metadata)
-      
+
             self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),10)
             self.assertAlmostEqual(decObserved[0],numpy.radians(vv[3]),10)
-        
+
         if os.path.exists(parallaxName):
             os.unlink(parallaxName)
 
