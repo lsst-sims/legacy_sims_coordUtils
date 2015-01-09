@@ -6,7 +6,7 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.catalogs.generation.db import haversine
+from lsst.sims.catalogs.generation.db import haversine, radiansToArcsec, arcsecToRadians
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -177,7 +177,7 @@ class AstrometryBase(object):
 
         @param [in] pm_dec is dec proper motion in radians/year
 
-        @param [in] parallax in arcseconds
+        @param [in] parallax in radians
 
         @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
 
@@ -191,8 +191,11 @@ class AstrometryBase(object):
 
         if self.obs_metadata.mjd is None:
             raise RuntimeError("in Astrometry.py cannot call applyProperMotion; self.obs_metadata.mjd is None")
-
-        px = numpy.where(parallax<0.00045, 0.00045, parallax)
+        
+        parallaxArcsec=radiansToArcsec(parallax) 
+        #convert to Arcsec because that is what PAL expects
+           
+        px = numpy.where(parallaxArcsec<0.00045, 00045, parallaxArcsec)
         #so that pal.Pm returns meaningful values
 
         # Generate Julian epoch from MJD
@@ -206,7 +209,7 @@ class AstrometryBase(object):
         #I have done away with that, since PAL expects the user to pass in
         #proper motion in radians/per year.  I leave it to the user to perform
         #whatever coordinate transformations are appropriate to the data.
-        raOut, decOut = pal.pmVector(ra,dec,pm_ra,pm_dec,parallax,v_rad, EP0, julianEpoch)
+        raOut, decOut = pal.pmVector(ra,dec,pm_ra,pm_dec,px,v_rad, EP0, julianEpoch)
 
         return raOut,decOut
 
@@ -265,7 +268,7 @@ class AstrometryBase(object):
 
         @param [in] pm_dec is dec proper motion in radians/year
 
-        @param [in] parallax in arcseconds
+        @param [in] parallax in radians
 
         @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
 
@@ -327,7 +330,7 @@ class AstrometryBase(object):
         #The accuracy is sub-milliarcsecond, limited by the
         #precession-nutation model (see palPrenut for details).
 
-        raOut,decOut = pal.mapqkVector(ra,dec,pm_ra,pm_dec,parallax,v_rad,prms)
+        raOut,decOut = pal.mapqkVector(ra,dec,pm_ra,pm_dec,radiansToArcsec(parallax),v_rad,prms)
 
         return raOut,decOut
 
@@ -473,7 +476,7 @@ class AstrometryBase(object):
 
         @param [in] pm_dec is proper motion in dec (radians/yr)
 
-        @param [in] parallax is parallax (arcseconds)
+        @param [in] parallax is parallax in radians
 
         @param [in] v_rad is radial velocity (km/s)
 
@@ -882,7 +885,7 @@ class CameraCoords(AstrometryBase):
             The optional arguments above are there to be passed to calculatePupilCoordinates if you choose
             to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
             not set, calculatePupilCoordinates will try to set them from self and db_obj,
-            assuming that this routine is being called from an InstanceCatalog daughter class.
+            assuming that this ro;utine is being called from an InstanceCatalog daughter class.
             If that is not the case, an exception will be raised.
 
         @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
@@ -1055,7 +1058,7 @@ class AstrometryStars(AstrometryBase):
 
         pr = self.column_by_name('properMotionRa') #in radians per year
         pd = self.column_by_name('properMotionDec') #in radians per year
-        px = self.column_by_name('parallax') * 0.001 #in arcseconds (stored as milliarcseconds in database)
+        px = self.column_by_name('parallax') #in radians
         rv = self.column_by_name('radialVelocity') #in km/s; positive if receding
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
