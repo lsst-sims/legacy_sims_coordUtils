@@ -45,7 +45,8 @@ import lsst.utils.tests as utilsTests
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import ObservationMetaData, Site, getRotTelPos, \
-                                             altAzToRaDec, calcObsDefaults
+                                             altAzToRaDec, calcObsDefaults, radiansToArcsec, \
+                                             arcsecToRadians
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
@@ -99,6 +100,18 @@ def makeRandomSample(raCenter=None, decCenter=None, radius=None):
 
 class AstrometryTestStars(myTestStars):
     dbAddress = 'sqlite:///AstrometryTestDatabase.db'
+
+class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
+    column_outputs = ['raJ2000', 'decJ2000', 'raObserved', 'decObserved',
+                      'properMotionRa', 'properMotionDec',
+                      'radialVelocity', 'parallax']
+
+    transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees,
+                       'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
+                       'properMotionRa':numpy.degrees, 'properMotionDec':numpy.degrees,
+                       'parallax':radiansToArcsec}
+
+    default_formats = {'f':'%.12f'}
 
 class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
     """
@@ -782,7 +795,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         #This test passes pm_dec/numpy.cos(dec) because that is the input that
         #was used when the baseline data was generated with SLALIB
-        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),parallax,v_rad,EP0=ep)
+        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),
+                                          arcsecToRadians(parallax),v_rad,EP0=ep)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
         self.assertAlmostEqual(output[1][0],5.198769294314042888e-01,6)
@@ -878,7 +892,7 @@ class astrometryUnitTest(unittest.TestCase):
         cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
 
         output=cat.applyMeanApparentPlace(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
-              parallax = parallax,v_rad = v_rad, Epoch0=ep)
+              parallax = arcsecToRadians(parallax),v_rad = v_rad, Epoch0=ep)
 
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6)
         self.assertAlmostEqual(output[1][0],5.309044018653210628e-01,6)
@@ -1058,6 +1072,35 @@ class astrometryUnitTest(unittest.TestCase):
                 else:
                     #make sure the pixel positions are inside the detector bounding box.
                     self.assertTrue(afwGeom.Box2D(self.cat.camera[cname].getBBox()).contains(afwGeom.Point2D(x,y)))
+
+
+    def testParallax(self):
+        cat = parallaxTestCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
+        parallaxName = 'parallaxCatalog.sav'
+        cat.write_catalog(parallaxName)
+        
+        data = numpy.genfromtxt(parallaxName,delimiter=',')
+        epoch = cat.db_obj.epoch
+        mjd = cat.obs_metadata.mjd
+        prms = pal.mappa(epoch, mjd)
+        for vv in data:
+            ra0 = numpy.radians(vv[0])
+            dec0 = numpy.radians(vv[1])
+            pmra = numpy.radians(vv[4])
+            pmdec = numpy.radians(vv[5])
+            rv = vv[6]
+            px = vv[7]
+            ra_apparent, dec_apparent = pal.mapqk(ra0, dec0, pmra, pmdec, px, rv, prms)
+            ra_apparent = numpy.array([ra_apparent])
+            dec_apparent = numpy.array([dec_apparent])
+            raObserved, decObserved = cat.applyMeanObservedPlace(ra_apparent, dec_apparent,
+                                                                 obs_metadata=cat.obs_metadata)
+      
+            self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),10)
+            self.assertAlmostEqual(decObserved[0],numpy.radians(vv[3]),10)
+        
+        if os.path.exists(parallaxName):
+            os.unlink(parallaxName)
 
 def suite():
     utilsTests.init()
