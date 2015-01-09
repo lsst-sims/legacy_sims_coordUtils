@@ -1075,6 +1075,16 @@ class astrometryUnitTest(unittest.TestCase):
 
 
     def testParallax(self):
+        """
+        This test will output a catalog of uncorrected and corrected (astrometrically)
+        ra and dec.  It will also output the quantities (proper motion, radial velocity,
+        and parallax) needed to apply the astrometric corrections.  It will then run the
+        catalog through PALPY and verify that the catalog generating code correctly applied
+        the astrometric corrections.
+        """
+
+        #create and write a catalog that performs astrometric transformations
+        #on a cartoon star database
         cat = parallaxTestCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         parallaxName = 'parallaxCatalog.sav'
         cat.write_catalog(parallaxName)
@@ -1084,6 +1094,8 @@ class astrometryUnitTest(unittest.TestCase):
         mjd = cat.obs_metadata.mjd
         prms = pal.mappa(epoch, mjd)
         for vv in data:
+            #run the PALPY routines that actuall do astrometry `by hand' and compare
+            #the results to the contents of the catalog
             ra0 = numpy.radians(vv[0])
             dec0 = numpy.radians(vv[1])
             pmra = numpy.radians(vv[4])
