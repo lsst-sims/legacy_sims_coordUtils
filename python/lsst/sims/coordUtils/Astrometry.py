@@ -698,7 +698,7 @@ class AstrometryBase(object):
 
         return numpy.array([x_out, y_out])
 
-    def calculateGnomonicProjection(self, ra_in, dec_in):
+    def calculateGnomonicProjection(self, ra_in, dec_in, obs_metadata=None, epoch=None):
         """
         Take an input RA and dec from the sky and convert it to coordinates
         on the focal plane.
@@ -710,36 +710,53 @@ class AstrometryBase(object):
         @param [in] ra_in is a numpy array of RAs in radians
 
         @param [in] dec_in in radians
+        
+        @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
+        telescope location and pointing (optional)
+        
+        @param [in] epoch is the epoch of mean ra and dec in julian years (optional)
 
         @param [out] returns a numpy array whose first row is the x coordinate according to a naive
         gnomonic projection and whose second row is the y coordinate
         """
+        
+        if obs_metadata is None:
+            if hasattr(self, 'obs_metadata'):
+                obs_metadata = self.obs_metadata
+            else:
+                raise RuntimeError("in Astrometry.py cannot call calculateGnomonicProjection without obs_metadata")
 
-        if self.obs_metadata.mjd is None:
-            raise RuntimeError("in Astrometry.py cannot call get_gnomonicProjection; obs_metadata.mjd is None")
+        if obs_metadata.mjd is None:
+            raise RuntimeError("in Astrometry.py cannot call calculatGnomonicProjection; obs_metadata.mjd is None")
 
-        if self.db_obj.epoch is None:
-            raise RuntimeError("in Astrometry.py cannot call get_gnomonicProjection; db_obj.epoch is None")
+        if epoch is None:
+            if hasattr(self, 'db_obj'):
+                epoch = self.db_obj.epoch
+            else:
+                raise RuntimeError("in Astrometry.py cannot call calculateGnomonicProjection without epoch")
+                
+        if epoch is None:
+            raise RuntimeError("in Astrometry.py cannot call calculateGnomonicProjection; epoch is None")
 
         x_out=numpy.zeros(len(ra_in))
         y_out=numpy.zeros(len(ra_in))
 
-        if self.rotSkyPos is None:
+        if obs_metadata.rotSkyPos is None:
             #there is no observation meta data on which to base astrometry
-            raise RuntimeError("Cannot calculate [x,y]_focal_nominal without rotSkyPos obs_metadata")
+            raise RuntimeError("Cannot calculate [x,y]_focal_nominal without obs_metadata.rotSkyPos")
 
-        if self.unrefractedRA is None or self.unrefractedDec is None:
+        if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
             raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
 
-        theta = -self.rotSkyPos
+        theta = -obs_metadata.rotSkyPos
 
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
-        inRA=numpy.array([self.unrefractedRA])
-        inDec=numpy.array([self.unrefractedDec])
+        inRA=numpy.array([obs_metadata.unrefractedRA])
+        inDec=numpy.array([obs_metadata.unrefractedDec])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=self.db_obj.epoch)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=epoch)
 
         #correct for refraction
         trueRA, trueDec = self.applyMeanObservedPlace(x, y)
