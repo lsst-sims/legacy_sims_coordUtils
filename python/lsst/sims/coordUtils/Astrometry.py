@@ -710,16 +710,16 @@ class AstrometryBase(object):
         @param [in] ra_in is a numpy array of RAs in radians
 
         @param [in] dec_in in radians
-        
+
         @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
         telescope location and pointing (optional)
-        
+
         @param [in] epoch is the epoch of mean ra and dec in julian years (optional)
 
         @param [out] returns a numpy array whose first row is the x coordinate according to a naive
         gnomonic projection and whose second row is the y coordinate
         """
-        
+
         if obs_metadata is None:
             if hasattr(self, 'obs_metadata'):
                 obs_metadata = self.obs_metadata
@@ -734,7 +734,7 @@ class AstrometryBase(object):
                 epoch = self.db_obj.epoch
             else:
                 raise RuntimeError("in Astrometry.py cannot call calculateGnomonicProjection without epoch")
-                
+
         if epoch is None:
             raise RuntimeError("in Astrometry.py cannot call calculateGnomonicProjection; epoch is None")
 
