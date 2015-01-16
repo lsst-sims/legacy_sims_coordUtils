@@ -756,10 +756,10 @@ class AstrometryBase(object):
         inRA=numpy.array([obs_metadata.unrefractedRA])
         inDec=numpy.array([obs_metadata.unrefractedDec])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=epoch)
+        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
-        trueRA, trueDec = self.applyMeanObservedPlace(x, y)
+        trueRA, trueDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
         #we should now have the true tangent point for the gnomonic projection
 
         #pal.ds2tp performs the gnomonic projection on ra_in and dec_in
