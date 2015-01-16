@@ -520,7 +520,7 @@ class AstrometryBase(object):
 
         return numpy.array([ra_out,dec_out])
 
-    def refractionCoefficients(self, wavelength=0.5):
+    def refractionCoefficients(self, wavelength=0.5, site=None):
         """ Calculate the refraction using PAL's refco routine
 
         This calculates the refraction at 2 angles and derives a tanz and tan^3z
@@ -528,20 +528,36 @@ class AstrometryBase(object):
 
         @param [in] wavelength is effective wavelength in microns
 
+        @param [in] site is an instantiation of the Site class defined in
+        sims_catalogs_generation/../db/Site.py; (optional; if not provided,
+        this routine will use the site member variable provided by the
+        InstanceCatalog this method is being called from, if one exists)
+
         One should call PAL refz to apply the coefficients calculated here
 
         """
         precision = 1.e-10
 
+        hasSite = (site is not None)
+
+        if site is None:
+            if hasattr(self,'obs_metadata'):
+                if hasattr(self.obs_metadata, 'site'):
+                    hasSite = True
+                    site = self.obs_metadata.site
+
+        if not hasSite:
+            raise RuntimeError("Cannot call refractionCoefficients; no site information")
+
         #TODO the latitude in refco needs to be astronomical latitude,
         #not geodetic latitude
-        _refcoOutput=pal.refco(self.site.height,
-                        self.site.meanTemperature,
-                        self.site.meanPressure,
-                        self.site.meanHumidity,
+        _refcoOutput=pal.refco(site.height,
+                        site.meanTemperature,
+                        site.meanPressure,
+                        site.meanHumidity,
                         wavelength ,
-                        self.site.latitude,
-                        self.site.lapseRate,
+                        site.latitude,
+                        site.lapseRate,
                         precision)
 
         return _refcoOutput[0], _refcoOutput[1]
