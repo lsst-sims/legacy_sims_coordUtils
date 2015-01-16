@@ -240,6 +240,10 @@ class astrometryUnitTest(unittest.TestCase):
         raShort = numpy.array([1.0])
         decShort = numpy.array([1.0])
 
+        self.assertRaises(RuntimeError, myAstrometry.refractionCoefficients)
+        site = obs_metadata.site
+        x, y = myAstrometry.refractionCoefficients(site=site)
+
         self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec)
         self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
         self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0)
