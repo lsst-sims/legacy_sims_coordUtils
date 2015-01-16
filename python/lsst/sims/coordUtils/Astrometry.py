@@ -728,9 +728,13 @@ class AstrometryBase(object):
         @param [in] dec_in in radians
 
         @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
-        telescope location and pointing (optional)
+        telescope location and pointing (optional; if not provided, the method will try to
+        get it from the InstanceCatalog member variable, assuming this is part of an 
+        InstanceCatalog)
 
-        @param [in] epoch is the epoch of mean ra and dec in julian years (optional)
+        @param [in] epoch is the epoch of mean ra and dec in julian years (optional; if not
+        provided, this method will try to get it from the db_obj member variable, assuming this
+        method is part of an InstanceCatalog)
 
         @param [out] returns a numpy array whose first row is the x coordinate according to a naive
         gnomonic projection and whose second row is the y coordinate
