@@ -240,6 +240,30 @@ class astrometryUnitTest(unittest.TestCase):
         raShort = numpy.array([1.0])
         decShort = numpy.array([1.0])
 
+        self.assertRaises(RuntimeError, myAstrometry.refractionCoefficients)
+        site = obs_metadata.site
+        x, y = myAstrometry.refractionCoefficients(site=site)
+
+        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec)
+        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.unrefractedRA = None
+        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.unrefractedDec = None
+        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.mjd = None
+        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        dummy_obs_metadata = makeObservationMetaData()
+        dummy_obs_metadata.rotSkyPos = None
+        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
+
+        xGnomon, yGnomon = myAstrometry.calculateGnomonicProjection(numpy.array([obs_metadata.unrefractedRA+0.01]),
+                                                                    numpy.array([obs_metadata.unrefractedDec+0.1]),
+                                                                     epoch=2000.0, obs_metadata=obs_metadata)
+
         self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, dec)
         self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, decShort)
         self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, raShort, dec)
