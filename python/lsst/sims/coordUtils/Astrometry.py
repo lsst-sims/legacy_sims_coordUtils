@@ -533,7 +533,7 @@ class AstrometryBase(object):
         @param [in] wavelength is effective wavelength in microns
 
         @param [in] site is an instantiation of the Site class defined in
-        sims_catalogs_generation/../db/Site.py; (optional; if not provided,
+        sims_utils/../Site.py; (optional; if not provided,
         this routine will use the site member variable provided by the
         InstanceCatalog this method is being called from, if one exists)
 
