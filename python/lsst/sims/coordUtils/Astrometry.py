@@ -6,7 +6,8 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.catalogs.generation.db import haversine, radiansToArcsec, arcsecToRadians
+from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
+
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
