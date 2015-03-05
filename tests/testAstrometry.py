@@ -44,9 +44,9 @@ import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import ObservationMetaData, Site, getRotTelPos, \
-                                             altAzToRaDec, calcObsDefaults, radiansToArcsec, \
-                                             arcsecToRadians
+from lsst.sims.catalogs.generation.db import ObservationMetaData
+from lsst.sims.utils import getRotTelPos, altAzToRaDec, calcObsDefaults, \
+                            arcsecToRadians, radiansToArcsec, Site
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils

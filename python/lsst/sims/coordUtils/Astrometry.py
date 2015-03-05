@@ -6,7 +6,8 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.catalogs.generation.db import haversine, radiansToArcsec, arcsecToRadians
+from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
+
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -532,7 +533,7 @@ class AstrometryBase(object):
         @param [in] wavelength is effective wavelength in microns
 
         @param [in] site is an instantiation of the Site class defined in
-        sims_catalogs_generation/../db/Site.py; (optional; if not provided,
+        sims_utils/../Site.py; (optional; if not provided,
         this routine will use the site member variable provided by the
         InstanceCatalog this method is being called from, if one exists)
 
