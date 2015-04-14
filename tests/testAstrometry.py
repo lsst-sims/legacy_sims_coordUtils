@@ -60,7 +60,7 @@ def makeObservationMetaData():
     testSite = Site(latitude=0.5, longitude=1.1, height=3000, meanTemperature=260.0,
                     meanPressure = 725.0, lapseRate=0.005)
     centerRA, centerDec = altAzToRaDec(alt,az,testSite.longitude,testSite.latitude,mjd)
-    rotTel = getRotTelPos(az, centerDec, testSite.latitude, 0.0)
+    rotTel = getRotTelPos(centerRA, centerDec, testSite.longitude, testSite.latitude, mjd, 0.0)
 
     obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band,
                  testSite.longitude, testSite.latitude)
