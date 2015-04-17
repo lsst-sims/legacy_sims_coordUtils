@@ -892,9 +892,6 @@ class CameraCoords(AstrometryBase):
         for det in detList:
             if len(det)==0:
                 chipNames.append(None)
-            elif len(det)>1 and not self.allow_multiple_chips:
-                raise RuntimeError("This method does not know how to deal with cameras where points can be"+
-                                   " on multiple detectors.  Override CameraCoords.get_chipName to add this.
             else:
                 chipNames.append(det[0].getName())
 
