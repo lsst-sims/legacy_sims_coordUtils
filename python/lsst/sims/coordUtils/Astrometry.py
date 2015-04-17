@@ -888,18 +888,17 @@ class CameraCoords(AstrometryBase):
                 raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
 
         chipNames = []
-        for x, y in zip(xPupil, yPupil):
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            detList = [dd for dd in camera.findDetectors(cp) if dd.getType()==SCIENCE]
-            if len(detList) > 1 and not self.allow_multiple_chips:
-                raise RuntimeError("This method does not know how to deal with cameras where points can be"+
-                                   " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
-            if not detList:
+        detList = camera.findDetectorsArray(xPupil, yPupil, PUPIL)
+        for det in detList:
+            if len(det)==0:
                 chipNames.append(None)
+            elif len(det)>1 and not self.allow_multiple_chips:
+                raise RuntimeError("This method does not know how to deal with cameras where points can be"+
+                                   " on multiple detectors.  Override CameraCoords.get_chipName to add this.
             else:
-                chipNames.append(detList[0].getName())
+                chipNames.append(det[0].getName())
 
-        return numpy.asarray(chipNames)
+        return numpy.array(chipNames)
 
     def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
                                   obs_metadata=None, epoch=None, camera=None):
