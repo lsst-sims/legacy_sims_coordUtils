@@ -893,7 +893,15 @@ class CameraCoords(AstrometryBase):
             if len(det)==0:
                 chipNames.append(None)
             else:
-                chipNames.append(det[0].getName())
+                names = [dd.getName() for dd in det if dd.getType()==SCIENCE]
+                if len(names)>1:
+                    raise RuntimeError("This method does not know how to deal with cameras " +
+                                       "where points can be on multiple detectors.  " +
+                                       "Override CameraCoords.get_chipName to add this.")
+                elif len(names)==0:
+                    chipNames.append(None)
+                else:
+                    chipNames.append(names[0])
 
         return numpy.array(chipNames)
 
