@@ -888,7 +888,11 @@ class CameraCoords(AstrometryBase):
                 raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
 
         chipNames = []
-        detList = camera.findDetectorsList(xPupil, yPupil, PUPIL)
+
+        cameraPointList = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
+
+        detList = camera.findDetectorsList(cameraPointList, PUPIL)
+
         for det in detList:
             if len(det)==0:
                 chipNames.append(None)
