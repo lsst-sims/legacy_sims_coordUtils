@@ -888,7 +888,7 @@ class CameraCoords(AstrometryBase):
                 raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
 
         chipNames = []
-        detList = camera.findDetectorsArray(xPupil, yPupil, PUPIL)
+        detList = camera.findDetectorsList(xPupil, yPupil, PUPIL)
         for det in detList:
             if len(det)==0:
                 chipNames.append(None)
