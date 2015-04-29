@@ -733,7 +733,7 @@ class AstrometryBase(object):
 
         @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
         telescope location and pointing (optional; if not provided, the method will try to
-        get it from the InstanceCatalog member variable, assuming this is part of an 
+        get it from the InstanceCatalog member variable, assuming this is part of an
         InstanceCatalog)
 
         @param [in] epoch is the epoch of mean ra and dec in julian years (optional; if not
@@ -876,6 +876,12 @@ class CameraCoords(AstrometryBase):
 
         if specifiedPupil and specifiedRaDec:
             raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
+
+        if specifiedPupil and len(xPupil) != len(yPupil):
+            raise RuntimeError("You did not pass in an equal number of xPupil and yPupil coordinates")
+
+        if specifiedRaDec and len(ra) != len(dec):
+            raise RuntimeError("You did not pass in an equal number of ra and dec coordinates")
 
         if specifiedRaDec:
             xPupil, yPupil = self.calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
