@@ -733,7 +733,7 @@ class AstrometryBase(object):
 
         @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
         telescope location and pointing (optional; if not provided, the method will try to
-        get it from the InstanceCatalog member variable, assuming this is part of an 
+        get it from the InstanceCatalog member variable, assuming this is part of an
         InstanceCatalog)
 
         @param [in] epoch is the epoch of mean ra and dec in julian years (optional; if not
@@ -877,6 +877,12 @@ class CameraCoords(AstrometryBase):
         if specifiedPupil and specifiedRaDec:
             raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
 
+        if specifiedPupil and len(xPupil) != len(yPupil):
+            raise RuntimeError("You did not pass in an equal number of xPupil and yPupil coordinates")
+
+        if specifiedRaDec and len(ra) != len(dec):
+            raise RuntimeError("You did not pass in an equal number of ra and dec coordinates")
+
         if specifiedRaDec:
             xPupil, yPupil = self.calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
 
@@ -888,18 +894,26 @@ class CameraCoords(AstrometryBase):
                 raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
 
         chipNames = []
-        for x, y in zip(xPupil, yPupil):
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            detList = [dd for dd in camera.findDetectors(cp) if dd.getType()==SCIENCE]
-            if len(detList) > 1 and not self.allow_multiple_chips:
-                raise RuntimeError("This method does not know how to deal with cameras where points can be"+
-                                   " on multiple detectors.  Override CameraCoords.get_chipName to add this.")
-            if not detList:
+
+        cameraPointList = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
+
+        detList = camera.findDetectorsList(cameraPointList, PUPIL)
+
+        for det in detList:
+            if len(det)==0:
                 chipNames.append(None)
             else:
-                chipNames.append(detList[0].getName())
+                names = [dd.getName() for dd in det if dd.getType()==SCIENCE]
+                if len(names)>1 and not self.allow_multiple_chips:
+                    raise RuntimeError("This method does not know how to deal with cameras " +
+                                       "where points can be on multiple detectors.  " +
+                                       "Override CameraCoords.get_chipName to add this.")
+                elif len(names)==0:
+                    chipNames.append(None)
+                else:
+                    chipNames.append(names[0])
 
-        return numpy.asarray(chipNames)
+        return numpy.array(chipNames)
 
     def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
                                   obs_metadata=None, epoch=None, camera=None):
