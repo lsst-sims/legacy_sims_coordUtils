@@ -67,11 +67,11 @@ def makeObservationMetaData():
 
     obsDict['Opsim_expmjd'] = mjd
     radius = 0.1
-    phoSimMetadata = OrderedDict([
+    phoSimMetaData = OrderedDict([
                       (k, (obsDict[k],numpy.dtype(type(obsDict[k])))) for k in obsDict])
 
     obs_metadata = ObservationMetaData(boundType = 'circle', boundLength = 2.0*radius,
-                                       phoSimMetadata=phoSimMetadata, site=testSite)
+                                       phoSimMetaData=phoSimMetaData, site=testSite)
 
     return obs_metadata
 
@@ -173,7 +173,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.obs_metadata=ObservationMetaData(mjd=50984.371741,
                                      boundType='circle',
                                      boundLength=0.05,
-                                     phoSimMetadata=self.metadata)
+                                     phoSimMetaData=self.metadata)
 
         self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         self.tol=1.0e-5
@@ -267,12 +267,12 @@ class astrometryUnitTest(unittest.TestCase):
         dummy_obs_metadata = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=25.0, rotSkyPos=10.0)
         self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
 
-        myAstrometry.calculateGnomonicProjection( numpy.array([obs_metadata.unrefractedRA]),
-                                                  numpy.array([obs_metadata.unrefractedDec]),
+        myAstrometry.calculateGnomonicProjection( numpy.array([numpy.radians(obs_metadata.unrefractedRA)]),
+                                                  numpy.array([numpy.radians(obs_metadata.unrefractedDec)]),
                                                   epoch=20000.0, obs_metadata=obs_metadata)
 
-        xGnomon, yGnomon = myAstrometry.calculateGnomonicProjection(numpy.array([obs_metadata.unrefractedRA+0.01]),
-                                                                    numpy.array([obs_metadata.unrefractedDec+0.1]),
+        xGnomon, yGnomon = myAstrometry.calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)+0.01]),
+                                                                    numpy.array([numpy.radians(obs_metadata.unrefractedDec)+0.1]),
                                                                      epoch=2000.0, obs_metadata=obs_metadata)
 
         self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, dec)
@@ -281,14 +281,14 @@ class astrometryUnitTest(unittest.TestCase):
         test=myAstrometry.applyMeanApparentPlace(ra, dec, MJD=obs_metadata.mjd)
 
         self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec)
-        dummy_obs_metadata = ObservationMetaData(mjd=5389.0, boundType = 'circle', boundLength = 0.2, site=None, phoSimMetadata=self.metadata)
+        dummy_obs_metadata = ObservationMetaData(mjd=5389.0, boundType = 'circle', boundLength = 0.2, site=None, phoSimMetaData=self.metadata)
         self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec, obs_metadata=dummy_obs_metadata)
         test = myAstrometry.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
 
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
 
-        dummy_obs_metadata = ObservationMetaData(boundType = 'circle', boundLength = 0.2, site=None, phoSimMetadata=self.metadata)
+        dummy_obs_metadata = ObservationMetaData(boundType = 'circle', boundLength = 0.2, site=None, phoSimMetaData=self.metadata)
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0,
                           obs_metadata=dummy_obs_metadata)
 
@@ -320,8 +320,8 @@ class astrometryUnitTest(unittest.TestCase):
         """
 
         #these are just values shown heuristically to give an actual chip name
-        ra = numpy.array([self.obs_metadata.unrefractedRA - 1.01*numpy.radians(1.0/3600.0)])
-        dec = numpy.array([self.obs_metadata.unrefractedDec - 2.02*numpy.radians(1.0/3600.0)])
+        ra = numpy.array([numpy.radians(self.obs_metadata.unrefractedRA) - 1.01*numpy.radians(1.0/3600.0)])
+        dec = numpy.array([numpy.radians(self.obs_metadata.unrefractedDec) - 2.02*numpy.radians(1.0/3600.0)])
 
         ra, dec = self.cat.correctCoordinates(ra, dec)
 
@@ -657,7 +657,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         obs_metadata=ObservationMetaData(mjd=50984.371741,boundType='circle',
                                          boundLength=0.05,site=testSite,
-                                         phoSimMetadata=self.metadata)
+                                         phoSimMetaData=self.metadata)
 
         cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
 
@@ -903,7 +903,7 @@ class astrometryUnitTest(unittest.TestCase):
         obs_metadata=ObservationMetaData(mjd=mjd,
                                      boundType='circle',
                                      boundLength=0.05,
-                                     phoSimMetadata=self.metadata)
+                                     phoSimMetaData=self.metadata)
 
         cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
 
@@ -944,7 +944,7 @@ class astrometryUnitTest(unittest.TestCase):
         obs_metadata=ObservationMetaData(mjd=mjd,
                                      boundType='circle',
                                      boundLength=0.05,
-                                     phoSimMetadata=self.metadata)
+                                     phoSimMetaData=self.metadata)
 
         cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
 
@@ -1022,7 +1022,7 @@ class astrometryUnitTest(unittest.TestCase):
         obs_metadata=ObservationMetaData(mjd=mjd,
                                      boundType='circle',
                                      boundLength=0.05,
-                                     phoSimMetadata=self.metadata)
+                                     phoSimMetaData=self.metadata)
 
         cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
 
