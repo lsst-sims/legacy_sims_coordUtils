@@ -4,7 +4,7 @@ from lsst.sims.utils import radiansToArcsec, sphericalToCartesian, cartesianToSp
 from lsst.sims.utils import haversine
 
 __all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
-           "observedFromICRS", "calculatePupilCoordinates",
+           "observedFromICRS", "calculatePupilCoordinates", "calculateGnomonicProjection",
            "refractionCoefficients", "applyRefraction"]
 
 
@@ -495,5 +495,79 @@ def calculatePupilCoordinates(raObj, decObj, obs_metadata=None, epoch=None):
     #correct for rotation of the telescope
     x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
     y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
+
+    return numpy.array([x_out, y_out])
+
+
+def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
+    """
+    Take an input RA and dec from the sky and convert it to coordinates
+    on the focal plane.
+
+    This uses PAL's gnonomonic projection routine which assumes that the focal
+    plane is perfectly flat.  The output is in Cartesian coordinates, assuming
+    that the Celestial Sphere is a unit sphere.
+
+    @param [in] ra_in is a numpy array of RAs in radians
+
+    @param [in] dec_in in radians
+
+    @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
+    telescope location and pointing (optional; if not provided, the method will try to
+    get it from the InstanceCatalog member variable, assuming this is part of an
+    InstanceCatalog)
+
+    @param [in] epoch is the epoch of mean ra and dec in julian years (optional; if not
+    provided, this method will try to get it from the db_obj member variable, assuming this
+    method is part of an InstanceCatalog)
+
+    @param [out] returns a numpy array whose first row is the x coordinate according to a naive
+    gnomonic projection and whose second row is the y coordinate
+    """
+
+    if obs_metadata is None:
+        raise RuntimeError("Cannot call calculateGnomonicProjection without obs_metadata")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("Cannot call calculatGnomonicProjection; obs_metadata.mjd is None")
+
+    if epoch is None:
+        raise RuntimeError("Cannot call calculateGnomonicProjection; epoch is None")
+
+    x_out=numpy.zeros(len(ra_in))
+    y_out=numpy.zeros(len(ra_in))
+
+    if obs_metadata.rotSkyPos is None:
+        #there is no observation meta data on which to base astrometry
+        raise RuntimeError("Cannot calculate [x,y]_focal_nominal without obs_metadata.rotSkyPos")
+
+    if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
+        raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
+
+    theta = -1.0*obs_metadata._rotSkyPos
+
+    #correct RA and Dec for refraction, precession and nutation
+    #
+    #correct for precession and nutation
+    inRA=numpy.array([obs_metadata._unrefractedRA])
+    inDec=numpy.array([obs_metadata._unrefractedDec])
+
+    x, y = appGeoFromICRS(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
+
+    #correct for refraction
+    trueRA, trueDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)
+    #we should now have the true tangent point for the gnomonic projection
+
+    #palpy.ds2tp performs the gnomonic projection on ra_in and dec_in
+    #with a tangent point at (trueRA, trueDec)
+    #
+    x, y = palpy.ds2tpVector(ra_in,dec_in,trueRA[0],trueDec[0])
+
+    #rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
+    #camera cooridnates" according to phoSim documentation) to account for
+    #the rotation of the focal plane about the telescope pointing
+
+    x_out = x*numpy.cos(theta) - y*numpy.sin(theta)
+    y_out = x*numpy.sin(theta) + y*numpy.cos(theta)
 
     return numpy.array([x_out, y_out])

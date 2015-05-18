@@ -52,6 +52,7 @@ from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
+from lsst.sims.coordUtils import calculateGnomonicProjection
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -261,23 +262,23 @@ class astrometryUnitTest(unittest.TestCase):
         site = obs_metadata.site
         x, y = refractionCoefficients(site=site)
 
-        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec)
-        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
-        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0)
         dummy_obs_metadata = ObservationMetaData(unrefractedDec=25.0, rotSkyPos=10.0, mjd=50984.371741)
-        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
         dummy_obs_metadata = ObservationMetaData(unrefractedRA=25.0, rotSkyPos=10.0, mjd=50984.371741)
-        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
         dummy_obs_metadata = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=25.0, rotSkyPos=10.0)
-        self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
 
-        myAstrometry.calculateGnomonicProjection( numpy.array([numpy.radians(obs_metadata.unrefractedRA)]),
-                                                  numpy.array([numpy.radians(obs_metadata.unrefractedDec)]),
-                                                  epoch=20000.0, obs_metadata=obs_metadata)
+        calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)]),
+                                    numpy.array([numpy.radians(obs_metadata.unrefractedDec)]),
+                                    epoch=20000.0, obs_metadata=obs_metadata)
 
-        xGnomon, yGnomon = myAstrometry.calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)+0.01]),
-                                                                    numpy.array([numpy.radians(obs_metadata.unrefractedDec)+0.1]),
-                                                                     epoch=2000.0, obs_metadata=obs_metadata)
+        xGnomon, yGnomon = calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)+0.01]),
+                                                       numpy.array([numpy.radians(obs_metadata.unrefractedDec)+0.1]),
+                                                       epoch=2000.0, obs_metadata=obs_metadata)
 
         self.assertRaises(RuntimeError, appGeoFromICRS, ra, dec)
         self.assertRaises(RuntimeError, appGeoFromICRS, ra, decShort)
@@ -441,8 +442,9 @@ class astrometryUnitTest(unittest.TestCase):
                 self.assertTrue(numpy.isnan(xxtest))
                 self.assertTrue(numpy.isnan(yytest))
 
-        gnomonTest = self.cat.calculateGnomonicProjection(baselineData['raObserved'],
-                             baselineData['decObserved'])
+        gnomonTest = calculateGnomonicProjection(baselineData['raObserved'],
+                             baselineData['decObserved'], obs_metadata=self.obs_metadata,
+                             epoch=2000.0)
         for (xxtest, yytest, xx, yy) in \
                 zip(gnomonTest[0], gnomonTest[1],
                     baselineData['x_focal_nominal'], baselineData['y_focal_nominal']):
