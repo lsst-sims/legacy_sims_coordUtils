@@ -9,7 +9,7 @@ from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
 from lsst.sims.utils import equatorialToGalactic, cartesianToSpherical, sphericalToCartesian
 
-from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS
+from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS, observedFromAppGeo
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -34,131 +34,6 @@ class AstrometryBase(object):
 
         return numpy.array([glon,glat])
 
-
-    def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,
-                               altAzHr=False, wavelength=0.5, obs_metadata = None):
-        """Calculate the Mean Observed Place
-
-        Uses PAL aoppa routines
-
-        accepts RA and Dec.
-
-        Returns corrected RA and Dec
-
-        This will call pal.aopqk which accounts for refraction and diurnal aberration
-
-        @param [in] ra is geocentric apparent RA (radians)
-
-        @param [in] dec is geocentric apparent Dec (radians)
-
-        @param [in] includeRefraction is a boolean to turn refraction on and off
-
-        @param [in] altAzHr is a boolean indicating whether or not to return altitude
-        and azimuth
-
-        @param [in] wavelength is effective wavelength in microns
-
-        @param [in] obs_metadata is an ObservationMetaData characterizing the
-        observation (optional; if not included, the code will try to set it from
-        self assuming it is in an InstanceCatalog daughter class.  If that is not
-        the case, an exception will be raised.)
-
-        @param [out] raOut is corrected ra (radians)
-
-        @param [out] decOut is corrected dec (radians)
-
-        @param [out] alt is altitude angle (only returned if altAzHr == True) (radians)
-
-        @param [out] az is azimuth angle (only returned if altAzHr == True) (radians)
-
-        """
-
-        if obs_metadata is None:
-            if hasattr(self,'obs_metadata'):
-                obs_metadata = self.obs_metadata
-
-            if obs_metadata is None:
-                raise RuntimeError("Cannot call applyMeanObservedPlace without an obs_metadata")
-
-        if not hasattr(obs_metadata, 'site') or obs_metadata.site is None:
-            raise RuntimeError("Cannot call applyMeanObservedPlace: obs_metadata has no site info")
-
-        # Correct site longitude for polar motion slaPolmo
-        #
-        #17 October 2014
-        #  palAop.c (which calls Aoppa and Aopqk, as we do here) says
-        #  *     - The azimuths etc produced by the present routine are with
-        #  *       respect to the celestial pole.  Corrections to the terrestrial
-        #  *       pole can be computed using palPolmo.
-        #
-        #currently, palPolmo is not implemented in PAL
-        #I have filed an issue with the PAL team to change that.
-
-        # TODO NEED UT1 - UTC to be kept as a function of date.
-        # Requires a look up of the IERS tables (-0.9<dut1<0.9)
-        # Assume dut = 0.3 (seconds)
-        dut = 0.3
-
-        #
-        #pal.aoppa computes star-independent parameters necessary for
-        #converting apparent place into observed place
-        #i.e. it calculates geodetic latitude, magnitude of diurnal aberration,
-        #refraction coefficients and the like based on data about the observation site
-        #
-        #TODO: pal.aoppa requires as its first argument
-        #the UTC time expressed as an MJD.  It is not clear to me
-        #how to actually calculate that.
-        if (includeRefraction == True):
-            obsPrms=pal.aoppa(obs_metadata.mjd, dut,
-                            obs_metadata.site.longitude,
-                            obs_metadata.site.latitude,
-                            obs_metadata.site.height,
-                            obs_metadata.site.xPolar,
-                            obs_metadata.site.yPolar,
-                            obs_metadata.site.meanTemperature,
-                            obs_metadata.site.meanPressure,
-                            obs_metadata.site.meanHumidity,
-                            wavelength ,
-                            obs_metadata.site.lapseRate)
-        else:
-            #we can discard refraction by setting pressure and humidity to zero
-            obsPrms=pal.aoppa(obs_metadata.mjd, dut,
-                            obs_metadata.site.longitude,
-                            obs_metadata.site.latitude,
-                            obs_metadata.site.height,
-                            obs_metadata.site.xPolar,
-                            obs_metadata.site.yPolar,
-                            obs_metadata.site.meanTemperature,
-                            0.0,
-                            0.0,
-                            wavelength ,
-                            obs_metadata.site.lapseRate)
-
-        #pal.aopqk does an apparent to observed place
-        #correction
-        #
-        #it corrects for diurnal aberration and refraction
-        #(using a fast algorithm for refraction in the case of
-        #a small zenith distance and a more rigorous algorithm
-        #for a large zenith distance)
-        #
-
-        azimuth, zenith, hourAngle, decOut, raOut = pal.aopqkVector(ra,dec,obsPrms)
-
-        #
-        #Note: this is a choke point.  Even the vectorized version of aopqk
-        #is expensive (it takes about 0.006 seconds per call)
-        #
-        #Actually, this is only a choke point if you are dealing with zenith
-        #distances of greater than about 70 degrees
-
-        if altAzHr == True:
-            #
-            #pal.de2h converts equatorial to horizon coordinates
-            #
-            az, alt = pal.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
-            return raOut, decOut, alt, az
-        return raOut, decOut
 
     def correctCoordinates(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
              obs_metadata=None, epoch=None, includeRefraction=True):
@@ -218,7 +93,7 @@ class AstrometryBase(object):
         ra_apparent, dec_apparent = appGeoFromICRS(ra, dec, pm_ra = pm_ra,
                  pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
 
-        ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
+        ra_out, dec_out = observedFromAppGeo(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
                                                    includeRefraction = includeRefraction)
 
         return numpy.array([ra_out,dec_out])
@@ -392,7 +267,7 @@ class AstrometryBase(object):
         x, y = appGeoFromICRS(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
-        boreRA, boreDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
+        boreRA, boreDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)
 
         #we should now have the true tangent point for the gnomonic projection
         dPhi = decObj - boreDec
@@ -482,7 +357,7 @@ class AstrometryBase(object):
         x, y = appGeoFromICRS(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
-        trueRA, trueDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
+        trueRA, trueDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)
         #we should now have the true tangent point for the gnomonic projection
 
         #pal.ds2tp performs the gnomonic projection on ra_in and dec_in

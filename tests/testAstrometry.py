@@ -49,7 +49,7 @@ from lsst.sims.utils import getRotTelPos, altAzToRaDec, calcObsDefaults, \
                             arcsecToRadians, radiansToArcsec, Site
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
-from lsst.sims.coordUtils import appGeoFromICRS
+from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -282,10 +282,10 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, appGeoFromICRS, raShort, dec)
         test=appGeoFromICRS(ra, dec, MJD=obs_metadata.mjd)
 
-        self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec)
+        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec)
         dummy_obs_metadata = ObservationMetaData(mjd=5389.0, boundType = 'circle', boundLength = 0.2, site=None, phoSimMetaData=self.metadata)
-        self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec, obs_metadata=dummy_obs_metadata)
-        test = myAstrometry.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy_obs_metadata)
+        test = observedFromAppGeo(ra, dec, obs_metadata=obs_metadata)
 
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
         self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
@@ -730,7 +730,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.408639821342507537e-01,6)
         self.assertAlmostEqual(output[1][2],2.703229189890907214e-01,6)
 
-    def testApplyMeanObservedPlace(self):
+    def testObservedFromAppGeo(self):
         """
         Note: this routine depends on Aopqk which fails if zenith distance
         is too great (or, at least, it won't warn you if the zenith distance
@@ -759,9 +759,7 @@ class astrometryUnitTest(unittest.TestCase):
                                      boundLength=0.05,
                                      phoSimMetaData=self.metadata)
 
-        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-
-        output=cat.applyMeanObservedPlace(ra,dec, wavelength=wv)
+        output=observedFromAppGeo(ra,dec, wavelength=wv, obs_metadata=obs_metadata)
 
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
@@ -772,7 +770,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
         self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
 
-        output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True, wavelength=wv)
+        output=observedFromAppGeo(ra,dec,altAzHr=True, wavelength=wv, obs_metadata=obs_metadata)
 
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
@@ -789,8 +787,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[2][2],5.275840601437552513e-01,6)
         self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
 
-        output=cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
-                                               wavelength=wv)
+        output=observedFromAppGeo(ra,dec,includeRefraction=False,
+                                  wavelength=wv, obs_metadata=obs_metadata)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
         self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
@@ -801,8 +799,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
         self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
 
-        output=cat.applyMeanObservedPlace(ra,dec,includeRefraction=False,
-                                               altAzHr=True, wavelength=wv)
+        output=observedFromAppGeo(ra,dec,includeRefraction=False,
+                                  altAzHr=True, wavelength=wv, obs_metadata=obs_metadata)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
         self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
@@ -837,10 +835,8 @@ class astrometryUnitTest(unittest.TestCase):
                                      boundLength=0.05,
                                      phoSimMetaData=self.metadata)
 
-        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-
-        output=cat.applyMeanObservedPlace(ra,dec,altAzHr=True,
-                 includeRefraction = False)
+        output=observedFromAppGeo(ra,dec,altAzHr=True,
+                                  includeRefraction=False, obs_metadata=obs_metadata)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
         self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
@@ -934,7 +930,7 @@ class astrometryUnitTest(unittest.TestCase):
             ra_apparent, dec_apparent = pal.mapqk(ra0, dec0, pmra, pmdec, px, rv, prms)
             ra_apparent = numpy.array([ra_apparent])
             dec_apparent = numpy.array([dec_apparent])
-            raObserved, decObserved = cat.applyMeanObservedPlace(ra_apparent, dec_apparent,
+            raObserved, decObserved = observedFromAppGeo(ra_apparent, dec_apparent,
                                                                  obs_metadata=cat.obs_metadata)
 
             self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),10)
