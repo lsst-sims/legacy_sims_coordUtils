@@ -34,39 +34,6 @@ class AstrometryBase(object):
         return numpy.array([glon,glat])
 
 
-    @staticmethod
-    def rotationMatrixFromVectors(v1, v2):
-        '''
-        Given two vectors v1,v2 calculate the rotation matrix for v1->v2 using the axis-angle approach
-
-        @param [in] v1, v2 are two Cartesian vectors (in three dimensions)
-
-        @param [out] rot is the rotation matrix that rotates from one to the other
-
-        '''
-
-        # Calculate the axis of rotation by the cross product of v1 and v2
-        cross = numpy.cross(v1,v2)
-        cross = cross / math.sqrt(numpy.dot(cross,cross))
-
-        # calculate the angle of rotation via dot product
-        angle  = numpy.arccos(numpy.dot(v1,v2))
-        sinDot = math.sin(angle)
-        cosDot = math.cos(angle)
-
-        # calculate the corresponding rotation matrix
-        # http://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
-        rot = [[cosDot + cross[0]*cross[0]*(1-cosDot), -cross[2]*sinDot+(1-cosDot)*cross[0]*cross[1], \
-                cross[1]*sinDot + (1-cosDot)*cross[0]*cross[2]],\
-                [cross[2]*sinDot+(1-cosDot)*cross[0]*cross[1], cosDot + (1-cosDot)*cross[1]*cross[1], \
-                -cross[0]*sinDot+(1-cosDot)*cross[1]*cross[2]], \
-                [-cross[1]*sinDot+(1-cosDot)*cross[0]*cross[2], \
-                cross[0]*sinDot+(1-cosDot)*cross[1]*cross[2], \
-                cosDot + (1-cosDot)*(cross[2]*cross[2])]]
-
-        return rot
-
-
     def applyPrecession(self, ra, dec, EP0=2000.0, MJD=2000.0):
         """
         applyPrecession() applies precesion and nutation to coordinates between two epochs.
