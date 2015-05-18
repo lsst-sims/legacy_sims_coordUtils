@@ -73,7 +73,8 @@ class CameraCoords(AstrometryBase):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        return findChipName(xPupil=xPupil, yPupil=yPupil, camera=self.camera)
+        return findChipName(xPupil=xPupil, yPupil=yPupil, camera=self.camera,
+                            allow_multiple_chips=self.allow_multiple_chips)
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
