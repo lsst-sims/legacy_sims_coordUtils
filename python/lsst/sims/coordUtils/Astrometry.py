@@ -36,18 +36,6 @@ class AstrometryBase(object):
         return numpy.array([glon,glat])
 
 
-
-    def paralacticAngle(self, az, dec):
-        """
-        This returns the paralactic angle between the zenith and the pole that is up.
-        I need to check this, but this should be +ve in the East and -ve in the West if
-        Az is measured from North through East.
-        """
-
-        sinpa = math.sin(az)*math.cos(self.obs_metadata.site.latitude)/math.cos(dec)
-        return math.asin(sinpa)
-
-
     def calculatePupilCoordinates(self, raObj, decObj,
                                   obs_metadata=None, epoch=None):
         """

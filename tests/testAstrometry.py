@@ -863,14 +863,6 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output,7.851689251070859132e-01,6)
 
 
-    def testParalacticAngle(self):
-        arg1=1.507444663929565554e+00
-        arg2=-4.887258694875344922e-01
-
-        output=self.cat.paralacticAngle(arg1,arg2)
-
-        self.assertAlmostEqual(output,1.381600229503358701e+00,6)
-
     def testPixelPos(self):
         for chunk, chunkMap in self.cat.iter_catalog_chunks():
             self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
