@@ -53,7 +53,7 @@ from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection
-from lsst.sims.coordUtils import findChipName
+from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -341,11 +341,13 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, self.cat.calculateFocalPlaneCoordinates, ra = ra, dec = dec,
                              xPupil = xPupil, yPupil = yPupil)
 
-        xx, yy = self.cat.calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil)
-        xx, yy = self.cat.calculatePixelCoordinates(ra = ra, dec = dec)
+        xx, yy = calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+        xx, yy = calculatePixelCoordinates(ra = ra, dec = dec, epoch=self.cat.db_obj.epoch,
+                                           obs_metadata=self.cat.obs_metadata,
+                                           camera=self.cat.camera)
 
-        self.assertRaises(RuntimeError, self.cat.calculatePixelCoordinates)
-        self.assertRaises(RuntimeError, self.cat.calculatePixelCoordinates, xPupil = xPupil,
+        self.assertRaises(RuntimeError, calculatePixelCoordinates)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil = xPupil,
                            yPupil = yPupil, ra = ra, dec = dec)
 
         name = findChipName(xPupil = xPupil, yPupil = yPupil,
@@ -373,16 +375,16 @@ class astrometryUnitTest(unittest.TestCase):
         test = findChipName(ra=ra, dec=dec, camera=self.cat.camera, epoch=2000.0,
                             obs_metadata=self.obs_metadata)
 
-        myCameraCoords = CameraCoords()
-
-        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
-        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec, epoch=2000.0,
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec, epoch=2000.0,
                           camera=self.cat.camera)
-        self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
                           camera=self.cat.camera, obs_metadata=self.obs_metadata)
-        test = myCameraCoords.calculatePixelCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
-                                                        obs_metadata=self.obs_metadata, epoch=2000.0)
+        test = calculatePixelCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
+                                         obs_metadata=self.obs_metadata, epoch=2000.0)
+
+        myCameraCoords = CameraCoords()
 
         self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
@@ -428,9 +430,13 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxra,xx,6)
             self.assertAlmostEqual(yyra,yy,6)
 
-        pixTest = self.cat.calculatePixelCoordinates(xPupil = pupilTest[0], yPupil = pupilTest[1])
-        pixTestRaDec = self.cat.calculatePixelCoordinates(ra = baselineData['raObserved'],
-                                   dec = baselineData['decObserved'])
+        pixTest = calculatePixelCoordinates(xPupil = pupilTest[0], yPupil = pupilTest[1],
+                                            camera=self.cat.camera)
+        pixTestRaDec = calculatePixelCoordinates(ra = baselineData['raObserved'],
+                                   dec = baselineData['decObserved'],
+                                   epoch=self.cat.db_obj.epoch,
+                                   obs_metadata=self.cat.obs_metadata,
+                                   camera=self.cat.camera)
 
         for (xxtest, yytest, xxra, yyra, xx, yy) in \
                 zip(pixTest[0], pixTest[1], pixTestRaDec[0], pixTestRaDec[1],
@@ -542,37 +548,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.compareTestControlAndWrong(control, test, shouldBeWrong)
 
-    def testIndependentPixelCoordinates(self):
-        """
-        Test to make sure that calculateFocalPlaneCoordinates returns the correct answer
-        when you pass in an obs_metadata by hand
-        """
-
-        obs_metadata = makeObservationMetaData()
-        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
-        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
-        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
-        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
-        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
-        myCameraCoords = CameraCoords()
-
-        #generate some random RA and Decs to find chips for
-        nsamples = 100
-        numpy.random.seed(32)
-        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
-        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = observedFromICRS(raIn, decIn,
-                                               epoch=2000.0, obs_metadata=obs_metadata)
-
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
-                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
-
-        control = self.cat.calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata)
-        test = myCameraCoords.calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata,
-                                                             epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
-        shouldBeWrong = self.cat.calculatePixelCoordinates(ra=ra, dec=dec)
-
-        self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
 
 

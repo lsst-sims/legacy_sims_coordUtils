@@ -4,7 +4,7 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.coordUtils.AstrometryUtils import calculatePupilCoordinates
 
-__all__ = ["findChipName"]
+__all__ = ["findChipName", "calculatePixelCoordinates"]
 
 def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
                  obs_metadata=None, epoch=None, camera=None,
@@ -97,3 +97,82 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
                 chipNames.append(names[0])
 
     return numpy.array(chipNames)
+
+
+
+def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
+                              obs_metadata=None, epoch=None, camera=None):
+    """
+    Get the pixel positions (or nan if not on a chip) for all objects in the catalog
+
+    @param [in] xPupil a numpy array containing x pupil coordinates
+
+    @param [in] yPupil a numpy array containing y pupil coordinates
+
+    @param [in] ra one could alternatively provide a numpy array of ra and...
+
+    @param [in] ...dec (both in radians)
+
+    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call findChipName
+    to find the array.  The option exists for the user to specify chipNames, just in case the user
+    has already called findChipName for some reason.
+
+    @param [in] obs_metadata is an ObservationMetaData object describing the telescope pointing
+    (only if specifying RA and Dec rather than pupil coordinates)
+
+    @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
+    (in years; only if specifying RA and Dec rather than pupil coordinates)
+
+    @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
+    This is an optional argument to be passed to findChipName.
+
+    @param [out] a numpy array of pixel coordinates
+
+    """
+
+    if not camera:
+        raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
+
+    specifiedPupil = False
+    specifiedRaDec = False
+
+    specifiedPupil = (xPupil is not None and yPupil is not None)
+    specifiedRaDec = (ra is not None and dec is not None)
+
+    if not specifiedPupil and not specifiedRaDec:
+        raise RuntimeError("You need to specifiy either pupil coordinates or equatorial coordinates in calculatePixelCoordinates")
+
+    if specifiedPupil and specifiedRaDec:
+        raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
+
+    if specifiedRaDec:
+
+        if epoch is None:
+            raise RuntimeError("You need to specify an epoch to run calculatePixelCoordinates " + \
+                                   "on these inputs")
+
+        if obs_metadata is None:
+            raise RuntimeError("You need to specify an ObservationMetaDAta to run " + \
+                                   "calculatePixelCoordinates on these inputs")
+
+        xPupil, yPupil = calculatePupilCoordinates(ra, dec,
+                                                   obs_metadata=obs_metadata,
+                                                   epoch=epoch)
+
+    if chipNames is None:
+        chipNames = findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
+
+    xPix = []
+    yPix = []
+    for name, x, y in zip(chipNames, xPupil, yPupil):
+        if not name:
+            xPix.append(numpy.nan)
+            yPix.append(numpy.nan)
+            continue
+        cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+        det = camera[name]
+        cs = det.makeCameraSys(PIXELS)
+        detPoint = camera.transform(cp, cs)
+        xPix.append(detPoint.getPoint().getX())
+        yPix.append(detPoint.getPoint().getY())
+    return numpy.array([xPix, yPix])
