@@ -35,69 +35,6 @@ class AstrometryBase(object):
 
         return numpy.array([glon,glat])
 
-
-
-    def refractionCoefficients(self, wavelength=0.5, site=None):
-        """ Calculate the refraction using PAL's refco routine
-
-        This calculates the refraction at 2 angles and derives a tanz and tan^3z
-        coefficient for subsequent quick calculations. Good for zenith distances < 76 degrees
-
-        @param [in] wavelength is effective wavelength in microns
-
-        @param [in] site is an instantiation of the Site class defined in
-        sims_utils/../Site.py; (optional; if not provided,
-        this routine will use the site member variable provided by the
-        InstanceCatalog this method is being called from, if one exists)
-
-        One should call PAL refz to apply the coefficients calculated here
-
-        """
-        precision = 1.e-10
-
-        hasSite = (site is not None)
-
-        if site is None:
-            if hasattr(self,'obs_metadata'):
-                if hasattr(self.obs_metadata, 'site'):
-                    hasSite = True
-                    site = self.obs_metadata.site
-
-        if not hasSite:
-            raise RuntimeError("Cannot call refractionCoefficients; no site information")
-
-        #TODO the latitude in refco needs to be astronomical latitude,
-        #not geodetic latitude
-        _refcoOutput=pal.refco(site.height,
-                        site.meanTemperature,
-                        site.meanPressure,
-                        site.meanHumidity,
-                        wavelength ,
-                        site.latitude,
-                        site.lapseRate,
-                        precision)
-
-        return _refcoOutput[0], _refcoOutput[1]
-
-    def applyRefraction(self, zenithDistance, tanzCoeff, tan3zCoeff):
-        """ Calculted refracted Zenith Distance
-
-        uses the quick PAL refco routine which approximates the refractin calculation
-
-        @param [in] zenithDistance is unrefracted zenith distance of the source in radians
-
-        @param [in] tanzCoeff is the first output from refractionCoefficients (above)
-
-        @param [in] tan3zCoeff is the second output from refractionCoefficients (above)
-
-        @param [out] refractedZenith is the refracted zenith distance in radians
-
-        """
-
-        refractedZenith=pal.refz(zenithDistance, tanzCoeff, tan3zCoeff)
-
-        return refractedZenith
-
     def calcLast(self, mjd, long):
         """
         Converts the date mjd+long into Greenwhich Mean Sidereal Time (in radians)

@@ -3,7 +3,61 @@ import palpy
 from lsst.sims.utils import radiansToArcsec, sphericalToCartesian, cartesianToSpherical
 
 __all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
-           "observedFromICRS"]
+           "observedFromICRS", "refractionCoefficients", "applyRefraction"]
+
+
+def refractionCoefficients(wavelength=0.5, site=None):
+    """ Calculate the refraction using PAL's refco routine
+
+    This calculates the refraction at 2 angles and derives a tanz and tan^3z
+    coefficient for subsequent quick calculations. Good for zenith distances < 76 degrees
+
+    @param [in] wavelength is effective wavelength in microns
+
+    @param [in] site is an instantiation of the Site class defined in
+    sims_utils/../Site.py
+
+    One should call PAL refz to apply the coefficients calculated here
+
+    """
+    precision = 1.e-10
+
+    if site is None:
+        raise RuntimeError("Cannot call refractionCoefficients; no site information")
+
+    #TODO the latitude in refco needs to be astronomical latitude,
+    #not geodetic latitude
+    _refcoOutput=palpy.refco(site.height,
+                        site.meanTemperature,
+                        site.meanPressure,
+                        site.meanHumidity,
+                        wavelength ,
+                        site.latitude,
+                        site.lapseRate,
+                        precision)
+
+    return _refcoOutput[0], _refcoOutput[1]
+
+
+def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
+    """ Calculted refracted Zenith Distance
+
+    uses the quick PAL refco routine which approximates the refractin calculation
+
+    @param [in] zenithDistance is unrefracted zenith distance of the source in radians
+
+    @param [in] tanzCoeff is the first output from refractionCoefficients (above)
+
+    @param [in] tan3zCoeff is the second output from refractionCoefficients (above)
+
+    @param [out] refractedZenith is the refracted zenith distance in radians
+
+    """
+
+    refractedZenith=palpy.refz(zenithDistance, tanzCoeff, tan3zCoeff)
+
+    return refractedZenith
+
 
 def applyPrecession(ra, dec, EP0=2000.0, MJD=2000.0):
     """

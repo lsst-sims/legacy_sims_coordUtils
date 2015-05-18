@@ -51,6 +51,7 @@ from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, Cam
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS
+from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -256,9 +257,9 @@ class astrometryUnitTest(unittest.TestCase):
         raShort = numpy.array([1.0])
         decShort = numpy.array([1.0])
 
-        self.assertRaises(RuntimeError, myAstrometry.refractionCoefficients)
+        self.assertRaises(RuntimeError, refractionCoefficients)
         site = obs_metadata.site
-        x, y = myAstrometry.refractionCoefficients(site=site)
+        x, y = refractionCoefficients(site=site)
 
         self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec)
         self.assertRaises(RuntimeError, myAstrometry.calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
@@ -849,15 +850,15 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[3][2],5.479759402150099490e+00,6)
 
     def testRefractionCoefficients(self):
-        output=self.cat.refractionCoefficients(wavelength=5000.0)
+        output=refractionCoefficients(wavelength=5000.0, site=self.obs_metadata.site)
 
         self.assertAlmostEqual(output[0],2.295817926320665320e-04,6)
         self.assertAlmostEqual(output[1],-2.385964632924575670e-07,6)
 
     def testApplyRefraction(self):
-        coeffs=self.cat.refractionCoefficients(wavelength = 5000.0)
+        coeffs=refractionCoefficients(wavelength = 5000.0, site=self.obs_metadata.site)
 
-        output=self.cat.applyRefraction(0.25*numpy.pi,coeffs[0],coeffs[1])
+        output=applyRefraction(0.25*numpy.pi,coeffs[0],coeffs[1])
 
         self.assertAlmostEqual(output,7.851689251070859132e-01,6)
 
