@@ -49,6 +49,7 @@ from lsst.sims.utils import getRotTelPos, altAzToRaDec, calcObsDefaults, \
                             arcsecToRadians, radiansToArcsec, Site
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
+from lsst.sims.coordUtils import appGeoFromICRS
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -276,10 +277,10 @@ class astrometryUnitTest(unittest.TestCase):
                                                                     numpy.array([numpy.radians(obs_metadata.unrefractedDec)+0.1]),
                                                                      epoch=2000.0, obs_metadata=obs_metadata)
 
-        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, dec)
-        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, ra, decShort)
-        self.assertRaises(RuntimeError, myAstrometry.applyMeanApparentPlace, raShort, dec)
-        test=myAstrometry.applyMeanApparentPlace(ra, dec, MJD=obs_metadata.mjd)
+        self.assertRaises(RuntimeError, appGeoFromICRS, ra, dec)
+        self.assertRaises(RuntimeError, appGeoFromICRS, ra, decShort)
+        self.assertRaises(RuntimeError, appGeoFromICRS, raShort, dec)
+        test=appGeoFromICRS(ra, dec, MJD=obs_metadata.mjd)
 
         self.assertRaises(RuntimeError, myAstrometry.applyMeanObservedPlace, ra, dec)
         dummy_obs_metadata = ObservationMetaData(mjd=5389.0, boundType = 'circle', boundLength = 0.2, site=None, phoSimMetaData=self.metadata)
@@ -459,48 +460,6 @@ class astrometryUnitTest(unittest.TestCase):
         if os.path.exists("AstrometryTestCatalog.txt"):
             os.unlink("AstrometryTestCatalog.txt")
 
-    def testIndependentAstrometryMethods(self):
-        """
-        Test that calling applyMeanApparentPlace, applyMeanObservedPlace,
-        correctCoordinates, with observation data specified by hand
-        will result in the correct outputs
-        """
-
-        obs_metadata = makeObservationMetaData()
-        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
-        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
-        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
-        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
-        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
-        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
-
-        control = self.cat.applyMeanApparentPlace(ra, dec,
-                                                  pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                                  v_rad=v_rad, MJD=obs_metadata.mjd)
-        test = testCat.applyMeanApparentPlace(ra, dec,
-                                              pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                              v_rad=v_rad)
-        shouldBeWrong = self.cat.applyMeanApparentPlace(ra, dec,
-                                                        pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                                        v_rad=v_rad)
-
-        self.compareTestControlAndWrong(test, control, shouldBeWrong)
-
-        control = self.cat.applyMeanObservedPlace(ra, dec, obs_metadata=obs_metadata)
-        test = testCat.applyMeanObservedPlace(ra, dec)
-        shouldBeWrong = self.cat.applyMeanObservedPlace(ra, dec)
-
-        self.compareTestControlAndWrong(test, control, shouldBeWrong)
-
-        control = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                              v_rad=v_rad, obs_metadata=obs_metadata)
-        test = testCat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                          v_rad=v_rad)
-        shouldBeWrong = self.cat.correctCoordinates(ra, dec, pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax,
-                                                    v_rad=v_rad)
-
-        self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
     def testIndpendentPupilCoords(self):
         """
@@ -722,7 +681,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1][2],2.758844356561930278e-01,6)
 
 
-    def testApplyMeanApparentPlace(self):
+    def testAppGeoFromICRS(self):
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
         pm_ra=numpy.zeros((3),dtype=float)
@@ -759,15 +718,10 @@ class astrometryUnitTest(unittest.TestCase):
 
         ep=2.001040286039033845e+03
         mjd=2.018749109074271473e+03
-        obs_metadata=ObservationMetaData(mjd=mjd,
-                                     boundType='circle',
-                                     boundLength=0.05,
-                                     phoSimMetaData=self.metadata)
 
-        cat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-
-        output=cat.applyMeanApparentPlace(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
-              parallax = arcsecToRadians(parallax),v_rad = v_rad, Epoch0=ep)
+        output=appGeoFromICRS(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
+                              parallax = arcsecToRadians(parallax),v_rad = v_rad, Epoch0=ep,
+                              MJD=mjd)
 
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6)
         self.assertAlmostEqual(output[1][0],5.309044018653210628e-01,6)

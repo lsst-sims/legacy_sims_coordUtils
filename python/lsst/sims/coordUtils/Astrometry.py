@@ -9,6 +9,7 @@ from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
 from lsst.sims.utils import equatorialToGalactic, cartesianToSpherical, sphericalToCartesian
 
+from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -32,97 +33,6 @@ class AstrometryBase(object):
         glon, glat = self.equatorialToGalactic(ra,dec)
 
         return numpy.array([glon,glat])
-
-
-
-    def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-                               v_rad=None, Epoch0=2000.0, MJD = None):
-        """Calculate the Mean Apparent Place given an Ra and Dec
-
-        Uses PAL mappa routine, which computes precession and nutation
-
-        units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
-        (radians/year), parallax (arcsec), v_rad (km/sec; positive if receding),
-        EP0 (Julian years)
-
-        Returns corrected RA and Dec
-
-        This calls pal.mapqk(z) which accounts for proper motion, parallax,
-        radial velocity, aberration, precession-nutation
-
-        @param [in] ra in radians
-
-        @param [in] dec in radians
-
-        @param [in] pm_ra is ra proper motion in radians/year
-
-        @param [in] pm_dec is dec proper motion in radians/year
-
-        @param [in] parallax in radians
-
-        @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
-
-        @param [in] Epoch0 is the julian epoch (in years) of the equinox against which to
-        measure RA
-
-        @param[in] MJD is the date of the observation (optional; if None, the code will
-        try to set it from self.obs_metadata assuming that this method is being called
-        by an InstanceCatalog daughter class.  If that is not the case, an exception
-        will be raised.)
-
-        @param [out] raOut is corrected ra in radians
-
-        @param [out] decOut is corrected dec in radians
-
-        """
-
-        if MJD is None:
-            if hasattr(self, 'obs_metadata'):
-                MJD = self.obs_metadata.mjd
-
-            if MJD is None:
-                raise RuntimeError("in Astrometry.py cannot call applyMeanApparentPlace; mjd is None")
-
-        if len(ra) != len(dec):
-            raise RuntimeError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
-                            % (len(ra),len(dec)))
-
-        if pm_ra is None:
-            pm_ra=numpy.zeros(len(ra))
-
-        if pm_dec is None:
-            pm_dec=numpy.zeros(len(ra))
-
-        if v_rad is None:
-            v_rad=numpy.zeros(len(ra))
-
-        if parallax is None:
-            parallax=numpy.zeros(len(ra))
-
-        # Define star independent mean to apparent place parameters
-        #pal.mappa calculates the star-independent parameters
-        #needed to correct RA and Dec
-        #e.g the Earth barycentric and heliocentric position and velocity,
-        #the precession-nutation matrix, etc.
-        #
-        #arguments of pal.mappa are:
-        #epoch of mean equinox to be used (Julian)
-        #
-        #date (MJD)
-        #
-        #TODO This mjd should be the Barycentric Dynamical Time
-        prms=pal.mappa(Epoch0, MJD)
-
-        #pal.mapqk does a quick mean to apparent place calculation using
-        #the output of pal.mappa
-        #
-        #Taken from the palpy source code (palMap.c which calls both palMappa and palMapqk):
-        #The accuracy is sub-milliarcsecond, limited by the
-        #precession-nutation model (see palPrenut for details).
-
-        raOut,decOut = pal.mapqkVector(ra,dec,pm_ra,pm_dec,radiansToArcsec(parallax),v_rad,prms)
-
-        return raOut,decOut
 
 
     def applyMeanObservedPlace(self, ra, dec, includeRefraction = True,
@@ -305,7 +215,7 @@ class AstrometryBase(object):
             if epoch is None:
                 raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have not specified an epoch")
 
-        ra_apparent, dec_apparent = self.applyMeanApparentPlace(ra, dec, pm_ra = pm_ra,
+        ra_apparent, dec_apparent = appGeoFromICRS(ra, dec, pm_ra = pm_ra,
                  pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
 
         ra_out, dec_out = self.applyMeanObservedPlace(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
@@ -479,7 +389,7 @@ class AstrometryBase(object):
         pointingRA=numpy.array([obs_metadata._unrefractedRA])
         pointingDec=numpy.array([obs_metadata._unrefractedDec])
 
-        x, y = self.applyMeanApparentPlace(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
+        x, y = appGeoFromICRS(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
         boreRA, boreDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
@@ -569,7 +479,7 @@ class AstrometryBase(object):
         inRA=numpy.array([obs_metadata._unrefractedRA])
         inDec=numpy.array([obs_metadata._unrefractedDec])
 
-        x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
+        x, y = appGeoFromICRS(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
         #correct for refraction
         trueRA, trueDec = self.applyMeanObservedPlace(x, y, obs_metadata=obs_metadata)
