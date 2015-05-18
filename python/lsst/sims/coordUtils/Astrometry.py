@@ -10,6 +10,7 @@ from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
 from lsst.sims.utils import equatorialToGalactic, cartesianToSpherical, sphericalToCartesian
 
 from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS, observedFromAppGeo
+from lsst.sims.coordUtils.AstrometryUtils import observedFromICRS
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -35,68 +36,6 @@ class AstrometryBase(object):
         return numpy.array([glon,glat])
 
 
-    def correctCoordinates(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
-             obs_metadata=None, epoch=None, includeRefraction=True):
-        """
-        correct coordinates for all possible effects.
-
-        included are precession-nutation, aberration, proper motion, parallax, refraction,
-        radial velocity, diurnal aberration,
-
-        @param [in] ra is the unrefracted RA in radians
-
-        @param [in] dec is the unrefracted Dec in radians
-
-        @param [in] pm_ra is proper motion in RA (radians/yr)
-
-        @param [in] pm_dec is proper motion in dec (radians/yr)
-
-        @param [in] parallax is parallax in radians
-
-        @param [in] v_rad is radial velocity (km/s)
-
-        @param [in] obs_metadata is an ObservationMetaData object describing the
-        telescope pointing.  If it is None, the code will try to set it from self
-        assuming that this method is being called from within an InstanceCatalog
-        daughter class.  If that is not the case, an exception will be raised
-
-        @param [in] epoch is the julian epoch (in years) against which the mean
-        equinoxes are measured.  If it is None, the code will try to set it from
-        self.db_obj, assuming that the code is being called from an InstanceCatalog
-        daughter class.  If that is not the case, an exception will be raised.
-
-        @param [in] includeRefraction toggles whether or not to correct for refraction
-
-        @param [out] ra_out RA corrected for all included effects
-
-        @param [out] dec_out Dec corrected for all included effects
-
-        """
-
-        if obs_metadata is None:
-            if hasattr(self, 'obs_metadata'):
-                obs_metadata = self.obs_metadata
-
-            if obs_metadata is None:
-                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata is none")
-
-        if obs_metadata.mjd is None:
-            raise RuntimeError("in Astrometry.py cannot call correctCoordinates; obs_metadata.mjd is none")
-
-        if epoch is None:
-            if hasattr(self, 'db_obj'):
-                epoch = self.db_obj.epoch
-
-            if epoch is None:
-                raise RuntimeError("in Astrometry.py cannot call correctCoordinates; you have not specified an epoch")
-
-        ra_apparent, dec_apparent = appGeoFromICRS(ra, dec, pm_ra = pm_ra,
-                 pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
-
-        ra_out, dec_out = observedFromAppGeo(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
-                                                   includeRefraction = includeRefraction)
-
-        return numpy.array([ra_out,dec_out])
 
     def refractionCoefficients(self, wavelength=0.5, site=None):
         """ Calculate the refraction using PAL's refco routine
@@ -657,17 +596,19 @@ class AstrometryGalaxies(AstrometryBase):
     def get_phoSimCoordinates(self):
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
-        return self.correctCoordinates(ra, dec, includeRefraction = False)
+        return observedFromICRS(ra, dec, includeRefraction = False, obs_metadata=self.obs_metadata,
+                                epoch=self.db_obj.epoch)
 
 
     @compound('raObserved','decObserved')
     def get_observedCoordinates(self):
         """
-        get coordinates corrected for everything
+        convert mean coordinates in the International Celestial Reference Frame
+        to observed coordinates
         """
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
-        return self.correctCoordinates(ra, dec)
+        return observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=self.db_obj.epoch)
 
 
 class AstrometryStars(AstrometryBase):
@@ -675,10 +616,10 @@ class AstrometryStars(AstrometryBase):
     This mixin contains a getter for the corrected RA and dec which takes account of proper motion and parallax
     """
 
-    def correctStellarCoordinates(self, includeRefraction = True):
+    def observedStellarCoordinates(self, includeRefraction = True):
         """
-        Getter which coorrects RA and Dec for propermotion, radial velocity, and parallax
-
+        Getter which converts mean coordinates in the International Celestial
+        Reference Frame to observed coordinates.
         """
 
         #TODO
@@ -693,14 +634,15 @@ class AstrometryStars(AstrometryBase):
         ra = self.column_by_name('raJ2000')
         dec = self.column_by_name('decJ2000')
 
-        return self.correctCoordinates(ra, dec, pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
-                     includeRefraction = includeRefraction)
+        return observedFromICRS(ra, dec, pm_ra = pr, pm_dec = pd, parallax = px, v_rad = rv,
+                     includeRefraction = includeRefraction, obs_metadata=self.obs_metadata,
+                     epoch=self.db_obj.epoch)
 
 
     @compound('raPhoSim','decPhoSim')
     def get_phoSimCoordinates(self):
-        return self.correctStellarCoordinates(includeRefraction = False)
+        return self.observedStellarCoordinates(includeRefraction = False)
 
     @compound('raObserved','decObserved')
     def get_observedCoordinates(self):
-        return self.correctStellarCoordinates()
+        return self.observedStellarCoordinates()

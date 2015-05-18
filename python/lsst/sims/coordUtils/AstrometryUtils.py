@@ -2,7 +2,8 @@ import numpy
 import palpy
 from lsst.sims.utils import radiansToArcsec, sphericalToCartesian, cartesianToSpherical
 
-__all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo"]
+__all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
+           "observedFromICRS"]
 
 def applyPrecession(ra, dec, EP0=2000.0, MJD=2000.0):
     """
@@ -78,7 +79,7 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     """
 
     if mjd is None:
-        raise RuntimeError("in Astrometry.py cannot call applyProperMotion; mjd is None")
+        raise RuntimeError("cannot call applyProperMotion; mjd is None")
 
     parallaxArcsec=radiansToArcsec(parallax)
     #convert to Arcsec because that is what PALPY expects
@@ -133,10 +134,7 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     @param [in] Epoch0 is the julian epoch (in years) of the equinox against which to
     measure RA
 
-    @param[in] MJD is the date of the observation (optional; if None, the code will
-    try to set it from self.obs_metadata assuming that this method is being called
-    by an InstanceCatalog daughter class.  If that is not the case, an exception
-    will be raised.)
+    @param[in] MJD is the date of the observation
 
     @param [out] raOut is apparent geocentric RA-like coordinate in radians
 
@@ -145,10 +143,10 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     """
 
     if MJD is None:
-        raise RuntimeError("in Astrometry.py cannot call applyMeanApparentPlace; mjd is None")
+        raise RuntimeError("cannot call appGeoFromICRS; mjd is None")
 
     if len(ra) != len(dec):
-        raise RuntimeError('in Astrometry.py:applyMeanApparentPlace len(ra) %d len(dec) %d '
+        raise RuntimeError('appGeoFromICRS: len(ra) %d len(dec) %d '
                         % (len(ra),len(dec)))
 
     if pm_ra is None:
@@ -201,9 +199,9 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
 
     This will call palpy.aopqk
 
-    @param [in] ra is geocentric apparent RA (radians)
+    @param [in] ra is geocentric apparent RA (radians).  Must be a numpy array.
 
-    @param [in] dec is geocentric apparent Dec (radians)
+    @param [in] dec is geocentric apparent Dec (radians).  Must be a numpy array.
 
     @param [in] includeRefraction is a boolean to turn refraction on and off
 
@@ -230,10 +228,10 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
     if obs_metadata is None:
 
         if obs_metadata is None:
-            raise RuntimeError("Cannot call applyMeanObservedPlace without an obs_metadata")
+            raise RuntimeError("Cannot call observedFromAppGeo without an obs_metadata")
 
     if not hasattr(obs_metadata, 'site') or obs_metadata.site is None:
-        raise RuntimeError("Cannot call applyMeanObservedPlace: obs_metadata has no site info")
+        raise RuntimeError("Cannot call observedFromAppGeo: obs_metadata has no site info")
 
     # Correct site longitude for polar motion slaPolmo
     #
@@ -311,3 +309,58 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
         az, alt = palpy.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
         return raOut, decOut, alt, az
     return raOut, decOut
+
+
+def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+                     obs_metadata=None, epoch=None, includeRefraction=True):
+    """
+    Convert mean position (RA, Dec) in the International Celestial Reference Frame
+    to observed (RA, Dec)-like coordinates
+
+    included are precession-nutation, aberration, proper motion, parallax, refraction,
+    radial velocity, diurnal aberration,
+
+    @param [in] ra is the unrefracted RA in radians (ICRS).  Must be a numpy array.
+
+    @param [in] dec is the unrefracted Dec in radians (ICRS).  Must be a numpy array.
+
+    @param [in] pm_ra is proper motion in RA (radians/yr)
+
+    @param [in] pm_dec is proper motion in dec (radians/yr)
+
+    @param [in] parallax is parallax in radians
+
+    @param [in] v_rad is radial velocity (km/s)
+
+    @param [in] obs_metadata is an ObservationMetaData object describing the
+    telescope pointing.  If it is None, the code will try to set it from self
+    assuming that this method is being called from within an InstanceCatalog
+    daughter class.  If that is not the case, an exception will be raised
+
+    @param [in] epoch is the julian epoch (in years) against which the mean
+    equinoxes are measured.
+
+    @param [in] includeRefraction toggles whether or not to correct for refraction
+
+    @param [out] ra_out RA corrected for all included effects
+
+    @param [out] dec_out Dec corrected for all included effects
+
+    """
+
+    if obs_metadata is None:
+        raise RuntimeError("cannot call observedFromICRS; obs_metadata is none")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("cannot call observedFromICRS; obs_metadata.mjd is none")
+
+    if epoch is None:
+        raise RuntimeError("cannot call observedFromICRS; you have not specified an epoch")
+
+    ra_apparent, dec_apparent = appGeoFromICRS(ra, dec, pm_ra = pm_ra,
+             pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
+
+    ra_out, dec_out = observedFromAppGeo(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
+                                               includeRefraction = includeRefraction)
+
+    return numpy.array([ra_out,dec_out])

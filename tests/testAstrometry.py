@@ -50,6 +50,7 @@ from lsst.sims.utils import getRotTelPos, altAzToRaDec, calcObsDefaults, \
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
+from lsst.sims.coordUtils import observedFromICRS
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -287,14 +288,14 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy_obs_metadata)
         test = observedFromAppGeo(ra, dec, obs_metadata=obs_metadata)
 
-        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, obs_metadata=obs_metadata)
-        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0)
+        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, epoch=2000.0)
 
         dummy_obs_metadata = ObservationMetaData(boundType = 'circle', boundLength = 0.2, site=None, phoSimMetaData=self.metadata)
-        self.assertRaises(RuntimeError, myAstrometry.correctCoordinates, ra, dec, epoch=2000.0,
+        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, epoch=2000.0,
                           obs_metadata=dummy_obs_metadata)
 
-        test = myAstrometry.correctCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+        test = observedFromICRS(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
 
         self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
                           obs_metadata=obs_metadata)
@@ -325,7 +326,7 @@ class astrometryUnitTest(unittest.TestCase):
         ra = numpy.array([numpy.radians(self.obs_metadata.unrefractedRA) - 1.01*numpy.radians(1.0/3600.0)])
         dec = numpy.array([numpy.radians(self.obs_metadata.unrefractedDec) - 2.02*numpy.radians(1.0/3600.0)])
 
-        ra, dec = self.cat.correctCoordinates(ra, dec)
+        ra, dec = observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=self.starDBObject.epoch)
 
         xPupil = numpy.array([-0.000262243770])
         yPupil = numpy.array([0.000199467792])
@@ -479,7 +480,7 @@ class astrometryUnitTest(unittest.TestCase):
                                            decCenter = numpy.radians(obs_metadata.unrefractedDec),
                                            radius = 2.0)
 
-        raObj, decObj = testCat.correctCoordinates(ra, dec)
+        raObj, decObj = observedFromICRS(ra, dec, obs_metadata=obs_metadata, epoch=self.starDBObject.epoch)
         control = self.cat.calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata)
         test = testCat.calculatePupilCoordinates(raObj, decObj)
         shouldBeWrong = self.cat.calculatePupilCoordinates(raObj, decObj)
@@ -506,8 +507,8 @@ class astrometryUnitTest(unittest.TestCase):
         numpy.random.seed(32)
         raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
         decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
-                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+        raCenter, decCenter = observedFromICRS(raIn, decIn,
+                                               epoch=2000.0, obs_metadata=obs_metadata)
 
         ra, dec, pm_ra, pm_dec, parallax, v_rad = \
                     makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
@@ -525,8 +526,8 @@ class astrometryUnitTest(unittest.TestCase):
         epoch = 1500.0
         raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
         decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
-                                                                   epoch=epoch, obs_metadata=obs_metadata)
+        raCenter, decCenter = observedFromICRS(raIn, decIn,
+                                               epoch=epoch, obs_metadata=obs_metadata)
 
         ra, dec, pm_ra, pm_dec, parallax, v_rad = \
                     makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
@@ -560,8 +561,8 @@ class astrometryUnitTest(unittest.TestCase):
         numpy.random.seed(32)
         raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
         decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
-                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+        raCenter, decCenter = observedFromICRS(raIn, decIn,
+                                               epoch=2000.0, obs_metadata=obs_metadata)
 
         ra, dec, pm_ra, pm_dec, parallax, v_rad = \
                     makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
@@ -592,8 +593,8 @@ class astrometryUnitTest(unittest.TestCase):
         numpy.random.seed(32)
         raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
         decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = myCameraCoords.correctCoordinates(raIn, decIn,
-                                                                   epoch=2000.0, obs_metadata=obs_metadata)
+        raCenter, decCenter = observedFromICRS(raIn, decIn,
+                                               epoch=2000.0, obs_metadata=obs_metadata)
 
         ra, dec, pm_ra, pm_dec, parallax, v_rad = \
                     makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
