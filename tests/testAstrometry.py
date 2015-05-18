@@ -52,8 +52,8 @@ from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
-from lsst.sims.coordUtils import calculateGnomonicProjection
-from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
+from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
+from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates, calculateFocalPlaneCoordinates
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -212,36 +212,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         return False
 
-    def compareTestControlAndWrong(self, test, control, wrong):
-        """
-        param [in] test is an array
-
-        param [in] control is an array
-
-        param [in] wrong is an array
-
-        This method verifies that test and control are identical and that test
-        and wrong are not
-        """
-
-        for (tt, cc, ww) in zip(test, control, wrong):
-            if '__iter__' in dir(tt):
-                for (t, c, w) in zip(tt, cc, ww):
-                    if not self.isNanOrNone(t):
-                        self.assertEqual(t, c)
-                    else:
-                        self.assertTrue(self.isNanOrNone(c))
-
-                    if not self.isNanOrNone(t) or not self.isNanOrNone(w):
-                        self.assertNotEqual(t, w)
-            else:
-                if not self.isNanOrNone(tt):
-                    self.assertEqual(tt, cc)
-                else:
-                    self.assertTrue(self.isNanOrNone(cc))
-
-                if not self.isNanOrNone(tt) or not self.isNanOrNone(ww):
-                    self.assertNotEqual(tt, ww)
 
     def testWritingOfCatalog(self):
         self.cat.write_catalog("starsTestOutput.txt")
@@ -334,11 +304,13 @@ class astrometryUnitTest(unittest.TestCase):
         xPupil = numpy.array([-0.000262243770])
         yPupil = numpy.array([0.000199467792])
 
-        xx, yy = self.cat.calculateFocalPlaneCoordinates(xPupil = xPupil, yPupil = yPupil)
-        xx, yy = self.cat.calculateFocalPlaneCoordinates(ra = ra, dec = dec)
+        xx, yy = calculateFocalPlaneCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+        xx, yy = calculateFocalPlaneCoordinates(ra = ra, dec = dec,
+                                                epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
+                                                camera=self.cat.camera)
 
-        self.assertRaises(RuntimeError, self.cat.calculateFocalPlaneCoordinates)
-        self.assertRaises(RuntimeError, self.cat.calculateFocalPlaneCoordinates, ra = ra, dec = dec,
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
                              xPupil = xPupil, yPupil = yPupil)
 
         xx, yy = calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
@@ -384,16 +356,14 @@ class astrometryUnitTest(unittest.TestCase):
         test = calculatePixelCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
                                          obs_metadata=self.obs_metadata, epoch=2000.0)
 
-        myCameraCoords = CameraCoords()
-
-        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
-        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                           epoch=2000.0, camera=self.cat.camera)
-        self.assertRaises(RuntimeError, myCameraCoords.calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                           camera=self.cat.camera, obs_metadata=self.obs_metadata)
-        test = myCameraCoords.calculateFocalPlaneCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
-                                                             obs_metadata=self.obs_metadata, epoch=2000.0)
+        test = calculateFocalPlaneCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
+                                              obs_metadata=self.obs_metadata, epoch=2000.0)
 
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
@@ -415,11 +385,13 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        focalTest = self.cat.calculateFocalPlaneCoordinates(xPupil = pupilTest[0],
-                                      yPupil = pupilTest[1])
+        focalTest = calculateFocalPlaneCoordinates(xPupil = pupilTest[0],
+                                      yPupil = pupilTest[1], camera=self.cat.camera)
 
-        focalRa = self.cat.calculateFocalPlaneCoordinates(ra = baselineData['raObserved'],
-                        dec = baselineData['decObserved'])
+        focalRa = calculateFocalPlaneCoordinates(ra = baselineData['raObserved'],
+                        dec = baselineData['decObserved'],
+                        epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
+                        camera=self.cat.camera)
 
         for (xxtest, yytest, xxra, yyra, xx, yy) in \
                 zip(focalTest[0], focalTest[1], focalRa[0], focalRa[1],
@@ -485,70 +457,32 @@ class astrometryUnitTest(unittest.TestCase):
             os.unlink("AstrometryTestCatalog.txt")
 
 
-    def testIndpendentPupilCoords(self):
+
+    def testPassingOfSite(self):
         """
-        Test that calling calculatePupilCoordinates, with observation data specified by hand
-        will result in the correct outputs
-        """
-
-        obs_metadata = makeObservationMetaData()
-        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
-        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
-        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
-        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
-        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
-        testCat = testCatalog(self.starDBObject, obs_metadata=obs_metadata)
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
-                          makeRandomSample(raCenter = numpy.radians(obs_metadata.unrefractedRA),
-                                           decCenter = numpy.radians(obs_metadata.unrefractedDec),
-                                           radius = 2.0)
-
-        raObj, decObj = observedFromICRS(ra, dec, obs_metadata=obs_metadata,
-                                         epoch=self.starDBObject.epoch)
-        control = calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata,
-                                            epoch=self.starDBObject.epoch)
-        test = calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata,
-                                         epoch=self.starDBObject.epoch)
-        shouldBeWrong = calculatePupilCoordinates(raObj, decObj,
-                                                  obs_metadata=self.cat.obs_metadata,
-                                                  epoch=self.cat.db_obj.epoch)
-
-        self.compareTestControlAndWrong(test, control, shouldBeWrong)
-
-
-    def testIndependentFocalPlaneCoordinates(self):
-        """
-        Test to make sure that calculateFocalPlaneCoordinates returns the correct answer
-        when you pass in an obs_metadata by hand
+        Test that site information is correctly passed to
+        InstanceCatalog objects
         """
 
-        obs_metadata = makeObservationMetaData()
-        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
-        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
-        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
-        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
-        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
-        myCameraCoords = CameraCoords()
+        testSite=Site(longitude=10.0,latitude=20.0,height=4000.0, \
+              xPolar=2.4, yPolar=1.4, meanTemperature=314.0, \
+              meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
 
-        #generate some random RA and Decs to find chips for
-        nsamples = 100
-        numpy.random.seed(32)
-        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
-        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = observedFromICRS(raIn, decIn,
-                                               epoch=2000.0, obs_metadata=obs_metadata)
+        obs_metadata=ObservationMetaData(mjd=50984.371741,boundType='circle',
+                                         boundLength=0.05,site=testSite,
+                                         phoSimMetaData=self.metadata)
 
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
-                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
+        cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
 
-        control = self.cat.calculateFocalPlaneCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata)
-        test = myCameraCoords.calculateFocalPlaneCoordinates(ra=ra, dec=dec, obs_metadata=obs_metadata,
-                                                             epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
-        shouldBeWrong = self.cat.calculateFocalPlaneCoordinates(ra=ra, dec=dec)
-
-        self.compareTestControlAndWrong(control, test, shouldBeWrong)
-
-
+        self.assertEqual(cat2.site.longitude,10.0)
+        self.assertEqual(cat2.site.latitude,20.0)
+        self.assertEqual(cat2.site.height,4000.0)
+        self.assertEqual(cat2.site.xPolar,2.4)
+        self.assertEqual(cat2.site.yPolar,1.4)
+        self.assertEqual(cat2.site.meanTemperature,314.0)
+        self.assertEqual(cat2.site.meanPressure,800.0)
+        self.assertEqual(cat2.site.meanHumidity,0.9)
+        self.assertEqual(cat2.site.lapseRate,0.01)
 
 
     def testApplyPrecession(self):

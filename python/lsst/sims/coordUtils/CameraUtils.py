@@ -4,7 +4,7 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.coordUtils.AstrometryUtils import calculatePupilCoordinates
 
-__all__ = ["findChipName", "calculatePixelCoordinates"]
+__all__ = ["findChipName", "calculatePixelCoordinates", "calculateFocalPlaneCoordinates"]
 
 def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
                  obs_metadata=None, epoch=None, camera=None,
@@ -175,4 +175,62 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
         detPoint = camera.transform(cp, cs)
         xPix.append(detPoint.getPoint().getX())
         yPix.append(detPoint.getPoint().getY())
+    return numpy.array([xPix, yPix])
+
+
+
+def calculateFocalPlaneCoordinates(xPupil=None, yPupil=None, ra=None, dec=None,
+                                       obs_metadata=None, epoch=None, camera=None):
+    """
+    Get the focal plane coordinates for all objects in the catalog.
+
+    @param [in] xPupil a numpy array of x pupil coordinates
+
+    @param [in] yPupil a numpy array of y pupil coordinates
+
+    @param [in] alternatively, one can specify numpy arrays of ra and dec (in radians)
+
+    @param [in] obs_metadata is an ObservationMetaData object describing the telescope
+    pointing (only if specifying RA and Dec rather than pupil coordinates)
+
+    @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
+    (in years; only if specifying RA and Dec rather than pupil coordinates)
+
+    @param [out] a numpy array in which the first row is the x pixel coordinates
+    and the second row is the y pixel coordinates
+
+    """
+
+    specifiedPupil = (xPupil is not None and yPupil is not None)
+    specifiedRaDec = (ra is not None and dec is not None)
+
+    if not specifiedPupil and not specifiedRaDec:
+        raise RuntimeError("You must specify either pupil coordinates or equatorial coordinates to call calculateFocalPlaneCoordinates")
+
+    if specifiedPupil and specifiedRaDec:
+        raise RuntimeError("You cannot specify both pupil and equaltorial coordinates when calling calculateFocalPlaneCoordinates")
+
+    if not camera:
+        raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
+
+    if specifiedRaDec:
+
+        if epoch is None:
+            raise RuntimeError("You have to specify an epoch to run " + \
+                                "calculateFocalPlaneCoordinates on these inputs")
+
+        if obs_metadata is None:
+            raise RuntimeError("You have to specify an ObservationMetaData to run " + \
+                                   "calculateFocalPlaneCoordinates on these inputs")
+
+        xPupil, yPupil = calculatePupilCoordinates(ra ,dec,
+                                                   obs_metadata=obs_metadata, epoch=epoch)
+
+    xPix = []
+    yPix = []
+    for x, y in zip(xPupil, yPupil):
+        cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+        fpPoint = camera.transform(cp, FOCAL_PLANE)
+        xPix.append(fpPoint.getPoint().getX())
+        yPix.append(fpPoint.getPoint().getY())
     return numpy.array([xPix, yPix])
