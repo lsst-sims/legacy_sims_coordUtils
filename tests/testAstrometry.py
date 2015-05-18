@@ -48,6 +48,7 @@ from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.utils import getRotTelPos, altAzToRaDec, calcObsDefaults, \
                             arcsecToRadians, radiansToArcsec, Site
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
+from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -666,7 +667,7 @@ class astrometryUnitTest(unittest.TestCase):
         #code has been fixed.  This test still passes a julian
         #epoch so that it will give the same results as the control
         #SLALIB run.
-        output=self.cat.applyPrecession(ra,dec, MJD=pal.epj(2000.0))
+        output=applyPrecession(ra,dec, MJD=pal.epj(2000.0))
 
         self.assertAlmostEqual(output[0][0],2.514361575034799401e+00,6)
         self.assertAlmostEqual(output[1][0], 5.306722463159389003e-01,6)
@@ -709,8 +710,9 @@ class astrometryUnitTest(unittest.TestCase):
 
         #This test passes pm_dec/numpy.cos(dec) because that is the input that
         #was used when the baseline data was generated with SLALIB
-        output=self.cat.applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),
-                                          arcsecToRadians(parallax),v_rad,EP0=ep)
+        output=applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),
+                                 arcsecToRadians(parallax),v_rad,EP0=ep,
+                                 mjd=self.obs_metadata.mjd)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
         self.assertAlmostEqual(output[1][0],5.198769294314042888e-01,6)
