@@ -7,7 +7,7 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
-from lsst.sims.utils import equatorialToGalactic
+from lsst.sims.utils import equatorialToGalactic, cartesianToSpherical, sphericalToCartesian
 
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
@@ -33,43 +33,6 @@ class AstrometryBase(object):
 
         return numpy.array([glon,glat])
 
-    @staticmethod
-    def sphericalToCartesian(longitude, latitude):
-        """
-        Transforms between spherical and Cartesian coordinates.
-
-        @param [in] longitude is the input longitudinal coordinate
-
-        @param [in] latitude is the input latitudinal coordinate
-
-        @param [out] a list of the (three-dimensional) cartesian coordinates on a unit sphere
-
-        All angles are in radians
-        """
-
-        cosDec = numpy.cos(latitude)
-        return numpy.array([numpy.cos(longitude)*cosDec,
-                          numpy.sin(longitude)*cosDec,
-                          numpy.sin(latitude)])
-
-    @staticmethod
-    def cartesianToSpherical(xyz):
-        """
-        Transforms between Cartesian and spherical coordinates
-
-        @param [in] xyz is a list of the three-dimensional Cartesian coordinates
-
-        @param [out] returns longitude and latitude
-
-        All angles are in radians
-        """
-
-        rad = numpy.sqrt(xyz[:][0]*xyz[:][0] + xyz[:][1]*xyz[:][1] + xyz[:][2]*xyz[:][2])
-
-        longitude = numpy.arctan2( xyz[:][1], xyz[:][0])
-        latitude = numpy.arcsin( xyz[:][2] / rad)
-
-        return longitude, latitude
 
     @staticmethod
     def angularSeparation(long1, lat1, long2, lat2):
@@ -152,10 +115,10 @@ class AstrometryBase(object):
         rmat=pal.prenut(EP0, MJD)
 
         # Apply rotation matrix
-        xyz = self.sphericalToCartesian(ra,dec)
+        xyz = sphericalToCartesian(ra,dec)
         xyz =  numpy.dot(rmat,xyz)
 
-        raOut,decOut = self.cartesianToSpherical(xyz)
+        raOut,decOut = cartesianToSpherical(xyz)
         return raOut,decOut
 
     def applyProperMotion(self, ra, dec, pm_ra, pm_dec, parallax, v_rad, \
