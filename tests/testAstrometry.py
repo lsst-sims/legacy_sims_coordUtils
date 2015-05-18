@@ -50,7 +50,7 @@ from lsst.sims.utils import getRotTelPos, altAzToRaDec, calcObsDefaults, \
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
-from lsst.sims.coordUtils import observedFromICRS
+from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
@@ -298,24 +298,24 @@ class astrometryUnitTest(unittest.TestCase):
 
         test = observedFromICRS(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
 
-        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
                           obs_metadata=obs_metadata)
-        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
                           epoch=2000.0)
 
         dummy_obs_metadata = ObservationMetaData(rotSkyPos=10.0, unrefractedDec=10.0, mjd=51200.0)
-        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
                           epoch=2000.0, obs_metadata=dummy_obs_metadata)
 
         dummy_obs_metadata = ObservationMetaData(rotSkyPos=10.0, unrefractedRA=10.0, mjd=51200.0)
-        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
                           epoch=2000.0, obs_metadata=dummy_obs_metadata)
 
         dummy_obs_metadata = ObservationMetaData(unrefractedRA=10.0, unrefractedDec=10.0, rotSkyPos=10.0)
-        self.assertRaises(RuntimeError, myAstrometry.calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
                           epoch=2000.0, obs_metadata=dummy_obs_metadata)
 
-        test = myAstrometry.calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+        test = calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
 
     def testCameraCoordsExceptions(self):
         """
@@ -350,7 +350,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertTrue(name[0] is not None)
 
         name = self.cat.findChipName(ra = ra, dec = dec)
-        xtest, ytest = self.cat.calculatePupilCoordinates(ra, dec )
+        xtest, ytest = calculatePupilCoordinates(ra, dec, obs_metadata=self.obs_metadata, epoch=2000.0)
         self.assertTrue(name[0] is not None)
 
         self.assertRaises(RuntimeError, self.cat.findChipName)
@@ -395,8 +395,10 @@ class astrometryUnitTest(unittest.TestCase):
 
         baselineData = numpy.loadtxt('AstrometryTestCatalog.txt',dtype = dtype, delimiter = ';')
 
-        pupilTest = self.cat.calculatePupilCoordinates(baselineData['raObserved'],
-                                                 baselineData['decObserved'])
+        pupilTest = calculatePupilCoordinates(baselineData['raObserved'],
+                                              baselineData['decObserved'],
+                                              obs_metadata=self.obs_metadata,
+                                              epoch=2000.0)
 
         for (xxtest, yytest, xx, yy) in \
                 zip(pupilTest[0], pupilTest[1], baselineData['x_pupil'], baselineData['y_pupil']):
@@ -465,7 +467,7 @@ class astrometryUnitTest(unittest.TestCase):
 
     def testIndpendentPupilCoords(self):
         """
-        Test that calling calculatePupilCoordinates, with observation data specified by and
+        Test that calling calculatePupilCoordinates, with observation data specified by hand
         will result in the correct outputs
         """
 
@@ -481,10 +483,15 @@ class astrometryUnitTest(unittest.TestCase):
                                            decCenter = numpy.radians(obs_metadata.unrefractedDec),
                                            radius = 2.0)
 
-        raObj, decObj = observedFromICRS(ra, dec, obs_metadata=obs_metadata, epoch=self.starDBObject.epoch)
-        control = self.cat.calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata)
-        test = testCat.calculatePupilCoordinates(raObj, decObj)
-        shouldBeWrong = self.cat.calculatePupilCoordinates(raObj, decObj)
+        raObj, decObj = observedFromICRS(ra, dec, obs_metadata=obs_metadata,
+                                         epoch=self.starDBObject.epoch)
+        control = calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata,
+                                            epoch=self.starDBObject.epoch)
+        test = calculatePupilCoordinates(raObj, decObj, obs_metadata=obs_metadata,
+                                         epoch=self.starDBObject.epoch)
+        shouldBeWrong = calculatePupilCoordinates(raObj, decObj,
+                                                  obs_metadata=self.cat.obs_metadata,
+                                                  epoch=self.cat.db_obj.epoch)
 
         self.compareTestControlAndWrong(test, control, shouldBeWrong)
 

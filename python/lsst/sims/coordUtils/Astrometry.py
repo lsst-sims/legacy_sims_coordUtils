@@ -10,7 +10,7 @@ from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
 from lsst.sims.utils import equatorialToGalactic, cartesianToSpherical, sphericalToCartesian
 
 from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS, observedFromAppGeo
-from lsst.sims.coordUtils.AstrometryUtils import observedFromICRS
+from lsst.sims.coordUtils.AstrometryUtils import observedFromICRS, calculatePupilCoordinates
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -35,93 +35,6 @@ class AstrometryBase(object):
 
         return numpy.array([glon,glat])
 
-
-    def calculatePupilCoordinates(self, raObj, decObj,
-                                  obs_metadata=None, epoch=None):
-        """
-        @param [in] raObj is a numpy array of RAs in radians
-
-        @param [in] decObj is a numpy array of Decs in radians
-
-        @param [in] obs_metadata is an ObservationMetaData object containing information
-        about the telescope pointing (optional; if None, the code will try to set it
-        from self assuming that this method is being called from an InstanceCatalog
-        daughter class.  If that is not the case, an exception will be raised.)
-
-        @param [in] epoch is the julian epoch of the mean equinox used for the coordinate
-        transforations (in years; optional)
-
-        @param [out] a numpy array in which the first row is the x pupil coordinate and the second
-        row is the y pupil coordinate
-
-        Take an input RA and dec from the sky and convert it to coordinates
-        in the pupil.
-
-        This routine will use the haversine formula to calculate the arc distance h
-        between the bore sight and the object.  It will convert this into pupil coordinates
-        by assuming that the y-coordinate is identically the declination of the object.
-        It will find the x-coordinate by demanding that
-
-        h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
-        """
-
-        if obs_metadata is None:
-            if hasattr(self, 'obs_metadata'):
-                obs_metadata = self.obs_metadata
-
-            if obs_metadata is None:
-                raise RuntimeError("in Astrometry.py cannot calculate x_pupil, y_pupil without obs_metadata")
-
-        if epoch is None:
-            if hasattr(self, 'db_obj'):
-                epoch = self.db_obj.epoch
-
-            if epoch is None:
-                raise RuntimeError("in Astrometry.py cannot call get_skyToPupil; epoch is None")
-
-        if obs_metadata.rotSkyPos is None:
-            raise RuntimeError("Cannot calculate x_pupil or y_pupil without rotSkyPos")
-
-        if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
-            raise RuntimeError("Cannot calculate x_pupil, y_pupil without unrefractedRA, unrefractedDec")
-
-        if obs_metadata.mjd is None:
-            raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd")
-
-        theta = -1.0*obs_metadata._rotSkyPos
-
-        #correct for precession and nutation
-
-        pointingRA=numpy.array([obs_metadata._unrefractedRA])
-        pointingDec=numpy.array([obs_metadata._unrefractedDec])
-
-        x, y = appGeoFromICRS(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
-
-        #correct for refraction
-        boreRA, boreDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)
-
-        #we should now have the true tangent point for the gnomonic projection
-        dPhi = decObj - boreDec
-        dLambda = raObj - boreRA
-
-        #see en.wikipedia.org/wiki/Haversine_formula
-        #Phi is latitude on the sphere (declination)
-        #Lambda is longitude on the sphere (RA)
-        #
-        #Now that there is a haversine method in
-        #sims_catalogs_generation/.../db/obsMetadataUtils.py
-        #I am using that function so that we only have one
-        #haversine formula floating around the stack
-        h = haversine(raObj, decObj, boreRA, boreDec)
-
-        #demand that the Euclidean distance on the pupil matches
-        #the haversine distance on the sphere
-        dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
-        #correct for rotation of the telescope
-        x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
-        y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
-
-        return numpy.array([x_out, y_out])
 
     def calculateGnomonicProjection(self, ra_in, dec_in, obs_metadata=None, epoch=None):
         """
@@ -221,7 +134,8 @@ class AstrometryBase(object):
         raObj = self.column_by_name('raObserved')
         decObj = self.column_by_name('decObserved')
 
-        return self.calculatePupilCoordinates(raObj, decObj)
+        return calculatePupilCoordinates(raObj, decObj, epoch=self.db_obj.epoch,
+                                         obs_metadata=self.obs_metadata)
 
 class CameraCoords(AstrometryBase):
     """Methods for getting coordinates from the camera object"""
@@ -289,7 +203,23 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("You did not pass in an equal number of ra and dec coordinates")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
+            if epoch is None:
+                if hasattr(self, 'db_obj'):
+                    epoch = self.db_obj.epoch
+
+            if obs_metadata is None:
+                if hasattr(self, 'obs_metadata'):
+                    obs_metadata = self.obs_metadata
+
+            if epoch is None:
+                raise RuntimeError("You have to specify an epoch to run " + \
+                                   "findChipName on these inputs")
+
+            if obs_metadata is None:
+                raise RuntimeError("You have to specifay an ObservationMetaData to run " + \
+                                   "findChipName on these inputs")
+
+            xPupil, yPupil = calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
 
         if not camera:
             if hasattr(self, 'camera'):
@@ -378,9 +308,26 @@ class CameraCoords(AstrometryBase):
             raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra, dec,
-                                                            obs_metadata=obs_metadata,
-                                                            epoch=epoch)
+
+            if epoch is None:
+                if hasattr(self, 'db_obj'):
+                    epoch = self.db_obj.epoch
+
+            if obs_metadata is None:
+                if hasattr(self, 'obs_metadata'):
+                    obs_metadata = self.obs_metadata
+
+            if epoch is None:
+                raise RuntimeError("You need to specify an epoch to run calculatePixelCoordinates " + \
+                                   "on these inputs")
+
+            if obs_metadata is None:
+                raise RuntimeError("You need to specify an ObservationMetaDAta to run " + \
+                                   "calculatePixelCoordinates on these inputs")
+
+            xPupil, yPupil = calculatePupilCoordinates(ra, dec,
+                                                       obs_metadata=obs_metadata,
+                                                       epoch=epoch)
 
         if chipNames is None:
             chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
@@ -445,8 +392,24 @@ class CameraCoords(AstrometryBase):
                 raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
 
         if specifiedRaDec:
-            xPupil, yPupil = self.calculatePupilCoordinates(ra ,dec,
-                                                            obs_metadata=obs_metadata, epoch=epoch)
+            if epoch is None:
+                if hasattr(self, 'db_obj'):
+                    epoch = self.db_obj.epoch
+
+            if obs_metadata is None:
+                if hasattr(self, 'obs_metadata'):
+                    obs_metadata = self.obs_metadata
+
+            if epoch is None:
+                raise RuntimeError("You have to specify an epoch to run " + \
+                                    "calculateFocalPlaneCoordinates on these inputs")
+
+            if obs_metadata is None:
+                raise RuntimeError("You have to specify an ObservationMetaData to run " + \
+                                   "calculateFocalPlaneCoordinates on these inputs")
+
+            xPupil, yPupil = calculatePupilCoordinates(ra ,dec,
+                                                       obs_metadata=obs_metadata, epoch=epoch)
 
         xPix = []
         yPix = []

@@ -1,9 +1,11 @@
 import numpy
 import palpy
 from lsst.sims.utils import radiansToArcsec, sphericalToCartesian, cartesianToSpherical
+from lsst.sims.utils import haversine
 
 __all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
-           "observedFromICRS", "refractionCoefficients", "applyRefraction"]
+           "observedFromICRS", "calculatePupilCoordinates",
+           "refractionCoefficients", "applyRefraction"]
 
 
 def refractionCoefficients(wavelength=0.5, site=None):
@@ -418,3 +420,80 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
                                                includeRefraction = includeRefraction)
 
     return numpy.array([ra_out,dec_out])
+
+
+
+def calculatePupilCoordinates(raObj, decObj, obs_metadata=None, epoch=None):
+    """
+    @param [in] raObj is a numpy array of RAs in radians
+
+    @param [in] decObj is a numpy array of Decs in radians
+
+    @param [in] obs_metadata is an ObservationMetaData object containing information
+    about the telescope pointing
+
+    @param [in] epoch is the julian epoch of the mean equinox used for the coordinate
+    transforations (in years)
+
+    @param [out] a numpy array in which the first row is the x pupil coordinate and the second
+    row is the y pupil coordinate
+
+    Take an input RA and dec from the sky and convert it to coordinates
+    in the pupil.
+
+    This routine will use the haversine formula to calculate the arc distance h
+    between the bore sight and the object.  It will convert this into pupil coordinates
+    by assuming that the y-coordinate is identically the declination of the object.
+    It will find the x-coordinate by demanding that
+
+    h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
+    """
+
+    if obs_metadata is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinates without obs_metadata")
+
+    if epoch is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinates without rotSkyPos " + \
+                           "in obs_metadata")
+
+    if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinaes "+ \
+                          "without unrefractedRA, unrefractedDec in obs_metadata")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd " + \
+                           "in obs_metadata")
+
+    theta = -1.0*obs_metadata._rotSkyPos
+
+    #correct for precession and nutation
+
+    pointingRA=numpy.array([obs_metadata._unrefractedRA])
+    pointingDec=numpy.array([obs_metadata._unrefractedDec])
+
+    x, y = appGeoFromICRS(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
+
+    #correct for refraction
+    boreRA, boreDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)
+
+    #we should now have the true tangent point for the gnomonic projection
+    dPhi = decObj - boreDec
+    dLambda = raObj - boreRA
+
+    #see en.wikipedia.org/wiki/Haversine_formula
+    #Phi is latitude on the sphere (declination)
+    #Lambda is longitude on the sphere (RA)
+
+    h = haversine(raObj, decObj, boreRA, boreDec)
+
+    #demand that the Euclidean distance on the pupil matches
+    #the haversine distance on the sphere
+    dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
+    #correct for rotation of the telescope
+    x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
+    y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
+
+    return numpy.array([x_out, y_out])
