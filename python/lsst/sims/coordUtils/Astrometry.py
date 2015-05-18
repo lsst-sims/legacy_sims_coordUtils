@@ -7,6 +7,7 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
 from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
+from lsst.sims.utils import equatorialToGalactic
 
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
@@ -214,37 +215,6 @@ class AstrometryBase(object):
 
         return raOut,decOut
 
-    @staticmethod
-    def equatorialToGalactic(ra, dec):
-        '''Convert RA,Dec (J2000) to Galactic Coordinates
-
-        All angles are in radians
-        '''
-        gLong = numpy.zeros(len(ra))
-        gLat = numpy.zeros(len(ra))
-
-        for i in range(len(ra)):
-            _eqgalOutput=pal.eqgal(ra[i], dec[i])
-            gLong[i] = _eqgalOutput[0]
-            gLat[i] = _eqgalOutput[1]
-
-        return gLong, gLat
-
-    @staticmethod
-    def galacticToEquatorial(gLong, gLat):
-        '''Convert Galactic Coordinates to RA, dec (J2000)
-
-        All angles are in radians
-        '''
-        ra = numpy.zeros(len(gLong))
-        dec = numpy.zeros(len(gLong))
-
-        for i in range(len(ra)):
-            _galeqOutput=pal.galeq(gLong[i], gLat[i])
-            ra[i] = _galeqOutput[0]
-            dec[i] = _galeqOutput[1]
-
-        return ra, dec
 
     def applyMeanApparentPlace(self, ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                                v_rad=None, Epoch0=2000.0, MJD = None):
