@@ -647,16 +647,6 @@ class astrometryUnitTest(unittest.TestCase):
 
 
 
-    def testAngularSeparation(self):
-        arg1 = 7.853981633974482790e-01
-        arg2 = 3.769911184307751517e-01
-        arg3 = 5.026548245743668986e+00
-        arg4 = -6.283185307179586232e-01
-
-        output=self.cat.angularSeparation(arg1,arg2,arg3,arg4)
-
-        self.assertAlmostEqual(output,2.162615946398791955e+00,10)
-
     def testRotationMatrixFromVectors(self):
         v1=numpy.zeros((3),dtype=float)
         v2=numpy.zeros((3),dtype=float)

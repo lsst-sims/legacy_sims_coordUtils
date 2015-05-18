@@ -35,24 +35,6 @@ class AstrometryBase(object):
 
 
     @staticmethod
-    def angularSeparation(long1, lat1, long2, lat2):
-        ''' Given two spherical points in radians, calculate the angular
-        separation between them.
-
-        @param [in] long1 is the longitudinal coordinate of one point
-        (long2 is the longitude of the other point)
-
-        @param [in] lat1 is the latitudinal coordinate of one point
-        (lat2 is the latitude of the other point)
-
-        @param [out] D the angular separation in radians
-
-        All angles are in radians
-        '''
-        D = pal.dsep (long1, lat1, long2, lat2)
-        return D
-
-    @staticmethod
     def rotationMatrixFromVectors(v1, v2):
         '''
         Given two vectors v1,v2 calculate the rotation matrix for v1->v2 using the axis-angle approach
