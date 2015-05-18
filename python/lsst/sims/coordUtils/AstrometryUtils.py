@@ -474,10 +474,8 @@ def calculatePupilCoordinates(raObj, decObj, obs_metadata=None, epoch=None):
     pointingRA=numpy.array([obs_metadata._unrefractedRA])
     pointingDec=numpy.array([obs_metadata._unrefractedDec])
 
-    x, y = appGeoFromICRS(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
-
-    #correct for refraction
-    boreRA, boreDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)
+    #transform from mean, ICRS pointing coordinates to observed pointing coordinates
+    boreRA, boreDec = observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
 
     #we should now have the true tangent point for the gnomonic projection
     dPhi = decObj - boreDec
