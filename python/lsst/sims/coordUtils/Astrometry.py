@@ -35,41 +35,7 @@ class AstrometryBase(object):
 
         return numpy.array([glon,glat])
 
-    def calcLast(self, mjd, long):
-        """
-        Converts the date mjd+long into Greenwhich Mean Sidereal Time (in radians)
 
-        Note that mjd is the UT1 time expressed as an MJD
-        """
-
-        #TODO the arguments of palGmsta are
-        # - the UT1 date expressed as an MJD
-        # - the UT1 time (fraction of a day)
-        D = pal.gmsta(mjd, 0.)
-        D += long
-        D = D%(2.*math.pi)
-        return D
-
-    def equatorialToHorizontal(self, ra, dec, mjd):
-        """
-        Converts from equatorial to horizon coordinates
-
-        @param [in] ra is in radians
-
-        @param [in] dec is declination in radians
-
-        @param [in] mjd is the date
-
-        @param [out] returns elevation angle and azimuth in that order (radians)
-
-        """
-
-        hourAngle = self.calcLast(mjd, self.obs_metadata.site.longitude) - ra
-
-        _de2hOutput=pal.de2h(hourAngle, dec,  self.obs_metadata.site.latitude)
-
-        #return (altitude, azimuth)
-        return _de2hOutput[1], _de2hOutput[0]
 
     def paralacticAngle(self, az, dec):
         """
@@ -80,6 +46,7 @@ class AstrometryBase(object):
 
         sinpa = math.sin(az)*math.cos(self.obs_metadata.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
+
 
     def calculatePupilCoordinates(self, raObj, decObj,
                                   obs_metadata=None, epoch=None):
