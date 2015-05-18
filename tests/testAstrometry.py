@@ -53,6 +53,7 @@ from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection
+from lsst.sims.coordUtils import findChipName
 from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
@@ -347,26 +348,32 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, self.cat.calculatePixelCoordinates, xPupil = xPupil,
                            yPupil = yPupil, ra = ra, dec = dec)
 
-        name = self.cat.findChipName(xPupil = xPupil, yPupil = yPupil)
+        name = findChipName(xPupil = xPupil, yPupil = yPupil,
+                            epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata,
+                            camera=self.cat.camera)
+
         self.assertTrue(name[0] is not None)
 
-        name = self.cat.findChipName(ra = ra, dec = dec)
+        name = findChipName(ra = ra, dec = dec, epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata, camera=self.cat.camera)
         xtest, ytest = calculatePupilCoordinates(ra, dec, obs_metadata=self.obs_metadata, epoch=2000.0)
         self.assertTrue(name[0] is not None)
 
-        self.assertRaises(RuntimeError, self.cat.findChipName)
-        self.assertRaises(RuntimeError, self.cat.findChipName, xPupil = xPupil, yPupil = yPupil,
+        self.assertRaises(RuntimeError, findChipName)
+        self.assertRaises(RuntimeError, findChipName, xPupil = xPupil, yPupil = yPupil,
                   ra = ra, dec = dec)
 
-        myCameraCoords = CameraCoords()
-        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec,
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
-        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec, epoch=2000.0,
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, epoch=2000.0,
                           camera=self.cat.camera)
-        self.assertRaises(RuntimeError, myCameraCoords.findChipName, ra=ra, dec=dec, camera=self.cat.camera,
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, camera=self.cat.camera,
                           obs_metadata=self.obs_metadata)
-        test = myCameraCoords.findChipName(ra=ra, dec=dec, camera=self.cat.camera, epoch=2000.0,
-                                           obs_metadata=self.obs_metadata)
+        test = findChipName(ra=ra, dec=dec, camera=self.cat.camera, epoch=2000.0,
+                            obs_metadata=self.obs_metadata)
+
+        myCameraCoords = CameraCoords()
 
         self.assertRaises(RuntimeError, myCameraCoords.calculatePixelCoordinates, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
@@ -452,8 +459,13 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        nameTest = self.cat.findChipName(xPupil = pupilTest[0], yPupil = pupilTest[1])
-        nameRA = self.cat.findChipName(ra = baselineData['raObserved'], dec = baselineData['decObserved'])
+        nameTest = findChipName(xPupil = pupilTest[0], yPupil = pupilTest[1],
+                                epoch=self.cat.db_obj.epoch,
+                                obs_metadata=self.cat.obs_metadata,
+                                camera=self.cat.camera)
+        nameRA = findChipName(ra = baselineData['raObserved'], dec = baselineData['decObserved'],
+                              epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
+                              camera=self.cat.camera)
 
         for (ntest, nra, ncontrol) in zip(nameTest, nameRA, baselineData['chipName']):
             if ncontrol != 'None':
@@ -497,60 +509,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.compareTestControlAndWrong(test, control, shouldBeWrong)
 
-    def testIndependentFindChipName(self):
-        """
-        Test that calling FindchipName independent of a catalog object works,
-        i.e. that if a user specifies an ObservationMetaData by hand, the code
-        will use that ObservationMetaData
-        """
-
-        obs_metadata = makeObservationMetaData()
-        self.assertFalse(obs_metadata.mjd==self.obs_metadata.mjd)
-        self.assertFalse(obs_metadata.unrefractedRA==self.obs_metadata.unrefractedRA)
-        self.assertFalse(obs_metadata.unrefractedDec==self.obs_metadata.unrefractedDec)
-        self.assertFalse(obs_metadata.site.longitude==self.obs_metadata.site.longitude)
-        self.assertFalse(obs_metadata.site.latitude==self.obs_metadata.site.latitude)
-        myCameraCoords = CameraCoords()
-
-        #generate some random RA and Decs to find chips for
-        nsamples = 100
-        numpy.random.seed(32)
-        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
-        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = observedFromICRS(raIn, decIn,
-                                               epoch=2000.0, obs_metadata=obs_metadata)
-
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
-                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
-
-        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=obs_metadata)
-
-        chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=self.cat.db_obj.epoch,
-                                                    obs_metadata=obs_metadata,
-                                                    camera = self.cat.camera)
-        shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec)
-
-        self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
-
-        #now vary the epoch
-        epoch = 1500.0
-        raIn = numpy.array([numpy.radians(obs_metadata.unrefractedRA)])
-        decIn = numpy.array([numpy.radians(obs_metadata.unrefractedDec)])
-        raCenter, decCenter = observedFromICRS(raIn, decIn,
-                                               epoch=epoch, obs_metadata=obs_metadata)
-
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = \
-                    makeRandomSample(raCenter=raCenter, decCenter=decCenter, radius = 0.0004)
-
-        chipNamesControl = self.cat.findChipName(ra=ra, dec=dec, obs_metadata=obs_metadata,
-                                                 epoch=epoch)
-
-        chipNamesTest = myCameraCoords.findChipName(ra=ra, dec=dec, epoch=epoch,
-                                                    obs_metadata=obs_metadata,
-                                                    camera=self.cat.camera)
-        shouldBeWrong = self.cat.findChipName(ra=ra, dec=dec, epoch=epoch)
-
-        self.compareTestControlAndWrong(chipNamesTest, chipNamesControl, shouldBeWrong)
 
     def testIndependentFocalPlaneCoordinates(self):
         """

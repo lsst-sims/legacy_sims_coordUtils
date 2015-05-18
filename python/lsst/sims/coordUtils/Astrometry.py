@@ -12,6 +12,7 @@ from lsst.sims.utils import equatorialToGalactic, cartesianToSpherical, spherica
 from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils.AstrometryUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils.AstrometryUtils import calculateGnomonicProjection
+from lsst.sims.coordUtils.CameraUtils import findChipName
 
 __all__ = ["AstrometryBase", "AstrometryStars", "AstrometryGalaxies",
            "CameraCoords"]
@@ -66,110 +67,6 @@ class CameraCoords(AstrometryBase):
                                  #multiple chips; only the first chip would be
                                  #written to the catalog
 
-    def findChipName(self, xPupil=None, yPupil=None, ra=None, dec=None,
-                     obs_metadata=None, epoch=None, camera=None):
-        """
-        Return the names of science detectors that see the object specified by
-        either (xPupil, yPupil) or (ra, dec).  Note: this method does not return
-        the name of guide, focus, or wavefront detectors
-
-        @param [in] xPupil a numpy array of x pupil coordinates
-
-        @param [in] yPupil a numpy array of y pupil coordinates
-
-        @param [in] ra in radians (optional; should not specify both ra/dec and pupil coordinates)
-
-        @param [in] dec in radians (optional; should not specify both ra/dec and pupil coordinates)
-
-        WARNING: if you are passing in RA and Dec, you should make sure they are corrected
-        for all of the astrometric quantities (precession, nutation, refraction, proper motion,
-        etc.) relevant to your problem.  The bore site will be corrected for these quantities
-        when calculating where on the focal plane your RA and Dec fall.  Thus, the result will
-        be wrong if you do not correct your RA and Dec before passing them in.  Consider using
-        the method AstrometryBase.correctCoordinates()
-
-        @param [in] obs_metadata is an ObservationMetaData object describing the telescope
-        pointing (optional)
-
-        @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
-        (in years; optional)
-
-                The optional arguments are there to be passed to calculatePupilCoordinates if you choose
-                to call this routine specifying ra and dec, rather than xPupil and yPupil.  If they are
-                not set, calculatePupilCoordinates will try to set them from self and db_obj,
-                assuming that this routine is being called from an InstanceCatalog daughter class.
-                If that is not the case, an exception will be raised.
-
-        @param [in] camera is an afwCameraGeom object that specifies the attributes of the camera.
-        If it is not set, this routine will try to set it from self.camera assuming that the code
-        is in an InstanceCatalog daughter class.  If that is not the case, an exception will be
-        raised
-
-        @param [out] a numpy array of chip names (science detectors only)
-
-        """
-        specifiedPupil = (xPupil is not None and yPupil is not None)
-        specifiedRaDec = (ra is not None and dec is not None)
-
-        if not specifiedPupil and not specifiedRaDec:
-            raise RuntimeError("You must specifyeither pupil coordinates or equatorial coordinates in findChipName")
-
-        if specifiedPupil and specifiedRaDec:
-            raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
-
-        if specifiedPupil and len(xPupil) != len(yPupil):
-            raise RuntimeError("You did not pass in an equal number of xPupil and yPupil coordinates")
-
-        if specifiedRaDec and len(ra) != len(dec):
-            raise RuntimeError("You did not pass in an equal number of ra and dec coordinates")
-
-        if specifiedRaDec:
-            if epoch is None:
-                if hasattr(self, 'db_obj'):
-                    epoch = self.db_obj.epoch
-
-            if obs_metadata is None:
-                if hasattr(self, 'obs_metadata'):
-                    obs_metadata = self.obs_metadata
-
-            if epoch is None:
-                raise RuntimeError("You have to specify an epoch to run " + \
-                                   "findChipName on these inputs")
-
-            if obs_metadata is None:
-                raise RuntimeError("You have to specifay an ObservationMetaData to run " + \
-                                   "findChipName on these inputs")
-
-            xPupil, yPupil = calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
-
-        if not camera:
-            if hasattr(self, 'camera'):
-                camera = self.camera
-
-            if not camera:
-                raise RuntimeError("No camera defined.  Cannot retrieve detector name.")
-
-        chipNames = []
-
-        cameraPointList = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
-
-        detList = camera.findDetectorsList(cameraPointList, PUPIL)
-
-        for det in detList:
-            if len(det)==0:
-                chipNames.append(None)
-            else:
-                names = [dd.getName() for dd in det if dd.getType()==SCIENCE]
-                if len(names)>1 and not self.allow_multiple_chips:
-                    raise RuntimeError("This method does not know how to deal with cameras " +
-                                       "where points can be on multiple detectors.  " +
-                                       "Override CameraCoords.get_chipName to add this.")
-                elif len(names)==0:
-                    chipNames.append(None)
-                else:
-                    chipNames.append(names[0])
-
-        return numpy.array(chipNames)
 
     def calculatePixelCoordinates(self, xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
                                   obs_metadata=None, epoch=None, camera=None):
@@ -251,7 +148,7 @@ class CameraCoords(AstrometryBase):
                                                        epoch=epoch)
 
         if chipNames is None:
-            chipNames = self.findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
+            chipNames = findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
 
         xPix = []
         yPix = []
@@ -344,7 +241,7 @@ class CameraCoords(AstrometryBase):
     def get_chipName(self):
         """Get the chip name if there is one for each catalog entry"""
         xPupil, yPupil = (self.column_by_name('x_pupil'), self.column_by_name('y_pupil'))
-        return self.findChipName(xPupil=xPupil, yPupil=yPupil)
+        return findChipName(xPupil=xPupil, yPupil=yPupil, camera=self.camera)
 
     @compound('xPix', 'yPix')
     def get_pixelCoordinates(self):
