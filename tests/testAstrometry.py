@@ -229,65 +229,144 @@ class astrometryUnitTest(unittest.TestCase):
         raShort = numpy.array([1.0])
         decShort = numpy.array([1.0])
 
+
+        ##########test refractionCoefficients
         self.assertRaises(RuntimeError, refractionCoefficients)
         site = obs_metadata.site
         x, y = refractionCoefficients(site=site)
 
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec)
+        ##########test calculateGnomonicProjection
+        #test without epoch
         self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
+
+        #test without obs_metadata
         self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0)
-        dummy_obs_metadata = ObservationMetaData(unrefractedDec=25.0, rotSkyPos=10.0, mjd=50984.371741)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
-        dummy_obs_metadata = ObservationMetaData(unrefractedRA=25.0, rotSkyPos=10.0, mjd=50984.371741)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
-        dummy_obs_metadata = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=25.0, rotSkyPos=10.0)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy_obs_metadata)
 
-        calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)]),
-                                    numpy.array([numpy.radians(obs_metadata.unrefractedDec)]),
-                                    epoch=20000.0, obs_metadata=obs_metadata)
+        #test without mjd
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  rotSkyPos=obs_metadata.rotSkyPos)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)                              
 
+        #test without rotSkyPos
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  mjd=obs_metadata.mjd)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
+
+        #test without unrefractedRA
+        dummy=ObservationMetaData(unrefractedDec=obs_metadata.unrefractedDec,
+                                  mjd=obs_metadata.mjd,
+                                  rotSkyPos=obs_metadata.rotSkyPos)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
+
+        #test without unrefractedDec
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  mjd=obs_metadata.mjd,
+                                  rotSkyPos=obs_metadata.rotSkyPos)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
+
+        #test that it actually runs
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  mjd=obs_metadata.mjd,
+                                  rotSkyPos=obs_metadata.rotSkyPos)
         xGnomon, yGnomon = calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)+0.01]),
                                                        numpy.array([numpy.radians(obs_metadata.unrefractedDec)+0.1]),
-                                                       epoch=2000.0, obs_metadata=obs_metadata)
+                                                       epoch=2000.0, obs_metadata=dummy)
 
+        ##########test appGeoFromICRS
+        #test without mjd
         self.assertRaises(RuntimeError, appGeoFromICRS, ra, dec)
-        self.assertRaises(RuntimeError, appGeoFromICRS, ra, decShort)
-        self.assertRaises(RuntimeError, appGeoFromICRS, raShort, dec)
+
+        #test with mismatched ra, dec
+        self.assertRaises(RuntimeError, appGeoFromICRS, ra, decShort, MJD=52000.0)
+        self.assertRaises(RuntimeError, appGeoFromICRS, raShort, dec, MJD=52000.0)
+
+        #test that it actually urns
         test=appGeoFromICRS(ra, dec, MJD=obs_metadata.mjd)
 
+        #test without obs_metadata
         self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec)
-        dummy_obs_metadata = ObservationMetaData(mjd=5389.0, boundType = 'circle', boundLength = 0.2, site=None, phoSimMetaData=self.metadata)
-        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy_obs_metadata)
-        test = observedFromAppGeo(ra, dec, obs_metadata=obs_metadata)
 
+        #test without site
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  mjd=obs_metadata.mjd,
+                                  site=None)
+        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy)
+
+        #test that it actually runs
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  mjd=obs_metadata.mjd,
+                                  site=Site())
+        test = observedFromAppGeo(ra, dec, obs_metadata=dummy)
+
+        ##########test observedFromICRS
+        #test without epoch
         self.assertRaises(RuntimeError, observedFromICRS, ra, dec, obs_metadata=obs_metadata)
+
+        #test without obs_metadata
         self.assertRaises(RuntimeError, observedFromICRS, ra, dec, epoch=2000.0)
 
-        dummy_obs_metadata = ObservationMetaData(boundType = 'circle', boundLength = 0.2, site=None, phoSimMetaData=self.metadata)
-        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, epoch=2000.0,
-                          obs_metadata=dummy_obs_metadata)
+        #test without mjd
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  site=obs_metadata.site)
+        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, epoch=2000.0, obs_metadata=dummy)
 
-        test = observedFromICRS(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+        #test that it actually runs
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  site=obs_metadata.site,
+                                  mjd=obs_metadata.mjd)
+        test = observedFromICRS(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
+        ##########test calculatePupilCoordinates
+        #test without epoch
         self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
                           obs_metadata=obs_metadata)
+
+        #test without obs_metadata
         self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
                           epoch=2000.0)
 
-        dummy_obs_metadata = ObservationMetaData(rotSkyPos=10.0, unrefractedDec=10.0, mjd=51200.0)
+        #test without unrefractedRA
+        dummy = ObservationMetaData(unrefractedDec=obs_metadata.unrefractedDec,
+                                    rotSkyPos=obs_metadata.rotSkyPos,
+                                    mjd=obs_metadata.mjd)
         self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+                          epoch=2000.0, obs_metadata=dummy)
 
-        dummy_obs_metadata = ObservationMetaData(rotSkyPos=10.0, unrefractedRA=10.0, mjd=51200.0)
+        #test without unrefractedDec
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    rotSkyPos=obs_metadata.rotSkyPos,
+                                    mjd=obs_metadata.mjd)
         self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+                          epoch=2000.0, obs_metadata=dummy)
 
-        dummy_obs_metadata = ObservationMetaData(unrefractedRA=10.0, unrefractedDec=10.0, rotSkyPos=10.0)
+        #test without rotSkyPos
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    unrefractedDec=obs_metadata.unrefractedDec,
+                                    mjd=obs_metadata.mjd)
         self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0, obs_metadata=dummy_obs_metadata)
+                          epoch=2000.0, obs_metadata=dummy)
 
-        test = calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+        #test without mjd
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    unrefractedDec=obs_metadata.unrefractedDec,
+                                    rotSkyPos=obs_metadata.rotSkyPos)
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy)
+
+
+        #test that it actually runs
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    unrefractedDec=obs_metadata.unrefractedDec,
+                                    rotSkyPos=obs_metadata.rotSkyPos,
+                                    mjd=obs_metadata.mjd)
+        test = calculatePupilCoordinates(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
     def testCameraCoordsExceptions(self):
         """

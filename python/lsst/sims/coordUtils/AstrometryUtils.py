@@ -455,7 +455,7 @@ def calculatePupilCoordinates(raObj, decObj, obs_metadata=None, epoch=None):
     if epoch is None:
         raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
 
-    if obs_metadata.rotSkyPos is None:
+    if obs_metadata._rotSkyPos is None:
         raise RuntimeError("Cannot call calculatePupilCoordinates without rotSkyPos " + \
                            "in obs_metadata")
 
@@ -535,7 +535,7 @@ def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
     x_out=numpy.zeros(len(ra_in))
     y_out=numpy.zeros(len(ra_in))
 
-    if obs_metadata.rotSkyPos is None:
+    if obs_metadata._rotSkyPos is None:
         #there is no observation meta data on which to base astrometry
         raise RuntimeError("Cannot calculate [x,y]_focal_nominal without obs_metadata.rotSkyPos")
 
