@@ -638,23 +638,6 @@ class astrometryUnitTest(unittest.TestCase):
         test = findChipName(ra=ra, dec=dec, camera=self.cat.camera, epoch=2000.0,
                             obs_metadata=self.obs_metadata)
 
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
-                          obs_metadata=self.obs_metadata, epoch=2000.0)
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec, epoch=2000.0,
-                          camera=self.cat.camera)
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
-                          camera=self.cat.camera, obs_metadata=self.obs_metadata)
-        test = calculatePixelCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
-                                         obs_metadata=self.obs_metadata, epoch=2000.0)
-
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
-                          obs_metadata=self.obs_metadata, epoch=2000.0)
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
-                          epoch=2000.0, camera=self.cat.camera)
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
-                          camera=self.cat.camera, obs_metadata=self.obs_metadata)
-        test = calculateFocalPlaneCoordinates(ra=ra, dec=dec, camera=self.cat.camera,
-                                              obs_metadata=self.obs_metadata, epoch=2000.0)
 
     def testClassMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
