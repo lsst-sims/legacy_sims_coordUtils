@@ -680,6 +680,12 @@ class astrometryUnitTest(unittest.TestCase):
 
 
     def testUtilityMethods(self):
+        """
+        Generate a catalog using the methods from AstrometryUtils.py and CameraUtils.py.
+        Read that data in, and then recalculate the values 'by hand' to make sure
+        that they are consistent.
+        """
+
         self.cat.write_catalog("AstrometryTestCatalog.txt")
 
         dtype = [('id',int),('raPhoSim',float),('decPhoSim',float),('raObserved',float),
