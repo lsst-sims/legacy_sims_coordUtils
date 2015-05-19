@@ -488,6 +488,29 @@ class astrometryUnitTest(unittest.TestCase):
         yPupil = numpy.array([0.000199467792, 0.000189334])
 
 
+        name = findChipName(xPupil = xPupil, yPupil = yPupil,
+                            epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata,
+                            camera=self.cat.camera)
+
+        self.assertTrue(name[0] is not None)
+
+        name = findChipName(ra = ra, dec = dec, epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata, camera=self.cat.camera)
+        xtest, ytest = calculatePupilCoordinates(ra, dec, obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertTrue(name[0] is not None)
+
+        self.assertRaises(RuntimeError, findChipName)
+        self.assertRaises(RuntimeError, findChipName, xPupil = xPupil, yPupil = yPupil,
+                  ra = ra, dec = dec)
+
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec,
+                          obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, epoch=2000.0,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, camera=self.cat.camera,
+                          obs_metadata=self.obs_metadata)
+
         ##########test FocalPlaneCoordinates
 
         #test that it actually runs
@@ -611,32 +634,6 @@ class astrometryUnitTest(unittest.TestCase):
                                   camera=self.cat.camera, chipNames=chipNames)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec, obs_metadata=self.cat.obs_metadata, epoch=self.cat.db_obj.epoch,
                                   camera=self.cat.camera, chipNames=[chipNames[0]])
-
-
-        name = findChipName(xPupil = xPupil, yPupil = yPupil,
-                            epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata,
-                            camera=self.cat.camera)
-
-        self.assertTrue(name[0] is not None)
-
-        name = findChipName(ra = ra, dec = dec, epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata, camera=self.cat.camera)
-        xtest, ytest = calculatePupilCoordinates(ra, dec, obs_metadata=self.obs_metadata, epoch=2000.0)
-        self.assertTrue(name[0] is not None)
-
-        self.assertRaises(RuntimeError, findChipName)
-        self.assertRaises(RuntimeError, findChipName, xPupil = xPupil, yPupil = yPupil,
-                  ra = ra, dec = dec)
-
-        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec,
-                          obs_metadata=self.obs_metadata, epoch=2000.0)
-        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, epoch=2000.0,
-                          camera=self.cat.camera)
-        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, camera=self.cat.camera,
-                          obs_metadata=self.obs_metadata)
-        test = findChipName(ra=ra, dec=dec, camera=self.cat.camera, epoch=2000.0,
-                            obs_metadata=self.obs_metadata)
 
 
     def testClassMethods(self):
