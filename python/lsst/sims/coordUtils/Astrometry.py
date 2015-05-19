@@ -614,9 +614,9 @@ class AstrometryBase(object):
 
         """
 
-        hourAngle = self.calcLast(mjd, self.site.longitude) - ra
+        hourAngle = self.calcLast(mjd, self.obs_metadata.site.longitude) - ra
 
-        _de2hOutput=pal.de2h(hourAngle, dec,  self.site.latitude)
+        _de2hOutput=pal.de2h(hourAngle, dec,  self.obs_metadata.site.latitude)
 
         #return (altitude, azimuth)
         return _de2hOutput[1], _de2hOutput[0]
@@ -628,7 +628,7 @@ class AstrometryBase(object):
         Az is measured from North through East.
         """
 
-        sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
+        sinpa = math.sin(az)*math.cos(self.obs_metadata.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
     def calculatePupilCoordinates(self, raObj, decObj,
