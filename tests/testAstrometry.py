@@ -1047,11 +1047,11 @@ class astrometryUnitTest(unittest.TestCase):
 
     def testParallax(self):
         """
-        This test will output a catalog of uncorrected and corrected (astrometrically)
-        ra and dec.  It will also output the quantities (proper motion, radial velocity,
-        and parallax) needed to apply the astrometric corrections.  It will then run the
-        catalog through PALPY and verify that the catalog generating code correctly applied
-        the astrometric corrections.
+        This test will output a catalog of ICRS and observed positions.
+        It will also output the quantities (proper motion, radial velocity,
+        and parallax) needed to apply the transformaiton between the two.
+        It will then run the catalog through PALPY and verify that the catalog
+        generating code correctly applied the transformations.
         """
 
         #create and write a catalog that performs astrometric transformations
