@@ -777,34 +777,6 @@ class astrometryUnitTest(unittest.TestCase):
             os.unlink("AstrometryTestCatalog.txt")
 
 
-
-    def testPassingOfSite(self):
-        """
-        Test that site information is correctly passed to
-        InstanceCatalog objects
-        """
-
-        testSite=Site(longitude=10.0,latitude=20.0,height=4000.0, \
-              xPolar=2.4, yPolar=1.4, meanTemperature=314.0, \
-              meanPressure=800.0,meanHumidity=0.9, lapseRate=0.01)
-
-        obs_metadata=ObservationMetaData(mjd=50984.371741,boundType='circle',
-                                         boundLength=0.05,site=testSite,
-                                         phoSimMetaData=self.metadata)
-
-        cat2=testCatalog(self.starDBObject,obs_metadata=obs_metadata)
-
-        self.assertEqual(cat2.site.longitude,10.0)
-        self.assertEqual(cat2.site.latitude,20.0)
-        self.assertEqual(cat2.site.height,4000.0)
-        self.assertEqual(cat2.site.xPolar,2.4)
-        self.assertEqual(cat2.site.yPolar,1.4)
-        self.assertEqual(cat2.site.meanTemperature,314.0)
-        self.assertEqual(cat2.site.meanPressure,800.0)
-        self.assertEqual(cat2.site.meanHumidity,0.9)
-        self.assertEqual(cat2.site.lapseRate,0.01)
-
-
     def testApplyPrecession(self):
 
         ra=numpy.zeros((3),dtype=float)
