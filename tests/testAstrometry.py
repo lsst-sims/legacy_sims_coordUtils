@@ -235,6 +235,16 @@ class astrometryUnitTest(unittest.TestCase):
         site = obs_metadata.site
         x, y = refractionCoefficients(site=site)
 
+        ##########test applyRefraction
+        zd = 0.1
+        rzd = applyRefraction(zd, x, y)
+
+        zd = [0.1, 0.2]
+        self.assertRaises(RuntimeError, applyRefraction, zd, x, y)
+
+        zd = numpy.array([0.1, 0.2])
+        rzd = applyRefraction(zd, x, y)
+
         ##########test calculateGnomonicProjection
         #test without epoch
         self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
