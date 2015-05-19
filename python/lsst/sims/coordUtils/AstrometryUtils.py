@@ -132,7 +132,7 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
 
     @param [in] dec in radians.  Can be a float or a numpy array (not a list).
 
-    @param [in] pm_ra is ra proper motion in radians/year.
+    @param [in] pm_ra is ra proper motion multiplied by cos(Dec) in radians/year.
     Can be a float or a numpy array (not a list).
 
     @param [in] pm_dec is dec proper motion in radians/year.
@@ -174,10 +174,10 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     #be using; just that the argument passed to palpy.pmVector should be in julian years)
     julianEpoch = palpy.epj(mjd)
 
-    #The pm_dec argument passed to pmVector used to be pm_dec/cos(dec).
-    #I have done away with that, since PAL expects the user to pass in
-    #proper motion in radians/per year.  I leave it to the user to perform
-    #whatever coordinate transformations are appropriate to the data.
+    #because PAL and ERFA expect proper motion in terms of "coordinate
+    #angle; not true angle" (as stated in erfa/starpm.c documentation)
+    pm_ra_corrected = pm_ra/numpy.cos(dec)
+
     if isinstance(ra, numpy.ndarray):
         if len(ra) != len(dec) or \
         len(ra) != len(pm_ra) or \
@@ -194,9 +194,9 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
                                "%d v_rads " % len(v_rad) +
                                "to applyPm; those numbers need to be identical.")
 
-        raOut, decOut = palpy.pmVector(ra,dec,pm_ra,pm_dec,parallaxArcsec,v_rad, epoch, julianEpoch)
+        raOut, decOut = palpy.pmVector(ra,dec,pm_ra_corrected,pm_dec,parallaxArcsec,v_rad, epoch, julianEpoch)
     else:
-        raOut, decOut = palpy.pm(ra, dec, pm_ra, pm_dec, parallaxArcsec, v_rad, epoch, julianEpoch)
+        raOut, decOut = palpy.pm(ra, dec, pm_ra_corrected, pm_dec, parallaxArcsec, v_rad, epoch, julianEpoch)
 
     return raOut,decOut
 
@@ -224,7 +224,7 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     @param [in] dec in radians (ICRS).  Must be a numpy array.
 
-    @param [in] pm_ra is ra proper motion in radians/year
+    @param [in] pm_ra is ra proper motion multiplied by cos(Dec) in radians/year
 
     @param [in] pm_dec is dec proper motion in radians/year
 
@@ -283,7 +283,11 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     #The accuracy is sub-milliarcsecond, limited by the
     #precession-nutation model (see palPrenut for details).
 
-    raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra,pm_dec,radiansToArcsec(parallax),v_rad,prms)
+    #because PAL and ERFA expect proper motion in terms of "coordinate
+    #angle; not true angle" (as stated in erfa/starpm.c documentation)
+    pm_ra_corrected = pm_ra/numpy.cos(dec)
+
+    raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra_corrected,pm_dec,radiansToArcsec(parallax),v_rad,prms)
 
     return raOut,decOut
 
@@ -430,7 +434,7 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
 
     @param [in] dec is the unrefracted Dec in radians (ICRS).  Must be a numpy array.
 
-    @param [in] pm_ra is proper motion in RA (radians/yr)
+    @param [in] pm_ra is proper motion in RA multiplied by cos(Dec) (radians/yr)
 
     @param [in] pm_dec is proper motion in dec (radians/yr)
 

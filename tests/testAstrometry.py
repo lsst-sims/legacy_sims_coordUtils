@@ -839,9 +839,10 @@ class astrometryUnitTest(unittest.TestCase):
 
         ep=2.001040286039033845e+03
 
-        #This test passes pm_dec/numpy.cos(dec) because that is the input that
-        #was used when the baseline data was generated with SLALIB
-        output=applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),
+        #The proper motion arguments in this function are weird
+        #because there was a misunderstanding when the baseline
+        #SLALIB data was made.
+        output=applyProperMotion(ra,dec,pm_ra*numpy.cos(dec),pm_dec/numpy.cos(dec),
                                  arcsecToRadians(parallax),v_rad,epoch=ep,
                                  mjd=self.obs_metadata.mjd)
 
@@ -883,15 +884,13 @@ class astrometryUnitTest(unittest.TestCase):
         parallax[2]=2.172865273161764255e-02
         v_rad[2]=-3.225459751425886452e+02
 
-
-        #hack because this is how the SLALIB baseline tests were run
-        for i in range(3):
-            pm_dec[i]=pm_dec[i]/numpy.cos(dec[i])
-
         ep=2.001040286039033845e+03
         mjd=2.018749109074271473e+03
 
-        output=appGeoFromICRS(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
+        #The proper motion arguments in this function are weird
+        #because there was a misunderstanding when the baseline
+        #SLALIB data was made.
+        output=appGeoFromICRS(ra,dec,pm_ra = pm_ra*numpy.cos(dec), pm_dec = pm_dec/numpy.cos(dec),
                               parallax = arcsecToRadians(parallax),v_rad = v_rad, epoch=ep,
                               mjd=mjd)
 
@@ -1081,8 +1080,8 @@ class astrometryUnitTest(unittest.TestCase):
             raObserved, decObserved = observedFromAppGeo(ra_apparent, dec_apparent,
                                                                  obs_metadata=cat.obs_metadata)
 
-            self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),10)
-            self.assertAlmostEqual(decObserved[0],numpy.radians(vv[3]),10)
+            self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),7)
+            self.assertAlmostEqual(decObserved[0],numpy.radians(vv[3]),7)
 
         if os.path.exists(parallaxName):
             os.unlink(parallaxName)
