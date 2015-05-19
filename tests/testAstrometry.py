@@ -479,27 +479,57 @@ class astrometryUnitTest(unittest.TestCase):
         """
 
         #these are just values shown heuristically to give an actual chip name
-        ra = numpy.array([numpy.radians(self.obs_metadata.unrefractedRA) - 1.01*numpy.radians(1.0/3600.0)])
-        dec = numpy.array([numpy.radians(self.obs_metadata.unrefractedDec) - 2.02*numpy.radians(1.0/3600.0)])
+        ra = numpy.array(numpy.radians(self.obs_metadata.unrefractedRA) - numpy.array([1.01, 1.02])*numpy.radians(1.0/3600.0))
+        dec = numpy.array(numpy.radians(self.obs_metadata.unrefractedDec) - numpy.array([2.02, 2.01])*numpy.radians(1.0/3600.0))
 
         ra, dec = observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=self.starDBObject.epoch)
 
-        xPupil = numpy.array([-0.000262243770])
-        yPupil = numpy.array([0.000199467792])
+        xPupil = numpy.array([-0.000262243770, -0.00000234])
+        yPupil = numpy.array([0.000199467792, 0.000189334])
 
+
+        ##########test FocalPlaneCoordinates
+
+        #test that it actually runs
         xx, yy = calculateFocalPlaneCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
         xx, yy = calculateFocalPlaneCoordinates(ra = ra, dec = dec,
                                                 epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                                                 camera=self.cat.camera)
 
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates)
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
-                             xPupil = xPupil, yPupil = yPupil)
+        #test without any coordinates
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, camera=self.cat.camera)
 
-        xx, yy = calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
-        xx, yy = calculatePixelCoordinates(ra = ra, dec = dec, epoch=self.cat.db_obj.epoch,
-                                           obs_metadata=self.cat.obs_metadata,
-                                           camera=self.cat.camera)
+        #test specifying both ra,dec and xPupil,yPupil
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
+                             xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+
+        #test without camera
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=xPupil, yPupil=yPupil)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                                        epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata)
+
+        #test without epoch
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
+                                                obs_metadata=self.cat.obs_metadata,
+                                                camera=self.cat.camera)
+
+        #test without obs_metadata
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
+                                                epoch=self.cat.db_obj.epoch,
+                                                camera=self.cat.camera)
+
+        #test with lists
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=list(xPupil), yPupil=yPupil,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=xPupil, yPupil=list(yPupil),
+                          camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=list(ra), dec=dec,
+                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=list(dec),
+                                        epoch=self.cat.db_obj.epoch,
+                                        obs_metadata=self.cat.obs_metadata,
+                                        camera=self.cat.camera)
 
         self.assertRaises(RuntimeError, calculatePixelCoordinates)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil = xPupil,
