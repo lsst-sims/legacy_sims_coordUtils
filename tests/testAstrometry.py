@@ -245,6 +245,17 @@ class astrometryUnitTest(unittest.TestCase):
         zd = numpy.array([0.1, 0.2])
         rzd = applyRefraction(zd, x, y)
 
+        ##########test applyPrecession
+        #test without mjd
+        self.assertRaises(RuntimeError, applyPrecession, ra, dec)
+
+        #test mismatches
+        self.assertRaises(RuntimeError, applyPrecession, raShort, dec, mjd=52000.0)
+        self.assertRaises(RuntimeError, applyPrecession, ra, decShort, mjd=52000.0)
+
+        #test that it runs
+        applyPrecession(ra, dec, mjd=52000.0)
+
         ##########test applyProperMotion
         raList = list(ra)
         decList = list(dec)

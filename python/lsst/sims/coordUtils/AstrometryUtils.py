@@ -95,6 +95,11 @@ def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
 
     """
 
+    if hasattr(ra, '__len__'):
+        if len(ra) != len(dec):
+            raise RuntimeError("You supplied %d RAs but %d Decs to applyPrecession" %
+                               (len(ra), len(dec)))
+
     if mjd is None:
         raise RuntimeError("You need to supply applyPrecession with an mjd")
 
