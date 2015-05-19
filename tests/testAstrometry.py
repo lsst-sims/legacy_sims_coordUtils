@@ -789,6 +789,8 @@ class astrometryUnitTest(unittest.TestCase):
         ra[2]=7.740864769302191473e-01
         dec[2]=2.758053025017753179e-01
 
+        self.assertRaises(RuntimeError, applyPrecession, ra, dec)
+
         #The MJD kwarg in applyPrecession below is a hold-over from
         #a misunderstanding in the API for the pal.prenut() back
         #when we generated the test data.  We passed a julian epoch
@@ -796,7 +798,7 @@ class astrometryUnitTest(unittest.TestCase):
         #code has been fixed.  This test still passes a julian
         #epoch so that it will give the same results as the control
         #SLALIB run.
-        output=applyPrecession(ra,dec, MJD=pal.epj(2000.0))
+        output=applyPrecession(ra,dec, mjd=pal.epj(2000.0))
 
         self.assertAlmostEqual(output[0][0],2.514361575034799401e+00,6)
         self.assertAlmostEqual(output[1][0], 5.306722463159389003e-01,6)

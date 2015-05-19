@@ -70,7 +70,7 @@ def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
     return refractedZenith
 
 
-def applyPrecession(ra, dec, EP0=2000.0, MJD=2000.0):
+def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     """
     applyPrecession() applies precesion and nutation to coordinates between two epochs.
     Accepts RA and dec as inputs.  Returns corrected RA and dec (in radians).
@@ -85,11 +85,18 @@ def applyPrecession(ra, dec, EP0=2000.0, MJD=2000.0):
 
     @param [in] dec
 
+    @param [in] epoch is the epoch of the mean equinox (in years; default 2000)
+
+    @param [in] mjd is the MJD of the observation
+
     @param [out] raOut is ra corrected for precession and nutation
 
     @param [out] decOut is dec corrected for precession and nutation
 
     """
+
+    if mjd is None:
+        raise RuntimeError("You need to supply applyPrecession with an mjd")
 
     # Determine the precession and nutation
     #palpy.prenut takes the julian epoch for the mean coordinates
@@ -97,7 +104,7 @@ def applyPrecession(ra, dec, EP0=2000.0, MJD=2000.0):
     #
     #TODO it is not specified what this MJD should be (i.e. in which
     #time system it should be reckoned)
-    rmat=palpy.prenut(EP0, MJD)
+    rmat=palpy.prenut(epoch, mjd)
 
     # Apply rotation matrix
     xyz = sphericalToCartesian(ra,dec)
