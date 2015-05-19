@@ -531,6 +531,20 @@ class astrometryUnitTest(unittest.TestCase):
                                         obs_metadata=self.cat.obs_metadata,
                                         camera=self.cat.camera)
 
+        #test mismatches
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=numpy.array([xPupil[0]]), yPupil=yPupil,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=xPupil, yPupil=numpy.array([yPupil[0]]),
+                          camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=numpy.array([ra[0]]), dec=dec,
+                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=numpy.array([dec[0]]),
+                                        epoch=self.cat.db_obj.epoch,
+                                        obs_metadata=self.cat.obs_metadata,
+                                        camera=self.cat.camera)
+
+
         self.assertRaises(RuntimeError, calculatePixelCoordinates)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil = xPupil,
                            yPupil = yPupil, ra = ra, dec = dec)
