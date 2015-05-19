@@ -679,7 +679,7 @@ class astrometryUnitTest(unittest.TestCase):
                                   camera=self.cat.camera, chipNames=[chipNames[0]])
 
 
-    def testClassMethods(self):
+    def testUtilityMethods(self):
         self.cat.write_catalog("AstrometryTestCatalog.txt")
 
         dtype = [('id',int),('raPhoSim',float),('decPhoSim',float),('raObserved',float),
