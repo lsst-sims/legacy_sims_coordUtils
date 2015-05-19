@@ -292,6 +292,7 @@ class astrometryUnitTest(unittest.TestCase):
         #test that it actually urns
         test=appGeoFromICRS(ra, dec, MJD=obs_metadata.mjd)
 
+        ##########test observedFromAppGeo
         #test without obs_metadata
         self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec)
 
@@ -302,11 +303,22 @@ class astrometryUnitTest(unittest.TestCase):
                                   site=None)
         self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy)
 
-        #test that it actually runs
+        #test without mjd
+        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                  unrefractedDec=obs_metadata.unrefractedDec,
+                                  site=Site())
+        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy)
+
+        #test mismatches
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                   unrefractedDec=obs_metadata.unrefractedDec,
                                   mjd=obs_metadata.mjd,
                                   site=Site())
+
+        self.assertRaises(RuntimeError, observedFromAppGeo, ra, decShort, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, observedFromAppGeo, raShort, dec, obs_metadata=dummy)
+
+        #test that it actually runs
         test = observedFromAppGeo(ra, dec, obs_metadata=dummy)
 
         ##########test observedFromICRS

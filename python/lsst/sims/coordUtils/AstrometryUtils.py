@@ -282,12 +282,17 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
     """
 
     if obs_metadata is None:
+        raise RuntimeError("Cannot call observedFromAppGeo without an obs_metadata")
 
-        if obs_metadata is None:
-            raise RuntimeError("Cannot call observedFromAppGeo without an obs_metadata")
-
-    if not hasattr(obs_metadata, 'site') or obs_metadata.site is None:
+    if obs_metadata.site is None:
         raise RuntimeError("Cannot call observedFromAppGeo: obs_metadata has no site info")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("Cannot call observedFromAppGeo: obs_metadata has no mjd")
+
+    if len(ra)!=len(dec):
+        raise RuntimeError("You passed %d RAs but %d Decs to observedFromAppGeo" % \
+                           (len(ra), len(dec)))
 
     # Correct site longitude for polar motion slaPolmo
     #
