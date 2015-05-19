@@ -14,7 +14,7 @@ def refractionCoefficients(wavelength=0.5, site=None):
     This calculates the refraction at 2 angles and derives a tanz and tan^3z
     coefficient for subsequent quick calculations. Good for zenith distances < 76 degrees
 
-    @param [in] wavelength is effective wavelength in microns
+    @param [in] wavelength is effective wavelength in microns (default 0.5)
 
     @param [in] site is an instantiation of the Site class defined in
     sims_utils/../Site.py
@@ -116,12 +116,12 @@ def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
 
 
 def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
-                      EP0=2000.0, mjd=None):
+                      epoch=2000.0, mjd=None):
     """Applies proper motion between two epochs.
 
     units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
     (radians/year), parallax (arcsec), v_rad (km/sec, positive if receding),
-    EP0 (Julian years)
+    epoch (Julian years)
 
     Returns corrected ra and dec (in radians)
 
@@ -143,7 +143,7 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     @param [in] v_rad is radial velocity in km/sec (positive if the object is receding).
     Can be a float or a numpy array (not a list).
 
-    @param [in] EP0 is epoch in Julian years (default: 2000.0)
+    @param [in] epoch is epoch in Julian years (default: 2000.0)
 
     @param [in] mjd is the MJD of the actual observation
 
@@ -194,16 +194,16 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
                                "%d v_rads " % len(v_rad) +
                                "to applyPm; those numbers need to be identical.")
 
-        raOut, decOut = palpy.pmVector(ra,dec,pm_ra,pm_dec,parallaxArcsec,v_rad, EP0, julianEpoch)
+        raOut, decOut = palpy.pmVector(ra,dec,pm_ra,pm_dec,parallaxArcsec,v_rad, epoch, julianEpoch)
     else:
-        raOut, decOut = palpy.pm(ra, dec, pm_ra, pm_dec, parallaxArcsec, v_rad, EP0, julianEpoch)
+        raOut, decOut = palpy.pm(ra, dec, pm_ra, pm_dec, parallaxArcsec, v_rad, epoch, julianEpoch)
 
     return raOut,decOut
 
 
 
 def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
-                   v_rad=None, Epoch0=2000.0, MJD = None):
+                   v_rad=None, epoch=2000.0, mjd = None):
     """
     Convert the mean position (RA, Dec) in the International Celestial Reference
     System (ICRS) to the mean apparent geocentric position in
@@ -213,7 +213,7 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
     (radians/year), parallax (arcsec), v_rad (km/sec; positive if receding),
-    EP0 (Julian years)
+    epoch (Julian years)
 
     Returns corrected RA and Dec
 
@@ -232,8 +232,8 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
 
-    @param [in] Epoch0 is the julian epoch (in years) of the equinox against which to
-    measure RA
+    @param [in] epoch is the julian epoch (in years) of the equinox against which to
+    measure RA (default: 2000.0)
 
     @param[in] MJD is the date of the observation
 
@@ -243,7 +243,7 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     """
 
-    if MJD is None:
+    if mjd is None:
         raise RuntimeError("cannot call appGeoFromICRS; mjd is None")
 
     if len(ra) != len(dec):
@@ -274,7 +274,7 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     #date (MJD)
     #
     #TODO This mjd should be the Barycentric Dynamical Time
-    prms=palpy.mappa(Epoch0, MJD)
+    prms=palpy.mappa(epoch, mjd)
 
     #palpy.mapqk does a quick mean to apparent place calculation using
     #the output of palpy.mappa
@@ -309,7 +309,7 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
     @param [in] altAzHr is a boolean indicating whether or not to return altitude
     and azimuth
 
-    @param [in] wavelength is effective wavelength in microns
+    @param [in] wavelength is effective wavelength in microns (default: 0.5)
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the
     observation (optional; if not included, the code will try to set it from
@@ -468,7 +468,7 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
                            (len(ra), len(dec)))
 
     ra_apparent, dec_apparent = appGeoFromICRS(ra, dec, pm_ra = pm_ra,
-             pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
+             pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, epoch = epoch, mjd=obs_metadata.mjd)
 
     ra_out, dec_out = observedFromAppGeo(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
                                                includeRefraction = includeRefraction)
@@ -611,7 +611,7 @@ def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
     inRA=numpy.array([obs_metadata._unrefractedRA])
     inDec=numpy.array([obs_metadata._unrefractedDec])
 
-    x, y = appGeoFromICRS(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
+    x, y = appGeoFromICRS(inRA, inDec, epoch=epoch, mjd=obs_metadata.mjd)
 
     #correct for refraction
     trueRA, trueDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)

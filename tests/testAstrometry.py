@@ -358,11 +358,11 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, appGeoFromICRS, ra, dec)
 
         #test with mismatched ra, dec
-        self.assertRaises(RuntimeError, appGeoFromICRS, ra, decShort, MJD=52000.0)
-        self.assertRaises(RuntimeError, appGeoFromICRS, raShort, dec, MJD=52000.0)
+        self.assertRaises(RuntimeError, appGeoFromICRS, ra, decShort, mjd=52000.0)
+        self.assertRaises(RuntimeError, appGeoFromICRS, raShort, dec, mjd=52000.0)
 
         #test that it actually urns
-        test=appGeoFromICRS(ra, dec, MJD=obs_metadata.mjd)
+        test=appGeoFromICRS(ra, dec, mjd=obs_metadata.mjd)
 
         ##########test observedFromAppGeo
         #test without obs_metadata
@@ -791,10 +791,10 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.assertRaises(RuntimeError, applyPrecession, ra, dec)
 
-        #The MJD kwarg in applyPrecession below is a hold-over from
+        #The mjd kwarg in applyPrecession below is a hold-over from
         #a misunderstanding in the API for the pal.prenut() back
         #when we generated the test data.  We passed a julian epoch
-        #(in years) when PAL actually wanted an MJD.  The underlying
+        #(in years) when PAL actually wanted an mjd.  The underlying
         #code has been fixed.  This test still passes a julian
         #epoch so that it will give the same results as the control
         #SLALIB run.
@@ -842,7 +842,7 @@ class astrometryUnitTest(unittest.TestCase):
         #This test passes pm_dec/numpy.cos(dec) because that is the input that
         #was used when the baseline data was generated with SLALIB
         output=applyProperMotion(ra,dec,pm_ra,pm_dec/numpy.cos(dec),
-                                 arcsecToRadians(parallax),v_rad,EP0=ep,
+                                 arcsecToRadians(parallax),v_rad,epoch=ep,
                                  mjd=self.obs_metadata.mjd)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
@@ -892,8 +892,8 @@ class astrometryUnitTest(unittest.TestCase):
         mjd=2.018749109074271473e+03
 
         output=appGeoFromICRS(ra,dec,pm_ra = pm_ra,pm_dec = pm_dec,
-                              parallax = arcsecToRadians(parallax),v_rad = v_rad, Epoch0=ep,
-                              MJD=mjd)
+                              parallax = arcsecToRadians(parallax),v_rad = v_rad, epoch=ep,
+                              mjd=mjd)
 
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6)
         self.assertAlmostEqual(output[1][0],5.309044018653210628e-01,6)
