@@ -532,6 +532,9 @@ def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
     if epoch is None:
         raise RuntimeError("Cannot call calculateGnomonicProjection; epoch is None")
 
+    if len(ra_in)!=len(dec_in):
+        raise RuntimeError("You passed %d RAs but %d Decs to calculateGnomonicProjection" % (len(ra_in), len(dec_in)))
+
     x_out=numpy.zeros(len(ra_in))
     y_out=numpy.zeros(len(ra_in))
 

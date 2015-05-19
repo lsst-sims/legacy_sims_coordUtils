@@ -246,7 +246,7 @@ class astrometryUnitTest(unittest.TestCase):
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                   unrefractedDec=obs_metadata.unrefractedDec,
                                   rotSkyPos=obs_metadata.rotSkyPos)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)                              
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
 
         #test without rotSkyPos
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
@@ -271,6 +271,12 @@ class astrometryUnitTest(unittest.TestCase):
                                   unrefractedDec=obs_metadata.unrefractedDec,
                                   mjd=obs_metadata.mjd,
                                   rotSkyPos=obs_metadata.rotSkyPos)
+
+        #test mismatches
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, decShort, epoch=2000.0, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, calculateGnomonicProjection, raShort, dec, epoch=2000.0, obs_metadata=dummy)
+
+        #test that it actually runs
         xGnomon, yGnomon = calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)+0.01]),
                                                        numpy.array([numpy.radians(obs_metadata.unrefractedDec)+0.1]),
                                                        epoch=2000.0, obs_metadata=dummy)
