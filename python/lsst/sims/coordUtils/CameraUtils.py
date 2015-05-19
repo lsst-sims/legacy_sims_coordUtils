@@ -55,13 +55,22 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
     if specifiedPupil and specifiedRaDec:
         raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
 
-    if specifiedPupil and len(xPupil) != len(yPupil):
-        raise RuntimeError("You did not pass in an equal number of xPupil and yPupil coordinates")
+    if specifiedPupil:
+        if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+            raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to findChipname")
 
-    if specifiedRaDec and len(ra) != len(dec):
-        raise RuntimeError("You did not pass in an equal number of ra and dec coordinates")
+        if len(xPupil) != len(yPupil):
+            raise RuntimeError("You passed %d xPupils and %d yPupils " % (len(xPupil), len(yPupil)) +
+                               "to findChipName.")
 
     if specifiedRaDec:
+
+        if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+            raise RuntimeError("You need to pass numpy arrays of RA and Dec to findChipName")
+
+        if len(ra) != len(dec):
+            raise RuntimeError("You passed %d RAs and %d Decs to findChipName" % (len(ra), len(dec)))
+
         if epoch is None:
             raise RuntimeError("You have to specify an epoch to run " + \
                                "findChipName on these inputs")
@@ -144,11 +153,19 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     if specifiedPupil and specifiedRaDec:
         raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
 
-    if specifiedPupil and len(xPupil) != len(yPupil):
-        raise RuntimeError("You passed %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
+    if specifiedPupil:
+
+        if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+            raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to calculatePixelCoordinates")
+
+        if len(xPupil) != len(yPupil):
+            raise RuntimeError("You passed %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
                            "to calculatePixelCoordinates")
 
     if specifiedRaDec:
+
+        if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+            raise RuntimeError("You must pass numpy arrays of RA and Dec to calculatePixelCoordinates")
 
         if len(ra) != len(dec):
             raise RuntimeError("You passed %d RAs and %d Decs to calculatePixelCoordinates" %
@@ -220,11 +237,19 @@ def calculateFocalPlaneCoordinates(xPupil=None, yPupil=None, ra=None, dec=None,
     if camera is None:
         raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
 
-    if specifiedPupil and len(xPupil) != len(yPupil):
-        raise RuntimeError("You specified %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
-                           "in calculateFocalPlaneCoordinates")
+    if specifiedPupil:
+        if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+            raise RuntimeError("You must pass numpy arrays of xPupil and yPupil to " +
+                               "calculateFocalPlaneCoordinates")
+
+        if len(xPupil) != len(yPupil):
+            raise RuntimeError("You specified %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
+                               "in calculateFocalPlaneCoordinates")
 
     if specifiedRaDec:
+
+        if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+            raise RuntimeError("You must pass numpy arrays of RA and Dec to calculateFocalPlaneCoordinates")
 
         if len(ra) != len(dec):
             raise RuntimeError("You specified %d RAs and %d Decs in calculateFocalPlaneCoordinates" %
