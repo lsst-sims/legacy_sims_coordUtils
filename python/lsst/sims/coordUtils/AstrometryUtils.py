@@ -476,6 +476,10 @@ def calculatePupilCoordinates(raObj, decObj, obs_metadata=None, epoch=None):
         raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd " + \
                            "in obs_metadata")
 
+    if len(raObj)!=len(decObj):
+        raise RuntimeError("You passed %d RAs but %d Decs into calculatePupilCoordinates" % \
+                           (len(raObj), len(decObj)))
+
     theta = -1.0*obs_metadata._rotSkyPos
 
     #correct for precession and nutation

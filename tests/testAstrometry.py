@@ -385,11 +385,19 @@ class astrometryUnitTest(unittest.TestCase):
                           epoch=2000.0, obs_metadata=dummy)
 
 
-        #test that it actually runs
+        #test for mismatches
         dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                     unrefractedDec=obs_metadata.unrefractedDec,
                                     rotSkyPos=obs_metadata.rotSkyPos,
                                     mjd=obs_metadata.mjd)
+
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, decShort, epoch=2000.0,
+                          obs_metadata=dummy)
+
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, raShort, dec, epoch=2000.0,
+                          obs_metadata=dummy)
+
+        #test that it actually runs
         test = calculatePupilCoordinates(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
     def testCameraCoordsExceptions(self):
