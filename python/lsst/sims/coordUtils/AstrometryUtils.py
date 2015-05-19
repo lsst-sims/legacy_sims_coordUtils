@@ -46,7 +46,8 @@ def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
 
     uses the quick PAL refco routine which approximates the refractin calculation
 
-    @param [in] zenithDistance is unrefracted zenith distance of the source in radians
+    @param [in] zenithDistance is unrefracted zenith distance of the source in radians.
+    Can either be a float or a numpy array (not a list).
 
     @param [in] tanzCoeff is the first output from refractionCoefficients (above)
 
@@ -55,6 +56,11 @@ def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
     @param [out] refractedZenith is the refracted zenith distance in radians
 
     """
+
+    if isinstance(zenithDistance, list):
+        raise RuntimeError("You passed a list of zenithDistances to " +
+                           "applyRefraction.  The method won't know how to " +
+                           "handle that.  Pass a numpy array.")
 
     if isinstance(zenithDistance, numpy.ndarray):
         refractedZenith = palpy.refzVector(zenithDistance, tanzCoeff, tan3zCoeff)
@@ -115,9 +121,9 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     The function palpy.pm does not work properly if the parallax is below
     0.00045 arcseconds
 
-    @param [in] ra in radians
+    @param [in] ra in radians.  Must be a numpy array.
 
-    @param [in] dec in radians
+    @param [in] dec in radians.  Must be a numpy array.
 
     @param [in] pm_ra is ra proper motion in radians/year
 
