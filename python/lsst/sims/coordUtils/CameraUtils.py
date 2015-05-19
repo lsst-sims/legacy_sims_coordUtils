@@ -72,9 +72,8 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
 
         xPupil, yPupil = calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
 
-    if not camera:
-        if not camera:
-            raise RuntimeError("No camera defined.  Cannot rin findChipName.")
+    if camera is None:
+        raise RuntimeError("No camera defined.  Cannot rin findChipName.")
 
     chipNames = []
 
@@ -145,7 +144,15 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     if specifiedPupil and specifiedRaDec:
         raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
 
+    if specifiedPupil and len(xPupil) != len(yPupil):
+        raise RuntimeError("You passed %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
+                           "to calculatePixelCoordinates")
+
     if specifiedRaDec:
+
+        if len(ra) != len(dec):
+            raise RuntimeError("You passed %d RAs and %d Decs to calculatePixelCoordinates" %
+                               (len(ra), len(dec)))
 
         if epoch is None:
             raise RuntimeError("You need to specify an epoch to run calculatePixelCoordinates " + \
@@ -210,10 +217,18 @@ def calculateFocalPlaneCoordinates(xPupil=None, yPupil=None, ra=None, dec=None,
     if specifiedPupil and specifiedRaDec:
         raise RuntimeError("You cannot specify both pupil and equaltorial coordinates when calling calculateFocalPlaneCoordinates")
 
-    if not camera:
+    if camera is None:
         raise RuntimeError("No camera defined.  Cannot calculate focalplane coordinates")
 
+    if specifiedPupil and len(xPupil) != len(yPupil):
+        raise RuntimeError("You specified %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
+                           "in calculateFocalPlaneCoordinates")
+
     if specifiedRaDec:
+
+        if len(ra) != len(dec):
+            raise RuntimeError("You specified %d RAs and %d Decs in calculateFocalPlaneCoordinates" %
+                               (len(ra), len(dec)))
 
         if epoch is None:
             raise RuntimeError("You have to specify an epoch to run " + \
