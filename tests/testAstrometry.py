@@ -245,6 +245,68 @@ class astrometryUnitTest(unittest.TestCase):
         zd = numpy.array([0.1, 0.2])
         rzd = applyRefraction(zd, x, y)
 
+        ##########test applyProperMotion
+        raList = list(ra)
+        decList = list(dec)
+        pm_raList = list(pm_ra)
+        pm_decList = list(pm_dec)
+        parallaxList = list(parallax)
+        v_radList = list(v_rad)
+
+        pm_raShort = numpy.array([pm_ra[0]])
+        pm_decShort = numpy.array([pm_dec[0]])
+        parallaxShort = numpy.array([parallax[0]])
+        v_radShort = numpy.array([v_rad[0]])
+
+        #test without mjd
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_ra, pm_dec, parallax, v_rad)
+
+        #test passing lists
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          raList, dec, pm_ra, pm_dec, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, decList, pm_ra, pm_dec, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_raList, pm_dec, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_ra, pm_decList, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_ra, pm_dec, parallaxList, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_ra, pm_dec, parallax, v_radList,
+                          mjd=52000.0)
+
+        #test mismatches
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          raShort, dec, pm_ra, pm_dec, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, decShort, pm_ra, pm_dec, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_raShort, pm_dec, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_ra, pm_decShort, parallax, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_ra, pm_dec, parallaxShort, v_rad,
+                          mjd=52000.0)
+        self.assertRaises(RuntimeError, applyProperMotion,
+                          ra, dec, pm_ra, pm_dec, parallax, v_radShort,
+                          mjd=52000.0)
+
+        #test that it actually runs
+        applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, mjd=52000.0)
+        applyProperMotion(ra[0], dec[0], pm_ra[0], pm_dec[0], parallax[0], v_rad[0],
+                          mjd=52000.0)
+
         ##########test calculateGnomonicProjection
         #test without epoch
         self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)

@@ -121,19 +121,22 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     The function palpy.pm does not work properly if the parallax is below
     0.00045 arcseconds
 
-    @param [in] ra in radians.  Must be a numpy array.
+    @param [in] ra in radians.  Can be a float or a numpy array (not a list).
 
-    @param [in] dec in radians.  Must be a numpy array.
+    @param [in] dec in radians.  Can be a float or a numpy array (not a list).
 
-    @param [in] pm_ra is ra proper motion in radians/year
+    @param [in] pm_ra is ra proper motion in radians/year.
+    Can be a float or a numpy array (not a list).
 
-    @param [in] pm_dec is dec proper motion in radians/year
+    @param [in] pm_dec is dec proper motion in radians/year.
+    Can be a float or a numpy array (not a list).
 
-    @param [in] parallax in radians
+    @param [in] parallax in radians. Can be a float or a numpy array (not a list).
 
-    @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
+    @param [in] v_rad is radial velocity in km/sec (positive if the object is receding).
+    Can be a float or a numpy array (not a list).
 
-    @param [in] EP0 is epoch in Julian years
+    @param [in] EP0 is epoch in Julian years (default: 2000.0)
 
     @param [in] mjd is the MJD of the actual observation
 
@@ -142,6 +145,14 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     @param [out] decOut is corrected dec
 
     """
+
+    if isinstance(ra, list) or isinstance(dec, list) or \
+    isinstance(pm_ra, list) or isinstance(pm_dec, list) or \
+    isinstance(parallax, list) or isinstance(v_rad, list):
+
+        raise RuntimeError("You tried to pass lists to applyPm. " +
+                           "The method does not know how to handle lists. " +
+                           "Use numpy arrays.")
 
     if mjd is None:
         raise RuntimeError("cannot call applyProperMotion; mjd is None")
@@ -160,7 +171,25 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     #I have done away with that, since PAL expects the user to pass in
     #proper motion in radians/per year.  I leave it to the user to perform
     #whatever coordinate transformations are appropriate to the data.
-    raOut, decOut = palpy.pmVector(ra,dec,pm_ra,pm_dec,parallaxArcsec,v_rad, EP0, julianEpoch)
+    if isinstance(ra, numpy.ndarray):
+        if len(ra) != len(dec) or \
+        len(ra) != len(pm_ra) or \
+        len(ra) != len(pm_dec) or \
+        len(ra) != len(parallaxArcsec) or \
+        len(ra) != len(v_rad):
+
+            raise RuntimeError("You passed: " +
+                               "%d RAs, " % len(ra) +
+                               "%d Dec, " % len(dec) +
+                               "%d pm_ras, " % len(pm_ra) +
+                               "%d pm_decs, " % len(pm_dec) +
+                               "%d parallaxes, " % len(parallaxArcsec)+
+                               "%d v_rads " % len(v_rad) +
+                               "to applyPm; those numbers need to be identical.")
+
+        raOut, decOut = palpy.pmVector(ra,dec,pm_ra,pm_dec,parallaxArcsec,v_rad, EP0, julianEpoch)
+    else:
+        raOut, decOut = palpy.pm(ra, dec, pm_ra, pm_dec, parallaxArcsec, v_rad, EP0, julianEpoch)
 
     return raOut,decOut
 
