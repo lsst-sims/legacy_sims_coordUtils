@@ -339,6 +339,12 @@ class astrometryUnitTest(unittest.TestCase):
                                   unrefractedDec=obs_metadata.unrefractedDec,
                                   site=obs_metadata.site,
                                   mjd=obs_metadata.mjd)
+
+        #test mismatches
+        self.assertRaises(RuntimeError, observedFromICRS, ra, decShort, epoch=2000.0, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, observedFromICRS, raShort, dec, epoch=2000.0, obs_metadata=dummy)
+
+        #test that it actually runs
         test = observedFromICRS(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
         ##########test calculatePupilCoordinates

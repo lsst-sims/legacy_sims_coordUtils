@@ -418,6 +418,10 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
     if epoch is None:
         raise RuntimeError("cannot call observedFromICRS; you have not specified an epoch")
 
+    if len(ra)!=len(dec):
+        raise RuntimeError("You passed %d RAs but %d Decs to observedFromICRS" % \
+                           (len(ra), len(dec)))
+
     ra_apparent, dec_apparent = appGeoFromICRS(ra, dec, pm_ra = pm_ra,
              pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, Epoch0 = epoch, MJD=obs_metadata.mjd)
 
