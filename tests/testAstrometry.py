@@ -487,29 +487,72 @@ class astrometryUnitTest(unittest.TestCase):
         xPupil = numpy.array([-0.000262243770, -0.00000234])
         yPupil = numpy.array([0.000199467792, 0.000189334])
 
+        ##########test findChipName
 
-        name = findChipName(xPupil = xPupil, yPupil = yPupil,
+        name = findChipName(ra = ra, dec = dec,
                             epoch=self.cat.db_obj.epoch,
                             obs_metadata=self.cat.obs_metadata,
                             camera=self.cat.camera)
 
         self.assertTrue(name[0] is not None)
 
-        name = findChipName(ra = ra, dec = dec, epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata, camera=self.cat.camera)
-        xtest, ytest = calculatePupilCoordinates(ra, dec, obs_metadata=self.obs_metadata, epoch=2000.0)
+        name = findChipName(xPupil = xPupil, yPupil = yPupil,
+                            camera=self.cat.camera)
+
         self.assertTrue(name[0] is not None)
 
+        #test when specifying no coordinates
         self.assertRaises(RuntimeError, findChipName)
-        self.assertRaises(RuntimeError, findChipName, xPupil = xPupil, yPupil = yPupil,
-                  ra = ra, dec = dec)
 
+        #test when specifying both sets fo coordinates
+        self.assertRaises(RuntimeError, findChipName, xPupil = xPupil, yPupil = yPupil,
+                  ra = ra, dec = dec, camera=self.cat.camera)
+
+        #test when failing to specify camera
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec,
                           obs_metadata=self.obs_metadata, epoch=2000.0)
+        self.assertRaises(RuntimeError, findChipName, xPupil=xPupil, yPupil=yPupil)
+
+        #test when failing to specify obs_metadata
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, epoch=2000.0,
                           camera=self.cat.camera)
+
+        #test when failing to specify epoch
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, camera=self.cat.camera,
                           obs_metadata=self.obs_metadata)
+
+        #test mismatches
+        self.assertRaises(RuntimeError, findChipName, ra = numpy.array([ra[0]]), dec = dec,
+                            epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata,
+                            camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, findChipName, ra = ra, dec = numpy.array([dec[0]]),
+                            epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata,
+                            camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, findChipName, xPupil=numpy.array([xPupil[0]]), yPupil=yPupil,
+                                        camera=self.cat.camera)
+        self.assertRaises(RuntimeError, findChipName, xPupil=xPupil, yPupil=numpy.array([yPupil[0]]),
+                                        camera=self.cat.camera)
+
+        #test lists
+        self.assertRaises(RuntimeError, findChipName, ra = list(ra), dec = dec,
+                            epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata,
+                            camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, findChipName, ra = ra, dec = list(dec),
+                            epoch=self.cat.db_obj.epoch,
+                            obs_metadata=self.cat.obs_metadata,
+                            camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, findChipName, xPupil=list(xPupil), yPupil=yPupil,
+                                        camera=self.cat.camera)
+        self.assertRaises(RuntimeError, findChipName, xPupil=xPupil, yPupil=list(yPupil),
+                                        camera=self.cat.camera)
+
 
         ##########test FocalPlaneCoordinates
 
