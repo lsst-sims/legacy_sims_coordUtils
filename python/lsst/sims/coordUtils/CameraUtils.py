@@ -139,7 +139,7 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     """
 
     if not camera:
-        raise RuntimeError("No camera defined.  Cannot calculate pixel coordinates")
+        raise RuntimeError("You need to pass a camera to calculatePixelCoordinates")
 
     specifiedPupil = False
     specifiedRaDec = False
@@ -162,6 +162,12 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
             raise RuntimeError("You passed %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
                            "to calculatePixelCoordinates")
 
+        if chipNames is not None:
+            if len(xPupil) != len(chipNames):
+                raise RuntimeError("You passed %d points but only %d chipNames to calculatePixelCoordinates" %
+                                   (len(xPupil), len(chipNames)))
+
+
     if specifiedRaDec:
 
         if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
@@ -170,6 +176,11 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
         if len(ra) != len(dec):
             raise RuntimeError("You passed %d RAs and %d Decs to calculatePixelCoordinates" %
                                (len(ra), len(dec)))
+
+        if chipNames is not None:
+            if len(ra) != len(chipNames):
+                raise RuntimeError("You passed %d points but only %d chipNames to calculatePixelCoordinates" %
+                                   (len(ra), len(chipNames)))
 
         if epoch is None:
             raise RuntimeError("You need to specify an epoch to run calculatePixelCoordinates " + \

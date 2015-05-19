@@ -545,9 +545,73 @@ class astrometryUnitTest(unittest.TestCase):
                                         camera=self.cat.camera)
 
 
-        self.assertRaises(RuntimeError, calculatePixelCoordinates)
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil = xPupil,
-                           yPupil = yPupil, ra = ra, dec = dec)
+        ##########test calculatePixelCoordinates
+         #test that it actually runs
+        xx, yy = calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+        xx, yy = calculatePixelCoordinates(ra = ra, dec = dec,
+                                                epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
+                                                camera=self.cat.camera)
+
+        #test without any coordinates
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, camera=self.cat.camera)
+
+        #test specifying both ra,dec and xPupil,yPupil
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra = ra, dec = dec,
+                             xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+
+        #test without camera
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=yPupil)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
+                                        epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata)
+
+        #test without epoch
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra = ra, dec = dec,
+                                                obs_metadata=self.cat.obs_metadata,
+                                                camera=self.cat.camera)
+
+        #test without obs_metadata
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra = ra, dec = dec,
+                                                epoch=self.cat.db_obj.epoch,
+                                                camera=self.cat.camera)
+
+        #test with lists
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=list(xPupil), yPupil=yPupil,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=list(yPupil),
+                          camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=list(ra), dec=dec,
+                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=list(dec),
+                                        epoch=self.cat.db_obj.epoch,
+                                        obs_metadata=self.cat.obs_metadata,
+                                        camera=self.cat.camera)
+
+        #test mismatches
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=numpy.array([xPupil[0]]), yPupil=yPupil,
+                          camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=numpy.array([yPupil[0]]),
+                          camera=self.cat.camera)
+
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=numpy.array([ra[0]]), dec=dec,
+                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=numpy.array([dec[0]]),
+                                        epoch=self.cat.db_obj.epoch,
+                                        obs_metadata=self.cat.obs_metadata,
+                                        camera=self.cat.camera)
+
+        chipNames = findChipName(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+        calculatePixelCoordinates(xPupil=xPupil, yPupil=yPupil, chipNames=chipNames, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=yPupil,
+                                        camera=self.cat.camera, chipNames=[chipNames[0]])
+
+        chipNames=findChipName(ra=ra, dec=dec, obs_metadata=self.cat.obs_metadata, epoch=self.cat.db_obj.epoch,
+                               camera=self.cat.camera)
+        calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=self.cat.obs_metadata, epoch=self.cat.db_obj.epoch,
+                                  camera=self.cat.camera, chipNames=chipNames)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec, obs_metadata=self.cat.obs_metadata, epoch=self.cat.db_obj.epoch,
+                                  camera=self.cat.camera, chipNames=[chipNames[0]])
+
 
         name = findChipName(xPupil = xPupil, yPupil = yPupil,
                             epoch=self.cat.db_obj.epoch,
