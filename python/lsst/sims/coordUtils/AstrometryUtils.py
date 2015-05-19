@@ -56,7 +56,10 @@ def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
 
     """
 
-    refractedZenith=palpy.refz(zenithDistance, tanzCoeff, tan3zCoeff)
+    if isinstance(zenithDistance, numpy.ndarray):
+        refractedZenith = palpy.refzVector(zenithDistance, tanzCoeff, tan3zCoeff)
+    else:
+        refractedZenith=palpy.refz(zenithDistance, tanzCoeff, tan3zCoeff)
 
     return refractedZenith
 
