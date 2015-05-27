@@ -99,7 +99,7 @@ def makeRandomSample(raCenter=None, decCenter=None, radius=None):
     return ra, dec, pm_ra, pm_dec, parallax, v_rad
 
 class AstrometryTestStars(myTestStars):
-    dbAddress = 'sqlite:///AstrometryTestDatabase.db'
+    database = 'AstrometryTestDatabase.db'
 
 class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'raObserved', 'decObserved',
