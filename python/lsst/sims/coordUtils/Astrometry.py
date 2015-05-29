@@ -614,9 +614,9 @@ class AstrometryBase(object):
 
         """
 
-        hourAngle = self.calcLast(mjd, self.site.longitude) - ra
+        hourAngle = self.calcLast(mjd, self.obs_metadata.site.longitude) - ra
 
-        _de2hOutput=pal.de2h(hourAngle, dec,  self.site.latitude)
+        _de2hOutput=pal.de2h(hourAngle, dec,  self.obs_metadata.site.latitude)
 
         #return (altitude, azimuth)
         return _de2hOutput[1], _de2hOutput[0]
@@ -628,7 +628,7 @@ class AstrometryBase(object):
         Az is measured from North through East.
         """
 
-        sinpa = math.sin(az)*math.cos(self.site.latitude)/math.cos(dec)
+        sinpa = math.sin(az)*math.cos(self.obs_metadata.site.latitude)/math.cos(dec)
         return math.asin(sinpa)
 
     def calculatePupilCoordinates(self, raObj, decObj,
@@ -683,12 +683,12 @@ class AstrometryBase(object):
         if obs_metadata.mjd is None:
             raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd")
 
-        theta = -obs_metadata.rotSkyPos
+        theta = -1.0*obs_metadata._rotSkyPos
 
         #correct for precession and nutation
 
-        pointingRA=numpy.array([obs_metadata.unrefractedRA])
-        pointingDec=numpy.array([obs_metadata.unrefractedDec])
+        pointingRA=numpy.array([obs_metadata._unrefractedRA])
+        pointingDec=numpy.array([obs_metadata._unrefractedDec])
 
         x, y = self.applyMeanApparentPlace(pointingRA, pointingDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
@@ -772,13 +772,13 @@ class AstrometryBase(object):
         if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
             raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
 
-        theta = -obs_metadata.rotSkyPos
+        theta = -1.0*obs_metadata._rotSkyPos
 
         #correct RA and Dec for refraction, precession and nutation
         #
         #correct for precession and nutation
-        inRA=numpy.array([obs_metadata.unrefractedRA])
-        inDec=numpy.array([obs_metadata.unrefractedDec])
+        inRA=numpy.array([obs_metadata._unrefractedRA])
+        inDec=numpy.array([obs_metadata._unrefractedDec])
 
         x, y = self.applyMeanApparentPlace(inRA, inDec, Epoch0=epoch, MJD=obs_metadata.mjd)
 
