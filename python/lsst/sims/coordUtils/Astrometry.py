@@ -34,7 +34,7 @@ class AstrometryBase(object):
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
 
-        glon, glat = self.equatorialToGalactic(ra,dec)
+        glon, glat = equatorialToGalactic(ra,dec)
 
         return numpy.array([glon,glat])
 
