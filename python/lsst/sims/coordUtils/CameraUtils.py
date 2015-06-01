@@ -95,7 +95,7 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
             chipNames.append(None)
         else:
             names = [dd.getName() for dd in det if dd.getType()==SCIENCE]
-            if len(names)>1 and not self.allow_multiple_chips:
+            if len(names)>1 and not allow_multiple_chips:
                 raise RuntimeError("This method does not know how to deal with cameras " +
                                    "where points can be on multiple detectors.  " +
                                    "Override CameraCoords.get_chipName to add this.")
