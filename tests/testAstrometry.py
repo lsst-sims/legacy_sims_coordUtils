@@ -29,14 +29,16 @@ from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import ObservationMetaData
 from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
                             radiansFromArcsec, arcsecFromRadians, Site
-from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
+from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, \
+                                            AstrometryGalaxies, CameraCoords
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates, calculateFocalPlaneCoordinates
-from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB
+from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, \
+                                                myTestGals, makeGalTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 def makeObservationMetaData():
@@ -86,7 +88,10 @@ def makeRandomSample(raCenter=None, decCenter=None, radius=None):
     return ra, dec, pm_ra, pm_dec, parallax, v_rad
 
 class AstrometryTestStars(myTestStars):
-    database = 'AstrometryTestDatabase.db'
+    database = 'AstrometryTestStarDatabase.db'
+
+class AstrometryTestGalaxies(myTestGals):
+    database = 'AstrometryTestGalaxyDatabase.db'
 
 class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
     column_outputs = ['raJ2000', 'decJ2000', 'raObserved', 'decObserved',
@@ -122,6 +127,28 @@ class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
                        ('radial_velocity', 0., float)]
 
 
+class testStellarCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
+    """
+    Define a catalog of stars with all possible astrometric columns
+    """
+
+    camera = camTestUtils.CameraWrapper().camera
+
+    column_outputs = ['glon', 'glat', 'x_focal_nominal', 'y_focal_nominal',
+                      'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
+                      'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
+
+class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
+    """
+    Define a catalog of galaxies with all possible astrometric columns
+    """
+
+    camera = camTestUtils.CameraWrapper().camera
+
+    column_outputs = ['glon', 'glat', 'x_focal_nominal', 'y_focal_nominal',
+                      'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
+                      'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
+
 class astrometryUnitTest(unittest.TestCase):
     """
     The bulk of this unit test involves inputting a set list of input values
@@ -134,19 +161,29 @@ class astrometryUnitTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         # Create test databases
-        if os.path.exists('AstrometryTestDatabase.db'):
-            print "deleting database"
-            os.unlink('AstrometryTestDatabase.db')
-        makeStarTestDB(filename='AstrometryTestDatabase.db',
+        cls.starDBName = 'AstrometryTestStarDatabase.db'
+        cls.galDBName = 'AstrometryTestGalaxyDatabase.db'
+        if os.path.exists(cls.starDBName):
+            os.unlink(cls.starDBName)
+        makeStarTestDB(filename=cls.starDBName,
+                      size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
+
+        if os.path.exists(cls.galDBName):
+            os.unlink(cls.galDBName)
+        makeGalTestDB(filename=cls.galDBName,
                       size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
 
     @classmethod
     def tearDownClass(cls):
-        if os.path.exists('AstrometryTestDatabase.db'):
-            os.unlink('AstrometryTestDatabase.db')
+        if os.path.exists(cls.starDBName):
+            os.unlink(cls.starDBName)
+
+        if os.path.exists(cls.galDBName):
+            os.unlink(cls.galDBName)
 
     def setUp(self):
         self.starDBObject = AstrometryTestStars()
+        self.galaxyDBObject = AstrometryTestGalaxies()
         self.metadata={}
 
         #below are metadata values that need to be set in order for
@@ -173,6 +210,7 @@ class astrometryUnitTest(unittest.TestCase):
 
     def tearDown(self):
         del self.starDBObject
+        del self.galaxyDBObject
         del self.cat
         del self.obs_metadata
         del self.metadata
@@ -195,9 +233,22 @@ class astrometryUnitTest(unittest.TestCase):
         return False
 
 
-    def testWritingOfCatalog(self):
-        self.cat.write_catalog("starsTestOutput.txt")
+    def testWritingOfStars(self):
+        """
+        Try writing a catalog with all possible Astrometric columns
+        """
+        stars = testStellarCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
+        stars.write_catalog("starsTestOutput.txt")
         os.unlink("starsTestOutput.txt")
+
+    def testWritingOfGalaxies(self):
+        """
+        Try writing a catalog with all possible Astrometric columns
+        """
+        galaxies = testGalaxyCatalog(self.galaxyDBObject, obs_metadata=self.obs_metadata)
+        galaxies.write_catalog("galTestOutput.txt")
+        os.unlink("galTestOutput.txt")
+
 
     def testAstrometryExceptions(self):
         """
