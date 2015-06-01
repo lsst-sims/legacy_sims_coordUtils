@@ -1,6 +1,6 @@
 import numpy
 import palpy
-from lsst.sims.utils import radiansToArcsec, sphericalToCartesian, cartesianToSpherical
+from lsst.sims.utils import arcsecFromRadians, cartesianFromSpherical, sphericalFromCartesian
 from lsst.sims.utils import haversine
 
 __all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
@@ -112,10 +112,10 @@ def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     rmat=palpy.prenut(epoch, mjd)
 
     # Apply rotation matrix
-    xyz = sphericalToCartesian(ra,dec)
+    xyz = cartesianFromSpherical(ra,dec)
     xyz =  numpy.dot(rmat,xyz)
 
-    raOut,decOut = cartesianToSpherical(xyz)
+    raOut,decOut = sphericalFromCartesian(xyz)
     return raOut,decOut
 
 
@@ -169,7 +169,7 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     if mjd is None:
         raise RuntimeError("cannot call applyProperMotion; mjd is None")
 
-    parallaxArcsec=radiansToArcsec(parallax)
+    parallaxArcsec=arcsecFromRadians(parallax)
     #convert to Arcsec because that is what PALPY expects
 
     # Generate Julian epoch from MJD
@@ -292,7 +292,7 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     #angle; not true angle" (as stated in erfa/starpm.c documentation)
     pm_ra_corrected = pm_ra/numpy.cos(dec)
 
-    raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra_corrected,pm_dec,radiansToArcsec(parallax),v_rad,prms)
+    raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra_corrected,pm_dec,arcsecFromRadians(parallax),v_rad,prms)
 
     return raOut,decOut
 

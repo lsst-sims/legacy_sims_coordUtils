@@ -6,8 +6,9 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.catalogs.measures.instance import compound
-from lsst.sims.utils import haversine, radiansToArcsec, arcsecToRadians
-from lsst.sims.utils import equatorialToGalactic, cartesianToSpherical, sphericalToCartesian
+from lsst.sims.utils import haversine, arcsecFromRadians, radiansFromArcsec, \
+                            galacticFromEquatorial, sphericalFromCartesian, \
+                            cartesianFromSpherical
 
 from lsst.sims.coordUtils.AstrometryUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils.AstrometryUtils import observedFromICRS, calculatePupilCoordinates
@@ -34,7 +35,7 @@ class AstrometryBase(object):
         ra=self.column_by_name('raJ2000')
         dec=self.column_by_name('decJ2000')
 
-        glon, glat = equatorialToGalactic(ra,dec)
+        glon, glat = galacticFromEquatorial(ra,dec)
 
         return numpy.array([glon,glat])
 
@@ -48,7 +49,7 @@ class AstrometryBase(object):
                                            epoch=self.db_obj.epoch)
 
     @compound('x_pupil','y_pupil')
-    def get_skyToPupil(self):
+    def get_pupilFromSky(self):
         """
         Take an input RA and dec from the sky and convert it to coordinates
         in the pupil.

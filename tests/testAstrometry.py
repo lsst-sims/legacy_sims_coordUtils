@@ -45,8 +45,8 @@ import lsst.utils.tests as utilsTests
 import lsst.afw.geom as afwGeom
 from lsst.sims.catalogs.measures.instance import InstanceCatalog
 from lsst.sims.catalogs.generation.db import ObservationMetaData
-from lsst.sims.utils import getRotTelPos, altAzToRaDec, calcObsDefaults, \
-                            arcsecToRadians, radiansToArcsec, Site
+from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
+                            radiansFromArcsec, arcsecFromRadians, Site
 from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, CameraCoords
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
@@ -65,7 +65,7 @@ def makeObservationMetaData():
     band = 'r'
     testSite = Site(latitude=0.5, longitude=1.1, height=3000, meanTemperature=260.0,
                     meanPressure = 725.0, lapseRate=0.005)
-    centerRA, centerDec = altAzToRaDec(alt,az,testSite.longitude,testSite.latitude,mjd)
+    centerRA, centerDec = raDecFromAltAz(alt,az,testSite.longitude,testSite.latitude,mjd)
     rotTel = getRotTelPos(centerRA, centerDec, testSite.longitude, testSite.latitude, mjd, 0.0)
 
     obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band,
@@ -114,7 +114,7 @@ class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
     transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees,
                        'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
                        'properMotionRa':numpy.degrees, 'properMotionDec':numpy.degrees,
-                       'parallax':radiansToArcsec}
+                       'parallax':arcsecFromRadians}
 
     default_formats = {'f':'%.12f'}
 
@@ -168,7 +168,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.metadata={}
 
         #below are metadata values that need to be set in order for
-        #get_skyToFocalPlane to work.  If we had been querying the database,
+        #get_getFocalPlaneCoordinates to work.  If we had been querying the database,
         #these would be set to meaningful values.  Because we are generating
         #an artificial set of inputs that must comport to the baseline SLALIB
         #inputs, these are set arbitrarily by hand
@@ -854,7 +854,7 @@ class astrometryUnitTest(unittest.TestCase):
         #because there was a misunderstanding when the baseline
         #SLALIB data was made.
         output=applyProperMotion(ra,dec,pm_ra*numpy.cos(dec),pm_dec/numpy.cos(dec),
-                                 arcsecToRadians(parallax),v_rad,epoch=ep,
+                                 radiansFromArcsec(parallax),v_rad,epoch=ep,
                                  mjd=self.obs_metadata.mjd)
 
         self.assertAlmostEqual(output[0][0],2.549309127917495754e+00,6)
@@ -902,7 +902,7 @@ class astrometryUnitTest(unittest.TestCase):
         #because there was a misunderstanding when the baseline
         #SLALIB data was made.
         output=appGeoFromICRS(ra,dec,pm_ra = pm_ra*numpy.cos(dec), pm_dec = pm_dec/numpy.cos(dec),
-                              parallax = arcsecToRadians(parallax),v_rad = v_rad, epoch=ep,
+                              parallax = radiansFromArcsec(parallax),v_rad = v_rad, epoch=ep,
                               mjd=mjd)
 
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6)
