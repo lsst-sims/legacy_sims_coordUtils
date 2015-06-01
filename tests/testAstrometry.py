@@ -64,7 +64,7 @@ def makeObservationMetaData():
     az = 0.0
     band = 'r'
     testSite = Site(latitude=0.5, longitude=1.1, height=3000, meanTemperature=260.0,
-                    meanPressure = 725.0, lapseRate=0.005)
+                    meanPressure=725.0, lapseRate=0.005)
     centerRA, centerDec = raDecFromAltAz(alt,az,testSite.longitude,testSite.latitude,mjd)
     rotTel = getRotTelPos(centerRA, centerDec, testSite.longitude, testSite.latitude, mjd, 0.0)
 
@@ -76,7 +76,7 @@ def makeObservationMetaData():
     phoSimMetaData = OrderedDict([
                       (k, (obsDict[k],numpy.dtype(type(obsDict[k])))) for k in obsDict])
 
-    obs_metadata = ObservationMetaData(boundType = 'circle', boundLength = 2.0*radius,
+    obs_metadata = ObservationMetaData(boundType='circle', boundLength=2.0*radius,
                                        phoSimMetaData=phoSimMetaData, site=testSite)
 
     return obs_metadata
@@ -500,14 +500,14 @@ class astrometryUnitTest(unittest.TestCase):
 
         ##########test findChipName
 
-        name = findChipName(ra = ra, dec = dec,
+        name = findChipName(ra=ra, dec=dec,
                             epoch=self.cat.db_obj.epoch,
                             obs_metadata=self.cat.obs_metadata,
                             camera=self.cat.camera)
 
         self.assertTrue(name[0] is not None)
 
-        name = findChipName(xPupil = xPupil, yPupil = yPupil,
+        name = findChipName(xPupil=xPupil, yPupil=yPupil,
                             camera=self.cat.camera)
 
         self.assertTrue(name[0] is not None)
@@ -516,8 +516,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, findChipName)
 
         #test when specifying both sets fo coordinates
-        self.assertRaises(RuntimeError, findChipName, xPupil = xPupil, yPupil = yPupil,
-                  ra = ra, dec = dec, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, findChipName, xPupil=xPupil, yPupil=yPupil,
+                  ra=ra, dec=dec, camera=self.cat.camera)
 
         #test when failing to specify camera
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec,
@@ -533,12 +533,12 @@ class astrometryUnitTest(unittest.TestCase):
                           obs_metadata=self.obs_metadata)
 
         #test mismatches
-        self.assertRaises(RuntimeError, findChipName, ra = numpy.array([ra[0]]), dec = dec,
+        self.assertRaises(RuntimeError, findChipName, ra=numpy.array([ra[0]]), dec=dec,
                             epoch=self.cat.db_obj.epoch,
                             obs_metadata=self.cat.obs_metadata,
                             camera=self.cat.camera)
 
-        self.assertRaises(RuntimeError, findChipName, ra = ra, dec = numpy.array([dec[0]]),
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=numpy.array([dec[0]]),
                             epoch=self.cat.db_obj.epoch,
                             obs_metadata=self.cat.obs_metadata,
                             camera=self.cat.camera)
@@ -549,12 +549,12 @@ class astrometryUnitTest(unittest.TestCase):
                                         camera=self.cat.camera)
 
         #test lists
-        self.assertRaises(RuntimeError, findChipName, ra = list(ra), dec = dec,
+        self.assertRaises(RuntimeError, findChipName, ra=list(ra), dec=dec,
                             epoch=self.cat.db_obj.epoch,
                             obs_metadata=self.cat.obs_metadata,
                             camera=self.cat.camera)
 
-        self.assertRaises(RuntimeError, findChipName, ra = ra, dec = list(dec),
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=list(dec),
                             epoch=self.cat.db_obj.epoch,
                             obs_metadata=self.cat.obs_metadata,
                             camera=self.cat.camera)
@@ -568,8 +568,8 @@ class astrometryUnitTest(unittest.TestCase):
         ##########test FocalPlaneCoordinates
 
         #test that it actually runs
-        xx, yy = calculateFocalPlaneCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
-        xx, yy = calculateFocalPlaneCoordinates(ra = ra, dec = dec,
+        xx, yy = calculateFocalPlaneCoordinates(xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
+        xx, yy = calculateFocalPlaneCoordinates(ra=ra, dec=dec,
                                                 epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                                                 camera=self.cat.camera)
 
@@ -577,8 +577,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, camera=self.cat.camera)
 
         #test specifying both ra,dec and xPupil,yPupil
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
-                             xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
+                             xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
 
         #test without camera
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=xPupil, yPupil=yPupil)
@@ -586,12 +586,12 @@ class astrometryUnitTest(unittest.TestCase):
                                         epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata)
 
         #test without epoch
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                                                 obs_metadata=self.cat.obs_metadata,
                                                 camera=self.cat.camera)
 
         #test without obs_metadata
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra = ra, dec = dec,
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
                                                 epoch=self.cat.db_obj.epoch,
                                                 camera=self.cat.camera)
 
@@ -624,8 +624,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         ##########test calculatePixelCoordinates
          #test that it actually runs
-        xx, yy = calculatePixelCoordinates(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
-        xx, yy = calculatePixelCoordinates(ra = ra, dec = dec,
+        xx, yy = calculatePixelCoordinates(xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
+        xx, yy = calculatePixelCoordinates(ra=ra, dec=dec,
                                                 epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                                                 camera=self.cat.camera)
 
@@ -633,8 +633,8 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertRaises(RuntimeError, calculatePixelCoordinates, camera=self.cat.camera)
 
         #test specifying both ra,dec and xPupil,yPupil
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra = ra, dec = dec,
-                             xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
+                             xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
 
         #test without camera
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=yPupil)
@@ -642,12 +642,12 @@ class astrometryUnitTest(unittest.TestCase):
                                         epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata)
 
         #test without epoch
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra = ra, dec = dec,
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
                                                 obs_metadata=self.cat.obs_metadata,
                                                 camera=self.cat.camera)
 
         #test without obs_metadata
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra = ra, dec = dec,
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
                                                 epoch=self.cat.db_obj.epoch,
                                                 camera=self.cat.camera)
 
@@ -677,7 +677,7 @@ class astrometryUnitTest(unittest.TestCase):
                                         obs_metadata=self.cat.obs_metadata,
                                         camera=self.cat.camera)
 
-        chipNames = findChipName(xPupil = xPupil, yPupil = yPupil, camera=self.cat.camera)
+        chipNames = findChipName(xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
         calculatePixelCoordinates(xPupil=xPupil, yPupil=yPupil, chipNames=chipNames, camera=self.cat.camera)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=yPupil,
                                         camera=self.cat.camera, chipNames=[chipNames[0]])
@@ -704,7 +704,7 @@ class astrometryUnitTest(unittest.TestCase):
                  ('x_pupil',float),('y_pupil',float),('chipName',str,11),('xPix',float),
                  ('yPix',float),('xFocalPlane',float),('yFocalPlane',float)]
 
-        baselineData = numpy.loadtxt('AstrometryTestCatalog.txt',dtype = dtype, delimiter = ';')
+        baselineData = numpy.loadtxt('AstrometryTestCatalog.txt', dtype=dtype, delimiter=';')
 
         pupilTest = calculatePupilCoordinates(baselineData['raObserved'],
                                               baselineData['decObserved'],
@@ -716,11 +716,11 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        focalTest = calculateFocalPlaneCoordinates(xPupil = pupilTest[0],
-                                      yPupil = pupilTest[1], camera=self.cat.camera)
+        focalTest = calculateFocalPlaneCoordinates(xPupil=pupilTest[0],
+                                      yPupil=pupilTest[1], camera=self.cat.camera)
 
-        focalRa = calculateFocalPlaneCoordinates(ra = baselineData['raObserved'],
-                        dec = baselineData['decObserved'],
+        focalRa = calculateFocalPlaneCoordinates(ra=baselineData['raObserved'],
+                        dec=baselineData['decObserved'],
                         epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                         camera=self.cat.camera)
 
@@ -733,10 +733,10 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxra,xx,6)
             self.assertAlmostEqual(yyra,yy,6)
 
-        pixTest = calculatePixelCoordinates(xPupil = pupilTest[0], yPupil = pupilTest[1],
+        pixTest = calculatePixelCoordinates(xPupil=pupilTest[0], yPupil=pupilTest[1],
                                             camera=self.cat.camera)
-        pixTestRaDec = calculatePixelCoordinates(ra = baselineData['raObserved'],
-                                   dec = baselineData['decObserved'],
+        pixTestRaDec = calculatePixelCoordinates(ra=baselineData['raObserved'],
+                                   dec=baselineData['decObserved'],
                                    epoch=self.cat.db_obj.epoch,
                                    obs_metadata=self.cat.obs_metadata,
                                    camera=self.cat.camera)
@@ -768,11 +768,11 @@ class astrometryUnitTest(unittest.TestCase):
             self.assertAlmostEqual(xxtest,xx,6)
             self.assertAlmostEqual(yytest,yy,6)
 
-        nameTest = findChipName(xPupil = pupilTest[0], yPupil = pupilTest[1],
+        nameTest = findChipName(xPupil=pupilTest[0], yPupil=pupilTest[1],
                                 epoch=self.cat.db_obj.epoch,
                                 obs_metadata=self.cat.obs_metadata,
                                 camera=self.cat.camera)
-        nameRA = findChipName(ra = baselineData['raObserved'], dec = baselineData['decObserved'],
+        nameRA = findChipName(ra=baselineData['raObserved'], dec=baselineData['decObserved'],
                               epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
                               camera=self.cat.camera)
 
@@ -901,8 +901,8 @@ class astrometryUnitTest(unittest.TestCase):
         #The proper motion arguments in this function are weird
         #because there was a misunderstanding when the baseline
         #SLALIB data was made.
-        output=appGeoFromICRS(ra,dec,pm_ra = pm_ra*numpy.cos(dec), pm_dec = pm_dec/numpy.cos(dec),
-                              parallax = radiansFromArcsec(parallax),v_rad = v_rad, epoch=ep,
+        output=appGeoFromICRS(ra,dec,pm_ra=pm_ra*numpy.cos(dec), pm_dec=pm_dec/numpy.cos(dec),
+                              parallax=radiansFromArcsec(parallax),v_rad=v_rad, epoch=ep,
                               mjd=mjd)
 
         self.assertAlmostEqual(output[0][0],2.525858337335585180e+00,6)
@@ -1036,7 +1036,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1],-2.385964632924575670e-07,6)
 
     def testApplyRefraction(self):
-        coeffs=refractionCoefficients(wavelength = 5000.0, site=self.obs_metadata.site)
+        coeffs=refractionCoefficients(wavelength=5000.0, site=self.obs_metadata.site)
 
         output=applyRefraction(0.25*numpy.pi,coeffs[0],coeffs[1])
 
@@ -1103,7 +1103,7 @@ def suite():
     suites += unittest.makeSuite(astrometryUnitTest)
     return unittest.TestSuite(suites)
 
-def run(shouldExit = False):
+def run(shouldExit=False):
     utilsTests.run(suite(),shouldExit)
 
 if __name__ == "__main__":
