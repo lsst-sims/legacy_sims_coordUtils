@@ -113,7 +113,7 @@ def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
 
     # Apply rotation matrix
     xyz = cartesianFromSpherical(ra,dec)
-    xyz =  numpy.dot(rmat,xyz)
+    xyz =  numpy.dot(rmat,xyz.transpose()).transpose()
 
     raOut,decOut = sphericalFromCartesian(xyz)
     return raOut,decOut
