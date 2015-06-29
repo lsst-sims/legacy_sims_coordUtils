@@ -35,6 +35,7 @@ from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
+from lsst.sims.coordUtils import raDecFromPupilCoordinates
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 def makeObservationMetaData():
@@ -861,6 +862,31 @@ class astrometryUnitTest(unittest.TestCase):
             else:
                 #make sure the pixel positions are inside the detector bounding box.
                 self.assertTrue(afwGeom.Box2D(self.cat.camera[cname].getBBox()).contains(afwGeom.Point2D(x,y)))
+
+
+
+
+    def testRaDecFromPupil(self):
+        """
+        Test conversion from pupil coordinates back to Ra, Dec
+        """
+        raCenter = 25.0
+        decCenter = -10.0
+        obs = ObservationMetaData(unrefractedRA=raCenter,
+                                  unrefractedDec=decCenter,
+                                  boundType='circle',
+                                  boundLength=0.1,
+                                  rotSkyPos=23.0,
+                                  mjd=52000.0)
+
+        nSamples = 100
+        numpy.random.seed(42)
+        ra = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(raCenter)
+        dec = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(decCenter)
+        xp, yp = calculatePupilCoordinates(ra, dec, obs_metadata=obs, epoch=2000.0)
+        raTest, decTest = raDecFromPupilCoordinates(xp, yp, obs_metadata=obs, epoch=2000.0)
+        numpy.testing.assert_array_almost_equal(raTest, ra, decimal=10)
+        numpy.testing.assert_array_almost_equal(decTest, dec, decimal=10)
 
 
 
