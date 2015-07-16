@@ -36,8 +36,6 @@ from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates, calculateFocalPlaneCoordinates
-from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, \
-                                                myTestGals, makeGalTestDB
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 def makeObservationMetaData():
