@@ -1,4 +1,4 @@
-setupRequired(sims_catalogs_measures)
+setupRequired(sims_utils)
 setupRequired(utils)
 setupRequired(base)
 setupRequired(python)
