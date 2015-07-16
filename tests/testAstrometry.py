@@ -113,11 +113,6 @@ class astrometryUnitTest(unittest.TestCase):
 
         self.tol=1.0e-5
 
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists('AstrometryTestDatabase.db'):
-            os.unlink('AstrometryTestDatabase.db')
-
     def tearDown(self):
         del self.obs_metadata
         del self.metadata
