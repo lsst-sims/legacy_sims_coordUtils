@@ -25,11 +25,10 @@ from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
-from lsst.sims.catalogs.generation.db import ObservationMetaData
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
                             radiansFromArcsec, arcsecFromRadians, Site
-from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, \
-                                            AstrometryGalaxies, CameraCoords
+
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
@@ -126,7 +125,6 @@ class astrometryUnitTest(unittest.TestCase):
         """
         obs_metadata = makeObservationMetaData()
         ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
-        myAstrometry = AstrometryBase()
 
         raShort = numpy.array([1.0])
         decShort = numpy.array([1.0])
