@@ -27,14 +27,14 @@ import lsst.utils.tests as utilsTests
 import lsst.afw.geom as afwGeom
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
-                            radiansFromArcsec, arcsecFromRadians, Site
+                            radiansFromArcsec, Site
 
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
-from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates, calculateFocalPlaneCoordinates
+from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 def makeObservationMetaData():
