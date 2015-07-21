@@ -25,20 +25,16 @@ from collections import OrderedDict
 import lsst.utils.tests as utilsTests
 
 import lsst.afw.geom as afwGeom
-from lsst.sims.catalogs.measures.instance import InstanceCatalog
-from lsst.sims.catalogs.generation.db import ObservationMetaData
+from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
-                            radiansFromArcsec, arcsecFromRadians, Site
-from lsst.sims.coordUtils.Astrometry import AstrometryBase, AstrometryStars, \
-                                            AstrometryGalaxies, CameraCoords
+                            radiansFromArcsec, Site
+
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
-from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates, calculateFocalPlaneCoordinates
-from lsst.sims.catalogs.generation.utils import myTestStars, makeStarTestDB, \
-                                                myTestGals, makeGalTestDB
+from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 def makeObservationMetaData():
@@ -87,67 +83,6 @@ def makeRandomSample(raCenter=None, decCenter=None, radius=None):
 
     return ra, dec, pm_ra, pm_dec, parallax, v_rad
 
-class AstrometryTestStars(myTestStars):
-    database = 'AstrometryTestStarDatabase.db'
-
-class AstrometryTestGalaxies(myTestGals):
-    database = 'AstrometryTestGalaxyDatabase.db'
-
-class parallaxTestCatalog(InstanceCatalog, AstrometryStars):
-    column_outputs = ['raJ2000', 'decJ2000', 'raObserved', 'decObserved',
-                      'properMotionRa', 'properMotionDec',
-                      'radialVelocity', 'parallax']
-
-    transformations = {'raJ2000':numpy.degrees, 'decJ2000':numpy.degrees,
-                       'raObserved':numpy.degrees, 'decObserved':numpy.degrees,
-                       'properMotionRa':numpy.degrees, 'properMotionDec':numpy.degrees,
-                       'parallax':arcsecFromRadians}
-
-    default_formats = {'f':'%.12f'}
-
-class testCatalog(InstanceCatalog,AstrometryStars,CameraCoords):
-    """
-    A (somewhat meaningless) instance catalog class that will allow us
-    to run the astrometry routines for testing purposes
-    """
-    catalog_type = 'test_stars'
-    column_outputs=['id','raPhoSim','decPhoSim','raObserved','decObserved',
-                   'x_focal_nominal', 'y_focal_nominal', 'x_pupil','y_pupil',
-                   'chipName', 'xPix', 'yPix','xFocalPlane','yFocalPlane']
-    #Needed to do camera coordinate transforms.
-    camera = camTestUtils.CameraWrapper().camera
-    default_formats = {'f':'%.12f'}
-
-    delimiter = ';' #so that numpy.loadtxt can parse the chipNames which may contain commas
-                     #(see testClassMethods)
-
-    default_columns = [('properMotionRa', 0., float),
-                       ('properMotionDec', 0., float),
-                       ('parallax', 1.2, float),
-                       ('radial_velocity', 0., float)]
-
-
-class testStellarCatalog(InstanceCatalog, AstrometryStars, CameraCoords):
-    """
-    Define a catalog of stars with all possible astrometric columns
-    """
-
-    camera = camTestUtils.CameraWrapper().camera
-
-    column_outputs = ['glon', 'glat', 'x_focal_nominal', 'y_focal_nominal',
-                      'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
-                      'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
-
-class testGalaxyCatalog(InstanceCatalog, AstrometryGalaxies, CameraCoords):
-    """
-    Define a catalog of galaxies with all possible astrometric columns
-    """
-
-    camera = camTestUtils.CameraWrapper().camera
-
-    column_outputs = ['glon', 'glat', 'x_focal_nominal', 'y_focal_nominal',
-                      'x_pupil', 'y_pupil', 'xPix', 'yPix', 'xFocalPlane', 'yFocalPlane',
-                      'chipName', 'raPhoSim', 'decPhoSim', 'raObserved', 'decObserved']
 
 class astrometryUnitTest(unittest.TestCase):
     """
@@ -158,32 +93,7 @@ class astrometryUnitTest(unittest.TestCase):
     to any particular Opsim run.
     """
 
-    @classmethod
-    def setUpClass(cls):
-        # Create test databases
-        cls.starDBName = 'AstrometryTestStarDatabase.db'
-        cls.galDBName = 'AstrometryTestGalaxyDatabase.db'
-        if os.path.exists(cls.starDBName):
-            os.unlink(cls.starDBName)
-        makeStarTestDB(filename=cls.starDBName,
-                      size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
-
-        if os.path.exists(cls.galDBName):
-            os.unlink(cls.galDBName)
-        makeGalTestDB(filename=cls.galDBName,
-                      size=100000, seedVal=1, ramin=199.98*math.pi/180., dra=0.04*math.pi/180.)
-
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists(cls.starDBName):
-            os.unlink(cls.starDBName)
-
-        if os.path.exists(cls.galDBName):
-            os.unlink(cls.galDBName)
-
     def setUp(self):
-        self.starDBObject = AstrometryTestStars()
-        self.galaxyDBObject = AstrometryTestGalaxies()
         self.metadata={}
 
         #below are metadata values that need to be set in order for
@@ -200,54 +110,12 @@ class astrometryUnitTest(unittest.TestCase):
                                      boundLength=0.05,
                                      phoSimMetaData=self.metadata)
 
-        self.cat = testCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
         self.tol=1.0e-5
 
-    @classmethod
-    def tearDownClass(cls):
-        if os.path.exists('AstrometryTestDatabase.db'):
-            os.unlink('AstrometryTestDatabase.db')
-
     def tearDown(self):
-        del self.starDBObject
-        del self.galaxyDBObject
-        del self.cat
         del self.obs_metadata
         del self.metadata
         del self.tol
-
-    def isNanOrNone(self, value):
-        """
-        Returns True if value is None or nan.  False otherwise.
-        """
-
-        if value is None:
-           return True
-
-        try:
-            if numpy.isnan(value):
-                return True
-        except TypeError:
-            pass
-
-        return False
-
-
-    def testWritingOfStars(self):
-        """
-        Try writing a catalog with all possible Astrometric columns
-        """
-        stars = testStellarCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
-        stars.write_catalog("starsTestOutput.txt")
-        os.unlink("starsTestOutput.txt")
-
-    def testWritingOfGalaxies(self):
-        """
-        Try writing a catalog with all possible Astrometric columns
-        """
-        galaxies = testGalaxyCatalog(self.galaxyDBObject, obs_metadata=self.obs_metadata)
-        galaxies.write_catalog("galTestOutput.txt")
-        os.unlink("galTestOutput.txt")
 
 
     def testAstrometryExceptions(self):
@@ -257,7 +125,6 @@ class astrometryUnitTest(unittest.TestCase):
         """
         obs_metadata = makeObservationMetaData()
         ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
-        myAstrometry = AstrometryBase()
 
         raShort = numpy.array([1.0])
         decShort = numpy.array([1.0])
@@ -522,11 +389,13 @@ class astrometryUnitTest(unittest.TestCase):
         specified.
         """
 
+        camera = camTestUtils.CameraWrapper().camera
+
         #these are just values shown heuristically to give an actual chip name
         ra = numpy.array(numpy.radians(self.obs_metadata.unrefractedRA) - numpy.array([1.01, 1.02])*numpy.radians(1.0/3600.0))
         dec = numpy.array(numpy.radians(self.obs_metadata.unrefractedDec) - numpy.array([2.02, 2.01])*numpy.radians(1.0/3600.0))
 
-        ra, dec = observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=self.starDBObject.epoch)
+        ra, dec = observedFromICRS(ra, dec, obs_metadata=self.obs_metadata, epoch=2000.0)
 
         xPupil = numpy.array([-0.000262243770, -0.00000234])
         yPupil = numpy.array([0.000199467792, 0.000189334])
@@ -534,14 +403,14 @@ class astrometryUnitTest(unittest.TestCase):
         ##########test findChipName
 
         name = findChipName(ra=ra, dec=dec,
-                            epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata,
-                            camera=self.cat.camera)
+                            epoch=2000.0,
+                            obs_metadata=self.obs_metadata,
+                            camera=camera)
 
         self.assertTrue(name[0] is not None)
 
         name = findChipName(xPupil=xPupil, yPupil=yPupil,
-                            camera=self.cat.camera)
+                            camera=camera)
 
         self.assertTrue(name[0] is not None)
 
@@ -550,7 +419,7 @@ class astrometryUnitTest(unittest.TestCase):
 
         #test when specifying both sets fo coordinates
         self.assertRaises(RuntimeError, findChipName, xPupil=xPupil, yPupil=yPupil,
-                  ra=ra, dec=dec, camera=self.cat.camera)
+                  ra=ra, dec=dec, camera=camera)
 
         #test when failing to specify camera
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec,
@@ -559,266 +428,170 @@ class astrometryUnitTest(unittest.TestCase):
 
         #test when failing to specify obs_metadata
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, epoch=2000.0,
-                          camera=self.cat.camera)
+                          camera=camera)
 
         #test when failing to specify epoch
-        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, camera=self.cat.camera,
+        self.assertRaises(RuntimeError, findChipName, ra=ra, dec=dec, camera=camera,
                           obs_metadata=self.obs_metadata)
 
         #test mismatches
         self.assertRaises(RuntimeError, findChipName, ra=numpy.array([ra[0]]), dec=dec,
-                            epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata,
-                            camera=self.cat.camera)
+                            epoch=2000.0,
+                            obs_metadata=self.obs_metadata,
+                            camera=camera)
 
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=numpy.array([dec[0]]),
-                            epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata,
-                            camera=self.cat.camera)
+                            epoch=2000.0,
+                            obs_metadata=self.obs_metadata,
+                            camera=camera)
 
         self.assertRaises(RuntimeError, findChipName, xPupil=numpy.array([xPupil[0]]), yPupil=yPupil,
-                                        camera=self.cat.camera)
+                                        camera=camera)
         self.assertRaises(RuntimeError, findChipName, xPupil=xPupil, yPupil=numpy.array([yPupil[0]]),
-                                        camera=self.cat.camera)
+                                        camera=camera)
 
         #test lists
         self.assertRaises(RuntimeError, findChipName, ra=list(ra), dec=dec,
-                            epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata,
-                            camera=self.cat.camera)
+                            epoch=2000.0,
+                            obs_metadata=self.obs_metadata,
+                            camera=camera)
 
         self.assertRaises(RuntimeError, findChipName, ra=ra, dec=list(dec),
-                            epoch=self.cat.db_obj.epoch,
-                            obs_metadata=self.cat.obs_metadata,
-                            camera=self.cat.camera)
+                            epoch=2000.0,
+                            obs_metadata=self.obs_metadata,
+                            camera=camera)
 
         self.assertRaises(RuntimeError, findChipName, xPupil=list(xPupil), yPupil=yPupil,
-                                        camera=self.cat.camera)
+                                        camera=camera)
         self.assertRaises(RuntimeError, findChipName, xPupil=xPupil, yPupil=list(yPupil),
-                                        camera=self.cat.camera)
+                                        camera=camera)
 
 
         ##########test FocalPlaneCoordinates
 
         #test that it actually runs
-        xx, yy = calculateFocalPlaneCoordinates(xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
+        xx, yy = calculateFocalPlaneCoordinates(xPupil=xPupil, yPupil=yPupil, camera=camera)
         xx, yy = calculateFocalPlaneCoordinates(ra=ra, dec=dec,
-                                                epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
-                                                camera=self.cat.camera)
+                                                epoch=2000.0, obs_metadata=self.obs_metadata,
+                                                camera=camera)
 
         #test without any coordinates
-        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, camera=camera)
 
         #test specifying both ra,dec and xPupil,yPupil
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
-                             xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
+                             xPupil=xPupil, yPupil=yPupil, camera=camera)
 
         #test without camera
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=xPupil, yPupil=yPupil)
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
-                                        epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata)
+                                        epoch=2000.0, obs_metadata=self.obs_metadata)
 
         #test without epoch
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
-                                                obs_metadata=self.cat.obs_metadata,
-                                                camera=self.cat.camera)
+                                                obs_metadata=self.obs_metadata,
+                                                camera=camera)
 
         #test without obs_metadata
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=dec,
-                                                epoch=self.cat.db_obj.epoch,
-                                                camera=self.cat.camera)
+                                               epoch=2000.0,
+                                               camera=camera)
 
         #test with lists
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=list(xPupil), yPupil=yPupil,
-                          camera=self.cat.camera)
+                          camera=camera)
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=xPupil, yPupil=list(yPupil),
-                          camera=self.cat.camera)
+                          camera=camera)
 
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=list(ra), dec=dec,
-                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+                                        epoch=2000.0, camera=camera)
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=list(dec),
-                                        epoch=self.cat.db_obj.epoch,
-                                        obs_metadata=self.cat.obs_metadata,
-                                        camera=self.cat.camera)
+                                        epoch=2000.0,
+                                        obs_metadata=self.obs_metadata,
+                                        camera=camera)
 
         #test mismatches
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=numpy.array([xPupil[0]]), yPupil=yPupil,
-                          camera=self.cat.camera)
+                          camera=camera)
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, xPupil=xPupil, yPupil=numpy.array([yPupil[0]]),
-                          camera=self.cat.camera)
+                          camera=camera)
 
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=numpy.array([ra[0]]), dec=dec,
-                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+                                        epoch=2000.0, camera=camera)
         self.assertRaises(RuntimeError, calculateFocalPlaneCoordinates, ra=ra, dec=numpy.array([dec[0]]),
-                                        epoch=self.cat.db_obj.epoch,
-                                        obs_metadata=self.cat.obs_metadata,
-                                        camera=self.cat.camera)
+                                        epoch=2000.0,
+                                        obs_metadata=self.obs_metadata,
+                                        camera=camera)
 
 
         ##########test calculatePixelCoordinates
          #test that it actually runs
-        xx, yy = calculatePixelCoordinates(xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
+        xx, yy = calculatePixelCoordinates(xPupil=xPupil, yPupil=yPupil, camera=camera)
         xx, yy = calculatePixelCoordinates(ra=ra, dec=dec,
-                                                epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
-                                                camera=self.cat.camera)
+                                                epoch=2000.0, obs_metadata=self.obs_metadata,
+                                                camera=camera)
 
         #test without any coordinates
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, camera=self.cat.camera)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, camera=camera)
 
         #test specifying both ra,dec and xPupil,yPupil
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
-                             xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
+                             xPupil=xPupil, yPupil=yPupil, camera=camera)
 
         #test without camera
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=yPupil)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
-                                        epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata)
+                                        epoch=2000.0, obs_metadata=self.obs_metadata)
 
         #test without epoch
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
-                                                obs_metadata=self.cat.obs_metadata,
-                                                camera=self.cat.camera)
+                                                obs_metadata=self.obs_metadata,
+                                                camera=camera)
 
         #test without obs_metadata
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec,
-                                                epoch=self.cat.db_obj.epoch,
-                                                camera=self.cat.camera)
+                                                epoch=2000.0,
+                                                camera=camera)
 
         #test with lists
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=list(xPupil), yPupil=yPupil,
-                          camera=self.cat.camera)
+                          camera=camera)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=list(yPupil),
-                          camera=self.cat.camera)
+                          camera=camera)
 
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=list(ra), dec=dec,
-                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+                                        epoch=2000.0, camera=camera)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=list(dec),
-                                        epoch=self.cat.db_obj.epoch,
-                                        obs_metadata=self.cat.obs_metadata,
-                                        camera=self.cat.camera)
+                                        epoch=2000.0,
+                                        obs_metadata=self.obs_metadata,
+                                        camera=camera)
 
         #test mismatches
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=numpy.array([xPupil[0]]), yPupil=yPupil,
-                          camera=self.cat.camera)
+                          camera=camera)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=numpy.array([yPupil[0]]),
-                          camera=self.cat.camera)
+                          camera=camera)
 
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=numpy.array([ra[0]]), dec=dec,
-                                        epoch=self.cat.db_obj.epoch, camera=self.cat.camera)
+                                        epoch=2000.0, camera=camera)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=numpy.array([dec[0]]),
-                                        epoch=self.cat.db_obj.epoch,
-                                        obs_metadata=self.cat.obs_metadata,
-                                        camera=self.cat.camera)
+                                        epoch=2000.0,
+                                        obs_metadata=self.obs_metadata,
+                                        camera=camera)
 
-        chipNames = findChipName(xPupil=xPupil, yPupil=yPupil, camera=self.cat.camera)
-        calculatePixelCoordinates(xPupil=xPupil, yPupil=yPupil, chipNames=chipNames, camera=self.cat.camera)
+        chipNames = findChipName(xPupil=xPupil, yPupil=yPupil, camera=camera)
+        calculatePixelCoordinates(xPupil=xPupil, yPupil=yPupil, chipNames=chipNames, camera=camera)
         self.assertRaises(RuntimeError, calculatePixelCoordinates, xPupil=xPupil, yPupil=yPupil,
-                                        camera=self.cat.camera, chipNames=[chipNames[0]])
+                                        camera=camera, chipNames=[chipNames[0]])
 
-        chipNames=findChipName(ra=ra, dec=dec, obs_metadata=self.cat.obs_metadata, epoch=self.cat.db_obj.epoch,
-                               camera=self.cat.camera)
-        calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=self.cat.obs_metadata, epoch=self.cat.db_obj.epoch,
-                                  camera=self.cat.camera, chipNames=chipNames)
-        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec, obs_metadata=self.cat.obs_metadata, epoch=self.cat.db_obj.epoch,
-                                  camera=self.cat.camera, chipNames=[chipNames[0]])
+        chipNames=findChipName(ra=ra, dec=dec, obs_metadata=self.obs_metadata, epoch=2000.0,
+                               camera=camera)
+        calculatePixelCoordinates(ra=ra, dec=dec, obs_metadata=self.obs_metadata, epoch=2000.0,
+                                  camera=camera, chipNames=chipNames)
+        self.assertRaises(RuntimeError, calculatePixelCoordinates, ra=ra, dec=dec, obs_metadata=self.obs_metadata,
+                          epoch=2000.0,
+                          camera=camera, chipNames=[chipNames[0]])
 
-
-    def testUtilityMethods(self):
-        """
-        Generate a catalog using the methods from AstrometryUtils.py and CameraUtils.py.
-        Read that data in, and then recalculate the values 'by hand' to make sure
-        that they are consistent.
-        """
-
-        self.cat.write_catalog("AstrometryTestCatalog.txt")
-
-        dtype = [('id',int),('raPhoSim',float),('decPhoSim',float),('raObserved',float),
-                 ('decObserved',float),('x_focal_nominal',float),('y_focal_nominal',float),
-                 ('x_pupil',float),('y_pupil',float),('chipName',str,11),('xPix',float),
-                 ('yPix',float),('xFocalPlane',float),('yFocalPlane',float)]
-
-        baselineData = numpy.loadtxt('AstrometryTestCatalog.txt', dtype=dtype, delimiter=';')
-
-        pupilTest = calculatePupilCoordinates(baselineData['raObserved'],
-                                              baselineData['decObserved'],
-                                              obs_metadata=self.obs_metadata,
-                                              epoch=2000.0)
-
-        for (xxtest, yytest, xx, yy) in \
-                zip(pupilTest[0], pupilTest[1], baselineData['x_pupil'], baselineData['y_pupil']):
-            self.assertAlmostEqual(xxtest,xx,6)
-            self.assertAlmostEqual(yytest,yy,6)
-
-        focalTest = calculateFocalPlaneCoordinates(xPupil=pupilTest[0],
-                                      yPupil=pupilTest[1], camera=self.cat.camera)
-
-        focalRa = calculateFocalPlaneCoordinates(ra=baselineData['raObserved'],
-                        dec=baselineData['decObserved'],
-                        epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
-                        camera=self.cat.camera)
-
-        for (xxtest, yytest, xxra, yyra, xx, yy) in \
-                zip(focalTest[0], focalTest[1], focalRa[0], focalRa[1],
-                        baselineData['xFocalPlane'], baselineData['yFocalPlane']):
-
-            self.assertAlmostEqual(xxtest,xx,6)
-            self.assertAlmostEqual(yytest,yy,6)
-            self.assertAlmostEqual(xxra,xx,6)
-            self.assertAlmostEqual(yyra,yy,6)
-
-        pixTest = calculatePixelCoordinates(xPupil=pupilTest[0], yPupil=pupilTest[1],
-                                            camera=self.cat.camera)
-        pixTestRaDec = calculatePixelCoordinates(ra=baselineData['raObserved'],
-                                   dec=baselineData['decObserved'],
-                                   epoch=self.cat.db_obj.epoch,
-                                   obs_metadata=self.cat.obs_metadata,
-                                   camera=self.cat.camera)
-
-        for (xxtest, yytest, xxra, yyra, xx, yy) in \
-                zip(pixTest[0], pixTest[1], pixTestRaDec[0], pixTestRaDec[1],
-                           baselineData['xPix'], baselineData['yPix']):
-
-            if not numpy.isnan(xx) and not numpy.isnan(yy):
-                self.assertAlmostEqual(xxtest,xx,5)
-                self.assertAlmostEqual(yytest,yy,5)
-                self.assertAlmostEqual(xxra,xx,5)
-                self.assertAlmostEqual(yyra,yy,5)
-            else:
-                self.assertTrue(numpy.isnan(xx))
-                self.assertTrue(numpy.isnan(yy))
-                self.assertTrue(numpy.isnan(xxra))
-                self.assertTrue(numpy.isnan(yyra))
-                self.assertTrue(numpy.isnan(xxtest))
-                self.assertTrue(numpy.isnan(yytest))
-
-        gnomonTest = calculateGnomonicProjection(baselineData['raObserved'],
-                             baselineData['decObserved'], obs_metadata=self.obs_metadata,
-                             epoch=2000.0)
-        for (xxtest, yytest, xx, yy) in \
-                zip(gnomonTest[0], gnomonTest[1],
-                    baselineData['x_focal_nominal'], baselineData['y_focal_nominal']):
-
-            self.assertAlmostEqual(xxtest,xx,6)
-            self.assertAlmostEqual(yytest,yy,6)
-
-        nameTest = findChipName(xPupil=pupilTest[0], yPupil=pupilTest[1],
-                                epoch=self.cat.db_obj.epoch,
-                                obs_metadata=self.cat.obs_metadata,
-                                camera=self.cat.camera)
-        nameRA = findChipName(ra=baselineData['raObserved'], dec=baselineData['decObserved'],
-                              epoch=self.cat.db_obj.epoch, obs_metadata=self.cat.obs_metadata,
-                              camera=self.cat.camera)
-
-        for (ntest, nra, ncontrol) in zip(nameTest, nameRA, baselineData['chipName']):
-            if ncontrol != 'None':
-                self.assertEqual(ntest,ncontrol)
-                self.assertEqual(nra,ncontrol)
-            else:
-                self.assertTrue(ntest is None)
-                self.assertTrue(nra is None)
-
-        if os.path.exists("AstrometryTestCatalog.txt"):
-            os.unlink("AstrometryTestCatalog.txt")
 
 
     def testApplyPrecession(self):
@@ -1065,58 +838,31 @@ class astrometryUnitTest(unittest.TestCase):
 
 
     def testPixelPos(self):
-        for chunk, chunkMap in self.cat.iter_catalog_chunks():
-            self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('x_pupil'))))
-            self.assertTrue(numpy.all(numpy.isfinite(self.cat.column_by_name('y_pupil'))))
-            for x, y, cname in zip(self.cat.column_by_name('xPix'), self.cat.column_by_name('yPix'),
-                                   self.cat.column_by_name('chipName')):
-                if cname is None:
-                    #make sure that x and y are not set if the object doesn't land on a chip
-                    self.assertTrue(not numpy.isfinite(x) and not numpy.isfinite(y))
-                else:
-                    #make sure the pixel positions are inside the detector bounding box.
-                    self.assertTrue(afwGeom.Box2D(self.cat.camera[cname].getBBox()).contains(afwGeom.Point2D(x,y)))
+        camera = camTestUtils.CameraWrapper().camera
+        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
+
+        pupilCoordinateArray = calculatePupilCoordinates(ra, dec, obs_metadata=self.obs_metadata,
+                                                         epoch=2000.0)
+
+        pixelCoordinateArray = calculatePixelCoordinates(ra=ra, dec=dec,
+                                                        obs_metadata=self.obs_metadata,
+                                                        epoch=2000.0, camera=camera)
+
+        chipNameList = findChipName(ra=ra, dec=dec,
+                                    obs_metadata=self.obs_metadata, epoch=2000.0, camera=camera)
+        self.assertTrue(numpy.all(numpy.isfinite(pupilCoordinateArray[0])))
+        self.assertTrue(numpy.all(numpy.isfinite(pupilCoordinateArray[1])))
+
+        for x, y, cname in zip(pixelCoordinateArray[0], pixelCoordinateArray[1],
+                               chipNameList):
+            if cname is None:
+                #make sure that x and y are not set if the object doesn't land on a chip
+                self.assertTrue(not numpy.isfinite(x) and not numpy.isfinite(y))
+            else:
+                #make sure the pixel positions are inside the detector bounding box.
+                self.assertTrue(afwGeom.Box2D(self.cat.camera[cname].getBBox()).contains(afwGeom.Point2D(x,y)))
 
 
-    def testParallax(self):
-        """
-        This test will output a catalog of ICRS and observed positions.
-        It will also output the quantities (proper motion, radial velocity,
-        and parallax) needed to apply the transformaiton between the two.
-        It will then run the catalog through PALPY and verify that the catalog
-        generating code correctly applied the transformations.
-        """
-
-        #create and write a catalog that performs astrometric transformations
-        #on a cartoon star database
-        cat = parallaxTestCatalog(self.starDBObject, obs_metadata=self.obs_metadata)
-        parallaxName = 'parallaxCatalog.sav'
-        cat.write_catalog(parallaxName)
-
-        data = numpy.genfromtxt(parallaxName,delimiter=',')
-        epoch = cat.db_obj.epoch
-        mjd = cat.obs_metadata.mjd
-        prms = pal.mappa(epoch, mjd)
-        for vv in data:
-            #run the PALPY routines that actuall do astrometry `by hand' and compare
-            #the results to the contents of the catalog
-            ra0 = numpy.radians(vv[0])
-            dec0 = numpy.radians(vv[1])
-            pmra = numpy.radians(vv[4])
-            pmdec = numpy.radians(vv[5])
-            rv = vv[6]
-            px = vv[7]
-            ra_apparent, dec_apparent = pal.mapqk(ra0, dec0, pmra, pmdec, px, rv, prms)
-            ra_apparent = numpy.array([ra_apparent])
-            dec_apparent = numpy.array([dec_apparent])
-            raObserved, decObserved = observedFromAppGeo(ra_apparent, dec_apparent,
-                                                                 obs_metadata=cat.obs_metadata)
-
-            self.assertAlmostEqual(raObserved[0],numpy.radians(vv[2]),7)
-            self.assertAlmostEqual(decObserved[0],numpy.radians(vv[3]),7)
-
-        if os.path.exists(parallaxName):
-            os.unlink(parallaxName)
 
 def suite():
     utilsTests.init()
