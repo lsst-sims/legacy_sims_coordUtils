@@ -2,9 +2,10 @@ import numpy
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
-from lsst.sims.coordUtils.AstrometryUtils import calculatePupilCoordinates
+from lsst.sims.coordUtils.AstrometryUtils import calculatePupilCoordinates, raDecFromPupilCoordinates
 
-__all__ = ["findChipName", "calculatePixelCoordinates", "calculateFocalPlaneCoordinates"]
+__all__ = ["findChipName", "calculatePixelCoordinates", "calculateFocalPlaneCoordinates",
+           "raDecFromPixelCoordinates"]
 
 def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
                  obs_metadata=None, epoch=None, camera=None,
@@ -212,6 +213,67 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
         yPix.append(detPoint.getPoint().getY())
     return numpy.array([xPix, yPix])
 
+
+def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
+                              obs_metadata=None, epoch=None):
+
+    """
+    Convert pixel coordinates into observed RA, Dec
+
+    @param [in] xPixList is a numpy array of x pixel coordinates
+
+    @param [in] yPixList is a numpy array of y pixel coordinates
+
+    @param [in] chipNameList is a numpy array of chip names (corresponding to the points
+    in xPixList and yPixList)
+
+    @param [in] camera is an afw.CameraGeom.camera object defining the camera
+
+    @param [in] obs_metadata is an ObservationMetaData defining the pointing
+
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system
+
+    @param [out] ra is a numpy array of observed RA
+
+    @param [out] dec is a numpy array of observed Dec
+
+    Note: to see what is mean by 'observed' ra/dec, see the docstring for
+    observedFromICRS in AstrometryUtils.py
+    """
+
+    pixelSystemDict = {}
+    pupilSystemDict = {}
+    detectorDict = {}
+    for name in chipNameList:
+        if name not in pixelSystemDict:
+            if name is None:
+                pixelSystemDict[name] = None
+                pupilSystemDict[name] = None
+            else:
+                pixelSystemDict[name] = camera[name].makeCameraSys(PIXELS)
+                pupilSystemDict[name] = camera[name].makeCameraSys(PUPIL)
+
+
+
+    raOut = []
+    decOut = []
+
+    for xPix, yPix, chipName in zip(xPixList, yPixList, chipNameList):
+        if chipName is None:
+            raOut.append(numpy.NaN)
+            decOut.append(numpy.NaN)
+        else:
+            pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xPix, yPix), pixelSystemDict[chipName])
+            pupilPoint =  camera.transform(pixPoint, pupilSystemDict[chipName])
+
+            ra, dec = raDecFromPupilCoordinates(numpy.array([pupilPoint.getPoint().getX()]),
+                                                numpy.array([pupilPoint.getPoint().getY()]),
+                                                obs_metadata=obs_metadata, epoch=epoch)
+
+            raOut.append(ra)
+            decOut.append(dec)
+
+    return numpy.array(raOut), numpy.array(decOut)
 
 
 def calculateFocalPlaneCoordinates(xPupil=None, yPupil=None, ra=None, dec=None,

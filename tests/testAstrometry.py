@@ -35,7 +35,7 @@ from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
-from lsst.sims.coordUtils import raDecFromPupilCoordinates
+from lsst.sims.coordUtils import raDecFromPupilCoordinates, raDecFromPixelCoordinates
 import lsst.afw.cameraGeom.testUtils as camTestUtils
 
 def makeObservationMetaData():
@@ -887,6 +887,59 @@ class astrometryUnitTest(unittest.TestCase):
         raTest, decTest = raDecFromPupilCoordinates(xp, yp, obs_metadata=obs, epoch=2000.0)
         numpy.testing.assert_array_almost_equal(raTest, ra, decimal=10)
         numpy.testing.assert_array_almost_equal(decTest, dec, decimal=10)
+
+
+
+    def testRaDecFromPixelCoordinates(self):
+        """
+        Test conversion from pixel coordinates to Ra, Dec
+        """
+
+        camera = camTestUtils.CameraWrapper().camera
+        epoch=2000.0
+
+        raCenter = 25.0
+        decCenter = -10.0
+        obs = ObservationMetaData(unrefractedRA=raCenter,
+                                  unrefractedDec=decCenter,
+                                  boundType='circle',
+                                  boundLength=0.1,
+                                  rotSkyPos=23.0,
+                                  mjd=52000.0)
+
+        raTrue, decTrue = observedFromICRS(numpy.array([numpy.radians(raCenter)]),
+                                           numpy.array([numpy.radians(decCenter)]),
+                                           obs_metadata=obs, epoch=epoch)
+
+
+        nSamples = 1000
+        numpy.random.seed(42)
+        ra = []
+        dec = []
+
+        dx = 0.0001
+
+        for rr in numpy.arange(raTrue-10.0*dx, raTrue+10.0*dx, dx):
+            for dd in numpy.arange(decTrue-10.0*dx, decTrue+10.0*dx, dx):
+                ra.append(rr)
+                dec.append(dd)
+
+
+        ra = numpy.array(ra)
+        dec = numpy.array(dec)
+
+        chipNameList = findChipName(ra=ra, dec=dec, obs_metadata=obs, epoch=epoch, camera=camera)
+        pixelList = calculatePixelCoordinates(ra=ra, dec=dec, chipNames=chipNameList, obs_metadata=obs,
+                                           epoch=epoch, camera=camera)
+
+        raTest, decTest = raDecFromPixelCoordinates(pixelList[0], pixelList[1], chipNameList,
+                                                    obs_metadata=obs, epoch=epoch, camera=camera)
+
+        raControl = numpy.array([rr if name is not None else numpy.NaN for (rr, name) in zip(ra, chipNameList)])
+        decControl = numpy.array([dd if name is not None else numpy.NaN for (dd, name) in zip(dec, chipNameList)])
+
+        numpy.testing.assert_array_almost_equal(raControl, raTest, decimal=10)
+        numpy.testing.assert_array_almost_equal(decControl, decTest, decimal=10)
 
 
 
