@@ -15,6 +15,7 @@ still agree to within one part in 10^5)
 
 import numpy
 
+import eups
 import os
 import unittest
 import warnings
@@ -37,6 +38,8 @@ from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlan
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.coordUtils import raDecFromPupilCoordinates, raDecFromPixelCoordinates
 import lsst.afw.cameraGeom.testUtils as camTestUtils
+
+from lsst.sims.coordUtils.utils import ReturnCamera
 
 def makeObservationMetaData():
     #create a cartoon ObservationMetaData object
@@ -895,7 +898,8 @@ class astrometryUnitTest(unittest.TestCase):
         Test conversion from pixel coordinates to Ra, Dec
         """
 
-        camera = camTestUtils.CameraWrapper().camera
+        baseDir = os.path.join(eups.productDir('sims_coordUtils'),'tests','cameraData')
+        camera = ReturnCamera(baseDir)
         epoch=2000.0
 
         raCenter = 25.0
@@ -911,16 +915,13 @@ class astrometryUnitTest(unittest.TestCase):
                                            numpy.array([numpy.radians(decCenter)]),
                                            obs_metadata=obs, epoch=epoch)
 
-
-        nSamples = 1000
-        numpy.random.seed(42)
         ra = []
         dec = []
 
-        dx = 0.0001
+        dx = 1.0e-4
 
-        for rr in numpy.arange(raTrue-10.0*dx, raTrue+10.0*dx, dx):
-            for dd in numpy.arange(decTrue-10.0*dx, decTrue+10.0*dx, dx):
+        for rr in numpy.arange(raTrue-20.0*dx, raTrue+20.0*dx, dx):
+            for dd in numpy.arange(decTrue-20.0*dx, decTrue+20.0*dx, dx):
                 ra.append(rr)
                 dec.append(dd)
 
@@ -934,6 +935,8 @@ class astrometryUnitTest(unittest.TestCase):
 
         raTest, decTest = raDecFromPixelCoordinates(pixelList[0], pixelList[1], chipNameList,
                                                     obs_metadata=obs, epoch=epoch, camera=camera)
+
+
 
         raControl = numpy.array([rr if name is not None else numpy.NaN for (rr, name) in zip(ra, chipNameList)])
         decControl = numpy.array([dd if name is not None else numpy.NaN for (dd, name) in zip(dec, chipNameList)])

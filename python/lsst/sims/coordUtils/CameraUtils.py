@@ -270,8 +270,8 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
                                                 numpy.array([pupilPoint.getPoint().getY()]),
                                                 obs_metadata=obs_metadata, epoch=epoch)
 
-            raOut.append(ra)
-            decOut.append(dec)
+            raOut.append(ra[0])
+            decOut.append(dec[0])
 
     return numpy.array(raOut), numpy.array(decOut)
 
