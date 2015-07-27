@@ -255,25 +255,26 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
 
 
 
-    raOut = []
-    decOut = []
+    xPupilList = []
+    yPupilList = []
 
     for xPix, yPix, chipName in zip(xPixList, yPixList, chipNameList):
         if chipName is None:
-            raOut.append(numpy.NaN)
-            decOut.append(numpy.NaN)
+            xPupilList.append(numpy.NaN)
+            yPupilList.append(numpy.NaN)
         else:
             pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xPix, yPix), pixelSystemDict[chipName])
-            pupilPoint =  camera.transform(pixPoint, pupilSystemDict[chipName])
+            pupilPoint =  camera.transform(pixPoint, pupilSystemDict[chipName]).getPoint()
+            xPupilList.append(pupilPoint.getX())
+            yPupilList.append(pupilPoint.getY())
 
-            ra, dec = raDecFromPupilCoordinates(numpy.array([pupilPoint.getPoint().getX()]),
-                                                numpy.array([pupilPoint.getPoint().getY()]),
-                                                obs_metadata=obs_metadata, epoch=epoch)
+    xPupilList = numpy.array(xPupilList)
+    yPupilList = numpy.array(yPupilList)
 
-            raOut.append(ra[0])
-            decOut.append(dec[0])
+    raOut, decOut = raDecFromPupilCoordinates(xPupilList, yPupilList,
+                                 obs_metadata=obs_metadata, epoch=epoch)
 
-    return numpy.array(raOut), numpy.array(decOut)
+    return raOut, decOut
 
 
 def calculateFocalPlaneCoordinates(xPupil=None, yPupil=None, ra=None, dec=None,
