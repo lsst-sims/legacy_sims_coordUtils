@@ -5,7 +5,7 @@ from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.coordUtils.AstrometryUtils import calculatePupilCoordinates, raDecFromPupilCoordinates
 
 __all__ = ["findChipName", "calculatePixelCoordinates", "calculateFocalPlaneCoordinates",
-           "raDecFromPixelCoordinates"]
+           "raDecFromPixelCoordinates", "pupilCoordinatesFromPixelCoordinates"]
 
 def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
                  obs_metadata=None, epoch=None, camera=None,
@@ -214,11 +214,11 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     return numpy.array([xPix, yPix])
 
 
-def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
-                              obs_metadata=None, epoch=None):
+def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
+                                         obs_metadata=None, epoch=None):
 
     """
-    Convert pixel coordinates into observed RA, Dec
+    Convert pixel coordinates into pupil coordinates
 
     @param [in] xPixList is a numpy array of x pixel coordinates
 
@@ -233,12 +233,9 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
 
     @param [in] epoch is the mean epoch in years of the celestial coordinate system
 
-    @param [out] ra is a numpy array of observed RA
+    @param [out] xPupilList is a numpy array of the x pupil coordinate (in radians)
 
-    @param [out] dec is a numpy array of observed Dec
-
-    Note: to see what is mean by 'observed' ra/dec, see the docstring for
-    observedFromICRS in AstrometryUtils.py
+    @param [out] yPupilList is a numpyarray of the y pupil coordinate (in radians)
     """
 
     pixelSystemDict = {}
@@ -270,6 +267,38 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
 
     xPupilList = numpy.array(xPupilList)
     yPupilList = numpy.array(yPupilList)
+
+    return xPupilList, yPupilList
+
+
+def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
+                              obs_metadata=None, epoch=None):
+    """
+    Convert pixel coordinates into observed RA, Dec
+
+    @param [in] xPixList is a numpy array of x pixel coordinates
+
+    @param [in] yPixList is a numpy array of y pixel coordinates
+
+    @param [in] chipNameList is a numpy array of chip names (corresponding to the points
+    in xPixList and yPixList)
+
+    @param [in] camera is an afw.CameraGeom.camera object defining the camera
+
+    @param [in] obs_metadata is an ObservationMetaData defining the pointing
+
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system
+
+    @param [out] ra is a numpy array of observed RA
+
+    @param [out] dec is a numpy array of observed Dec
+
+    Note: to see what is mean by 'observed' ra/dec, see the docstring for
+    observedFromICRS in AstrometryUtils.py
+    """
+
+    xPupilList, yPupilList = pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList,
+                                     camera=camera, obs_metadata=obs_metadata, epoch=epoch)
 
     raOut, decOut = raDecFromPupilCoordinates(xPupilList, yPupilList,
                                  obs_metadata=obs_metadata, epoch=epoch)
