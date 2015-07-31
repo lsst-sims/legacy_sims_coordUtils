@@ -1,6 +1,6 @@
 import numpy
 import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import PUPIL, PIXELS, FOCAL_PLANE
+from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.coordUtils.AstrometryUtils import calculatePupilCoordinates, raDecFromPupilCoordinates
 
@@ -110,7 +110,7 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
 
 
 def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
-                              obs_metadata=None, epoch=None, camera=None):
+                              obs_metadata=None, epoch=None, camera=None, includeDistortion=True):
     """
     Get the pixel positions (or nan if not on a chip) for all objects in the catalog
 
@@ -135,9 +135,20 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
     This is an optional argument to be passed to findChipName.
 
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    return the true pixel coordinates with optical distortion included.  If False, this
+    method will return TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
     @param [out] a numpy array of pixel coordinates
 
     """
+
+    if includeDistortion:
+        pixelType = PIXELS
+    else:
+        pixelType = TAN_PIXELS
 
     if not camera:
         raise RuntimeError("You need to pass a camera to calculatePixelCoordinates")
@@ -207,7 +218,7 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
             continue
         cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
         det = camera[name]
-        cs = det.makeCameraSys(PIXELS)
+        cs = det.makeCameraSys(pixelType)
         detPoint = camera.transform(cp, cs)
         xPix.append(detPoint.getPoint().getX())
         yPix.append(detPoint.getPoint().getY())
@@ -215,7 +226,7 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
 
 
 def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
-                                         obs_metadata=None, epoch=None):
+                                         obs_metadata=None, epoch=None, includeDistortion=True):
 
     """
     Convert pixel coordinates into pupil coordinates
@@ -233,10 +244,21 @@ def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camer
 
     @param [in] epoch is the mean epoch in years of the celestial coordinate system
 
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    expect the true pixel coordinates with optical distortion included.  If False, this
+    method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
     @param [out] xPupilList is a numpy array of the x pupil coordinate (in radians)
 
     @param [out] yPupilList is a numpyarray of the y pupil coordinate (in radians)
     """
+
+    if includeDistortion:
+        pixelType = PIXELS
+    else:
+        pixelType = TAN_PIXELS
 
     pixelSystemDict = {}
     pupilSystemDict = {}
@@ -247,7 +269,7 @@ def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camer
                 pixelSystemDict[name] = None
                 pupilSystemDict[name] = None
             else:
-                pixelSystemDict[name] = camera[name].makeCameraSys(PIXELS)
+                pixelSystemDict[name] = camera[name].makeCameraSys(pixelType)
                 pupilSystemDict[name] = camera[name].makeCameraSys(PUPIL)
 
 
@@ -272,7 +294,7 @@ def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camer
 
 
 def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
-                              obs_metadata=None, epoch=None):
+                              obs_metadata=None, epoch=None, includeDistortion=True):
     """
     Convert pixel coordinates into observed RA, Dec
 
@@ -289,6 +311,12 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
 
     @param [in] epoch is the mean epoch in years of the celestial coordinate system
 
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    expect the true pixel coordinates with optical distortion included.  If False, this
+    method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
     @param [out] ra is a numpy array of observed RA
 
     @param [out] dec is a numpy array of observed Dec
@@ -298,7 +326,8 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
     """
 
     xPupilList, yPupilList = pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList,
-                                     camera=camera, obs_metadata=obs_metadata, epoch=epoch)
+                                     camera=camera, obs_metadata=obs_metadata, epoch=epoch,
+                                     includeDistortion=includeDistortion)
 
     raOut, decOut = raDecFromPupilCoordinates(xPupilList, yPupilList,
                                  obs_metadata=obs_metadata, epoch=epoch)
