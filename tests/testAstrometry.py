@@ -28,7 +28,7 @@ import lsst.utils.tests as utilsTests
 import lsst.afw.geom as afwGeom
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
-                            radiansFromArcsec, Site
+                            radiansFromArcsec, arcsecFromRadians, Site
 
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
@@ -994,8 +994,8 @@ class astrometryUnitTest(unittest.TestCase):
         raControl = numpy.array([rr if name is not None else numpy.NaN for (rr, name) in zip(ra, chipNameList)])
         decControl = numpy.array([dd if name is not None else numpy.NaN for (dd, name) in zip(dec, chipNameList)])
 
-        numpy.testing.assert_array_almost_equal(raControl, raTest, decimal=10)
-        numpy.testing.assert_array_almost_equal(decControl, decTest, decimal=10)
+        numpy.testing.assert_array_almost_equal(arcsecFromRadians(raControl), arcsecFromRadians(raTest), decimal=10)
+        numpy.testing.assert_array_almost_equal(arcsecFromRadians(decControl), arcsecFromRadians(decTest), decimal=10)
 
 
 
