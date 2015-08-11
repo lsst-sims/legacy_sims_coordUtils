@@ -42,7 +42,7 @@ def makeAmpTables(segmentsFile, gainFile):
     with open(gainFile) as fh:
         for l in fh:
             els = l.rstrip().split()
-            gainDict[els[0]] = {'gain':float(els[1]), 'saturation':int(els[2])} 
+            gainDict[els[0]] = {'gain':float(els[1]), 'saturation':int(els[2])}
     """
     returnDict = {}
     #TODO currently there is no linearity provided, but we should identify
@@ -73,7 +73,7 @@ def makeAmpTables(segmentsFile, gainFile):
                 continue
             record = ampCatalog.addNew()
             name = els[0].split("_")[-1]
-            name = '%s,%s'%(name[1], name[2]) 
+            name = '%s,%s'%(name[1], name[2])
             #Because of the camera coordinate system, we choose an
             #image coordinate system that requires a -90 rotation to get
             #the correct pixel positions from the
@@ -85,7 +85,7 @@ def makeAmpTables(segmentsFile, gainFile):
             if correctY0:
                 if y0 > 0:
                     y1 -= y0
-                    y0 = 0 
+                    y0 = 0
             x0 = int(els[3])
             x1 = int(els[4])
             try:
@@ -98,15 +98,15 @@ def makeAmpTables(segmentsFile, gainFile):
             readnoise = float(els[11])
             bbox = afwGeom.Box2I(afwGeom.Point2I(x0, y0), afwGeom.Point2I(x1, y1))
 
-            if int(els[5]) == -1: 
-                flipx = False 
-            else: 
+            if int(els[5]) == -1:
+                flipx = False
+            else:
                 flipx = True
-            if int(els[6]) == 1: 
-                flipy = False 
-            else: 
+            if int(els[6]) == 1:
+                flipy = False
+            else:
                 flipy = True
-            
+
             #Since the amps are stored in amp coordinates, the readout is the same
             #for all amps
             readCorner = readoutMap['LL']
@@ -164,7 +164,7 @@ def makeLongName(shortName):
         return " ".join(["%s:%s"%(el[0], ",".join(el[1:]+wsPartMap[el[0]][parts[-1]])) for el in parts[:-1]])
     else:
         raise ValueError("Could not parse %s: has %i parts"%(shortName, len(parts)))
-   
+
 def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
     """
     Create the detector configs to use in building the Camera
@@ -192,7 +192,7 @@ def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
             detConfig.bbox_y1 = int(els[4]) - 1
             detConfig.detectorType = detType
             detConfig.serial = els[0]+"_"+phosimVersion
-            
+
             # Convert from microns to mm.
             detConfig.offset_x = float(els[1])/1000. + float(els[12])
             detConfig.offset_y = float(els[2])/1000. + float(els[13])
@@ -232,7 +232,7 @@ def ReturnCamera(baseDir):
     SegmentsFile -- https://dev.lsstcorp.org/cgit/LSST/sims/phosim.git/plain/data/lsst/segmentation.txt?h=dev
     """
     defaultOutDir = 'scratch'
-    
+
     DetectorLayoutFile = os.path.join(baseDir, 'focalplanelayout.txt')
     SegmentsFile = os.path.join(baseDir, 'segmentation.txt')
     GainFile = None
@@ -242,7 +242,7 @@ def ReturnCamera(baseDir):
     detectorConfigList = makeDetectorConfigs(DetectorLayoutFile, phosimVersion)
 
     #Build the camera config.
-    camConfig = CameraConfig() 
+    camConfig = CameraConfig()
     camConfig.detectorList = dict([(i,detectorConfigList[i]) for i in xrange(len(detectorConfigList))])
     camConfig.name = 'LSST'
     camConfig.plateScale = 2.0 #arcsec per mm
@@ -255,13 +255,13 @@ def ReturnCamera(baseDir):
     tConfig.transform.name = 'inverted'
     radialClass = afwGeom.xyTransformRegistry['radial']
     tConfig.transform.active.transform.retarget(radialClass)
-    # According to Dave M. the simulated LSST transform is well approximated (1/3 pix) 
+    # According to Dave M. the simulated LSST transform is well approximated (1/3 pix)
     # by a scale and a pincusion.
-    
+
     #this is ultimately used to convert from focal plane coordinates to pupil coordinates
     #see the asgnment below to tmc.transforms
     tConfig.transform.active.transform.coeffs = [0., 1./pScaleRad, 0., pincushion/pScaleRad]
-    
+
     #tConfig.transform.active.boresiteOffset_x = camConfig.boresiteOffset_x
     #tConfig.transform.active.boresiteOffset_y = camConfig.boresiteOffset_y
     tmc = afwGeom.TransformMapConfig()
@@ -272,4 +272,4 @@ def ReturnCamera(baseDir):
     myCamera = makeCameraFromCatalogs(camConfig, ampTableDict)
     return myCamera
 
-    
+
