@@ -216,8 +216,17 @@ def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
 
 def ReturnCamera(baseDir):
     """
-    Create the configs for building a camera.  This runs on the files distributed with PhoSim.  Currently gain and 
-    saturation need to be supplied as well.  The file should have three columns: on disk amp id (R22_S11_C00), gain, saturation. 
+    This method reads in the files
+
+    baseDir/focalplanelayout.txt
+    baseDir/segmentation.txt
+
+    and returns an afw.cameraGeom object
+
+    Below is the original documentation of the function this code was copied from:
+
+    Create the configs for building a camera.  This runs on the files distributed with PhoSim.  Currently gain and
+    saturation need to be supplied as well.  The file should have three columns: on disk amp id (R22_S11_C00), gain, saturation.
     For example:
     DetectorLayoutFile -- https://dev.lsstcorp.org/cgit/LSST/sims/phosim.git/plain/data/lsst/focalplanelayout.txt?h=dev
     SegmentsFile -- https://dev.lsstcorp.org/cgit/LSST/sims/phosim.git/plain/data/lsst/segmentation.txt?h=dev
