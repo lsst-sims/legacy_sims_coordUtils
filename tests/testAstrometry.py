@@ -34,7 +34,7 @@ from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
 from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
-from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
+from lsst.sims.coordUtils import calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.coordUtils import raDecFromPupilCoordinates, raDecFromPixelCoordinates
 from lsst.sims.coordUtils import pupilCoordinatesFromPixelCoordinates
@@ -223,52 +223,6 @@ class astrometryUnitTest(unittest.TestCase):
         applyProperMotion(ra[0], dec[0], pm_ra[0], pm_dec[0], parallax[0], v_rad[0],
                           mjd=52000.0)
 
-        ##########test calculateGnomonicProjection
-        #test without epoch
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, obs_metadata=obs_metadata)
-
-        #test without obs_metadata
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0)
-
-        #test without mjd
-        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                  unrefractedDec=obs_metadata.unrefractedDec,
-                                  rotSkyPos=obs_metadata.rotSkyPos)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
-
-        #test without rotSkyPos
-        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                  unrefractedDec=obs_metadata.unrefractedDec,
-                                  mjd=obs_metadata.mjd)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
-
-        #test without unrefractedRA
-        dummy=ObservationMetaData(unrefractedDec=obs_metadata.unrefractedDec,
-                                  mjd=obs_metadata.mjd,
-                                  rotSkyPos=obs_metadata.rotSkyPos)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
-
-        #test without unrefractedDec
-        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                  mjd=obs_metadata.mjd,
-                                  rotSkyPos=obs_metadata.rotSkyPos)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, dec, epoch=2000.0, obs_metadata=dummy)
-
-        #test that it actually runs
-        dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                  unrefractedDec=obs_metadata.unrefractedDec,
-                                  mjd=obs_metadata.mjd,
-                                  rotSkyPos=obs_metadata.rotSkyPos)
-
-        #test mismatches
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, ra, decShort, epoch=2000.0, obs_metadata=dummy)
-        self.assertRaises(RuntimeError, calculateGnomonicProjection, raShort, dec, epoch=2000.0, obs_metadata=dummy)
-
-        #test that it actually runs
-        xGnomon, yGnomon = calculateGnomonicProjection(numpy.array([numpy.radians(obs_metadata.unrefractedRA)+0.01]),
-                                                       numpy.array([numpy.radians(obs_metadata.unrefractedDec)+0.1]),
-                                                       epoch=2000.0, obs_metadata=dummy)
-
         ##########test appGeoFromICRS
         #test without mjd
         self.assertRaises(RuntimeError, appGeoFromICRS, ra, dec)
@@ -386,6 +340,9 @@ class astrometryUnitTest(unittest.TestCase):
                           obs_metadata=dummy)
 
         #test that it actually runs
+        numpy.random.seed(42)
+        ra = numpy.random.random_sample(10)*numpy.radians(1.0) + numpy.radians(dummy.unrefractedRA)
+        dec = numpy.random.random_sample(10)*numpy.radians(1.0) + numpy.radians(dummy.unrefractedDec)
         test = calculatePupilCoordinates(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
     def testCameraCoordsExceptions(self):
@@ -843,8 +800,13 @@ class astrometryUnitTest(unittest.TestCase):
 
 
     def testPixelPos(self):
+        numpy.random.seed(42)
+
         camera = camTestUtils.CameraWrapper().camera
-        ra, dec, pm_ra, pm_dec, parallax, v_rad = makeRandomSample()
+
+        nSamples = 100
+        ra = numpy.random.random_sample(nSamples)*radiansFromArcsec(100.0) + numpy.radians(self.obs_metadata.unrefractedRA)
+        dec = numpy.random.random_sample(nSamples)*radiansFromArcsec(100.0) + numpy.radians(self.obs_metadata.unrefractedDec)
 
         pupilCoordinateArray = calculatePupilCoordinates(ra, dec, obs_metadata=self.obs_metadata,
                                                          epoch=2000.0)
@@ -866,32 +828,6 @@ class astrometryUnitTest(unittest.TestCase):
             else:
                 #make sure the pixel positions are inside the detector bounding box.
                 self.assertTrue(afwGeom.Box2D(self.cat.camera[cname].getBBox()).contains(afwGeom.Point2D(x,y)))
-
-
-
-
-    def testRaDecFromPupil(self):
-        """
-        Test conversion from pupil coordinates back to Ra, Dec
-        """
-        raCenter = 25.0
-        decCenter = -10.0
-        obs = ObservationMetaData(unrefractedRA=raCenter,
-                                  unrefractedDec=decCenter,
-                                  boundType='circle',
-                                  boundLength=0.1,
-                                  rotSkyPos=23.0,
-                                  mjd=52000.0)
-
-        nSamples = 100
-        numpy.random.seed(42)
-        ra = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(raCenter)
-        dec = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(decCenter)
-        xp, yp = calculatePupilCoordinates(ra, dec, obs_metadata=obs, epoch=2000.0)
-        raTest, decTest = raDecFromPupilCoordinates(xp, yp, obs_metadata=obs, epoch=2000.0)
-        numpy.testing.assert_array_almost_equal(raTest, ra, decimal=10)
-        numpy.testing.assert_array_almost_equal(decTest, dec, decimal=10)
-
 
 
 
