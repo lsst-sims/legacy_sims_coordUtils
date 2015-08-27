@@ -12,7 +12,6 @@ import os
 import re
 import shutil
 
-import eups
 import lsst.afw.geom as afwGeom
 import lsst.afw.table as afwTable
 from lsst.afw.cameraGeom import SCIENCE

@@ -15,7 +15,6 @@ still agree to within one part in 10^5)
 
 import numpy
 
-import eups
 import os
 import unittest
 import warnings
@@ -24,6 +23,7 @@ import math
 import palpy as pal
 from collections import OrderedDict
 import lsst.utils.tests as utilsTests
+from lsst.utils import getPackageDir
 
 import lsst.afw.geom as afwGeom
 from lsst.sims.utils import ObservationMetaData
@@ -899,7 +899,7 @@ class astrometryUnitTest(unittest.TestCase):
         """
         Test the conversion between pixel coordinates and pupil coordinates
         """
-        baseDir = os.path.join(eups.productDir('sims_coordUtils'),'tests','cameraData')
+        baseDir = os.path.join(getPackageDir('sims_coordUtils'),'tests','cameraData')
         camera = ReturnCamera(baseDir)
         epoch=2000.0
         raCenter = 25.0
@@ -951,7 +951,7 @@ class astrometryUnitTest(unittest.TestCase):
         Test conversion from pixel coordinates to Ra, Dec
         """
 
-        baseDir = os.path.join(eups.productDir('sims_coordUtils'),'tests','cameraData')
+        baseDir = os.path.join(getPackageDir('sims_coordUtils'),'tests','cameraData')
         camera = ReturnCamera(baseDir)
         epoch=2000.0
 
