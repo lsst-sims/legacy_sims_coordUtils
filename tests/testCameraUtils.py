@@ -367,7 +367,42 @@ class CameraUtilsUnitTest(unittest.TestCase):
         numpy.testing.assert_array_almost_equal(arcsecFromRadians(decControl), arcsecFromRadians(decTest), decimal=10)
 
 
+    def testFindChipNameNaN(self):
+        """
+        Test that findChipName returns 'None' for objects with NaN pupil coordinates
+        """
+        baseDir = os.path.join(getPackageDir('sims_coordUtils'),'tests','cameraData')
+        camera = ReturnCamera(baseDir)
 
+        obs = ObservationMetaData(unrefractedRA=45.0, unrefractedDec=87.0, rotSkyPos=65.0,
+                                  mjd=43520.0)
+
+        raCenter, decCenter = observedFromICRS(numpy.array([obs._unrefractedRA]),
+                                               numpy.array([obs._unrefractedDec]),
+                                               obs_metadata=obs, epoch=2000.0)
+
+        nSamples = 100
+        numpy.random.seed(42)
+        xp = radiansFromArcsec(numpy.random.random_sample(nSamples)*100.0)
+        yp = radiansFromArcsec(numpy.random.random_sample(nSamples)*100.0)
+
+        nameList = findChipName(xPupil=xp, yPupil=yp, obs_metadata=obs, camera=camera, epoch=2000.0)
+        for name in nameList:
+            self.assertTrue(name is not None)
+
+        xp[4] = numpy.NaN
+        yp[4] = numpy.NaN
+
+        xp[10] = numpy.NaN
+
+        yp[15] = numpy.NaN
+
+        nameList2 = findChipName(xPupil=xp, yPupil=yp, obs_metadata=obs, camera=camera, epoch=2000.0)
+        for ix in range(len(nameList2)):
+            if ix!=4 and ix!=10 and ix!=15:
+                self.assertTrue(nameList2[ix]==nameList[ix])
+            else:
+                self.assertTrue(nameList2[ix] is None)
 
 
 def suite():
