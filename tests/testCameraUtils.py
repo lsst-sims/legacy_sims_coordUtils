@@ -401,6 +401,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
         for ix in range(len(nameList2)):
             if ix!=4 and ix!=10 and ix!=15:
                 self.assertTrue(nameList2[ix]==nameList[ix])
+                self.assertFalse(nameList2[ix] is None)
             else:
                 self.assertTrue(nameList2[ix] is None)
 
