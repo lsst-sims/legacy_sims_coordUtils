@@ -8,6 +8,74 @@ from lsst.sims.coordUtils import raDecFromPupilCoordinates
 
 class PupilCoordinateUnitTest(unittest.TestCase):
 
+    def testExceptions(self):
+        """
+        Test that exceptions are raised when they ought to be
+        """
+        obs_metadata = ObservationMetaData(unrefractedRA=25.0,
+                                           unrefractedDec=25.0,
+                                           rotSkyPos=25.0,
+                                           mjd=52000.0)
+
+        numpy.random.seed(42)
+        ra = numpy.random.random_sample(10)*numpy.radians(1.0) + numpy.radians(obs_metadata.unrefractedRA)
+        dec = numpy.random.random_sample(10)*numpy.radians(1.0) + numpy.radians(obs_metadata.unrefractedDec)
+        raShort = numpy.array([1.0])
+        decShort = numpy.array([1.0])
+
+        #test without epoch
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+                          obs_metadata=obs_metadata)
+
+        #test without obs_metadata
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0)
+
+        #test without unrefractedRA
+        dummy = ObservationMetaData(unrefractedDec=obs_metadata.unrefractedDec,
+                                    rotSkyPos=obs_metadata.rotSkyPos,
+                                    mjd=obs_metadata.mjd)
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy)
+
+        #test without unrefractedDec
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    rotSkyPos=obs_metadata.rotSkyPos,
+                                    mjd=obs_metadata.mjd)
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy)
+
+        #test without rotSkyPos
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    unrefractedDec=obs_metadata.unrefractedDec,
+                                    mjd=obs_metadata.mjd)
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy)
+
+        #test without mjd
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    unrefractedDec=obs_metadata.unrefractedDec,
+                                    rotSkyPos=obs_metadata.rotSkyPos)
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+                          epoch=2000.0, obs_metadata=dummy)
+
+
+        #test for mismatches
+        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
+                                    unrefractedDec=obs_metadata.unrefractedDec,
+                                    rotSkyPos=obs_metadata.rotSkyPos,
+                                    mjd=obs_metadata.mjd)
+
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, decShort, epoch=2000.0,
+                          obs_metadata=dummy)
+
+        self.assertRaises(RuntimeError, calculatePupilCoordinates, raShort, dec, epoch=2000.0,
+                          obs_metadata=dummy)
+
+        #test that it actually runs
+        test = calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+
+
     def testCardinalDirections(self):
         """
         This unit test verifies that the following conventions hold:

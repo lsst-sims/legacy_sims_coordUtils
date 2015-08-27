@@ -31,7 +31,7 @@ from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
 
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
-from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
+from lsst.sims.coordUtils import observedFromICRS
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 
 def makeObservationMetaData():
@@ -281,61 +281,6 @@ class astrometryUnitTest(unittest.TestCase):
         #test that it actually runs
         test = observedFromICRS(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
-        ##########test calculatePupilCoordinates
-        #test without epoch
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          obs_metadata=obs_metadata)
-
-        #test without obs_metadata
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0)
-
-        #test without unrefractedRA
-        dummy = ObservationMetaData(unrefractedDec=obs_metadata.unrefractedDec,
-                                    rotSkyPos=obs_metadata.rotSkyPos,
-                                    mjd=obs_metadata.mjd)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0, obs_metadata=dummy)
-
-        #test without unrefractedDec
-        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                    rotSkyPos=obs_metadata.rotSkyPos,
-                                    mjd=obs_metadata.mjd)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0, obs_metadata=dummy)
-
-        #test without rotSkyPos
-        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                    unrefractedDec=obs_metadata.unrefractedDec,
-                                    mjd=obs_metadata.mjd)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0, obs_metadata=dummy)
-
-        #test without mjd
-        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                    unrefractedDec=obs_metadata.unrefractedDec,
-                                    rotSkyPos=obs_metadata.rotSkyPos)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
-                          epoch=2000.0, obs_metadata=dummy)
-
-
-        #test for mismatches
-        dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
-                                    unrefractedDec=obs_metadata.unrefractedDec,
-                                    rotSkyPos=obs_metadata.rotSkyPos,
-                                    mjd=obs_metadata.mjd)
-
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, decShort, epoch=2000.0,
-                          obs_metadata=dummy)
-
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, raShort, dec, epoch=2000.0,
-                          obs_metadata=dummy)
-
-        #test that it actually runs
-        numpy.random.seed(42)
-        ra = numpy.random.random_sample(10)*numpy.radians(1.0) + numpy.radians(dummy.unrefractedRA)
-        dec = numpy.random.random_sample(10)*numpy.radians(1.0) + numpy.radians(dummy.unrefractedDec)
-        test = calculatePupilCoordinates(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
 
     def testApplyPrecession(self):
