@@ -23,11 +23,12 @@ import math
 import palpy as pal
 from collections import OrderedDict
 import lsst.utils.tests as utilsTests
+from lsst.utils import getPackageDir
 
 import lsst.afw.geom as afwGeom
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
-                            radiansFromArcsec, Site
+                            radiansFromArcsec, arcsecFromRadians, Site
 
 from lsst.sims.coordUtils import applyPrecession, applyProperMotion
 from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
@@ -35,7 +36,11 @@ from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 from lsst.sims.coordUtils import calculateGnomonicProjection, calculateFocalPlaneCoordinates
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
+from lsst.sims.coordUtils import raDecFromPupilCoordinates, raDecFromPixelCoordinates
+from lsst.sims.coordUtils import pupilCoordinatesFromPixelCoordinates
 import lsst.afw.cameraGeom.testUtils as camTestUtils
+
+from lsst.sims.coordUtils.utils import ReturnCamera
 
 def makeObservationMetaData():
     #create a cartoon ObservationMetaData object
@@ -861,6 +866,137 @@ class astrometryUnitTest(unittest.TestCase):
             else:
                 #make sure the pixel positions are inside the detector bounding box.
                 self.assertTrue(afwGeom.Box2D(self.cat.camera[cname].getBBox()).contains(afwGeom.Point2D(x,y)))
+
+
+
+
+    def testRaDecFromPupil(self):
+        """
+        Test conversion from pupil coordinates back to Ra, Dec
+        """
+        raCenter = 25.0
+        decCenter = -10.0
+        obs = ObservationMetaData(unrefractedRA=raCenter,
+                                  unrefractedDec=decCenter,
+                                  boundType='circle',
+                                  boundLength=0.1,
+                                  rotSkyPos=23.0,
+                                  mjd=52000.0)
+
+        nSamples = 100
+        numpy.random.seed(42)
+        ra = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(raCenter)
+        dec = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(decCenter)
+        xp, yp = calculatePupilCoordinates(ra, dec, obs_metadata=obs, epoch=2000.0)
+        raTest, decTest = raDecFromPupilCoordinates(xp, yp, obs_metadata=obs, epoch=2000.0)
+        numpy.testing.assert_array_almost_equal(raTest, ra, decimal=10)
+        numpy.testing.assert_array_almost_equal(decTest, dec, decimal=10)
+
+
+
+
+    def testPupilFromPixel(self):
+        """
+        Test the conversion between pixel coordinates and pupil coordinates
+        """
+        baseDir = os.path.join(getPackageDir('sims_coordUtils'),'tests','cameraData')
+        camera = ReturnCamera(baseDir)
+        epoch=2000.0
+        raCenter = 25.0
+        decCenter = -10.0
+        obs = ObservationMetaData(unrefractedRA=raCenter,
+                                  unrefractedDec=decCenter,
+                                  boundType='circle',
+                                  boundLength=0.1,
+                                  rotSkyPos=23.0,
+                                  mjd=52000.0)
+
+        raTrue, decTrue = observedFromICRS(numpy.array([numpy.radians(raCenter)]),
+                                           numpy.array([numpy.radians(decCenter)]),
+                                           obs_metadata=obs, epoch=epoch)
+
+        ra = []
+        dec = []
+
+        dx = 1.0e-4
+
+        for rr in numpy.arange(raTrue-20.0*dx, raTrue+20.0*dx, dx):
+            for dd in numpy.arange(decTrue-20.0*dx, decTrue+20.0*dx, dx):
+                ra.append(rr)
+                dec.append(dd)
+
+
+        ra = numpy.array(ra)
+        dec = numpy.array(dec)
+
+        xp, yp = calculatePupilCoordinates(ra, dec, obs_metadata=obs, epoch=2000.0)
+        chipNameList = findChipName(xPupil=xp, yPupil=yp, obs_metadata=obs, epoch=epoch,
+                                    camera=camera)
+        xPixList, yPixList = calculatePixelCoordinates(xPupil=xp, yPupil=yp, chipNames=chipNameList,
+                                               obs_metadata=obs, epoch=epoch, camera=camera)
+
+        xpTest, ypTest = pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList,
+                                                     camera=camera, obs_metadata=obs, epoch=epoch)
+
+        xpControl = numpy.array([xx if name is not None else numpy.NaN for (xx, name) in zip(xp, chipNameList)])
+        ypControl = numpy.array([yy if name is not None else numpy.NaN for (yy, name) in zip(yp, chipNameList)])
+
+        numpy.testing.assert_array_almost_equal(xpControl, xpTest, decimal=10)
+        numpy.testing.assert_array_almost_equal(ypControl, ypTest, decimal=10)
+
+
+
+    def testRaDecFromPixelCoordinates(self):
+        """
+        Test conversion from pixel coordinates to Ra, Dec
+        """
+
+        baseDir = os.path.join(getPackageDir('sims_coordUtils'),'tests','cameraData')
+        camera = ReturnCamera(baseDir)
+        epoch=2000.0
+
+        raCenter = 25.0
+        decCenter = -10.0
+        obs = ObservationMetaData(unrefractedRA=raCenter,
+                                  unrefractedDec=decCenter,
+                                  boundType='circle',
+                                  boundLength=0.1,
+                                  rotSkyPos=23.0,
+                                  mjd=52000.0)
+
+        raTrue, decTrue = observedFromICRS(numpy.array([numpy.radians(raCenter)]),
+                                           numpy.array([numpy.radians(decCenter)]),
+                                           obs_metadata=obs, epoch=epoch)
+
+        ra = []
+        dec = []
+
+        dx = 1.0e-4
+
+        for rr in numpy.arange(raTrue-20.0*dx, raTrue+20.0*dx, dx):
+            for dd in numpy.arange(decTrue-20.0*dx, decTrue+20.0*dx, dx):
+                ra.append(rr)
+                dec.append(dd)
+
+
+        ra = numpy.array(ra)
+        dec = numpy.array(dec)
+
+        chipNameList = findChipName(ra=ra, dec=dec, obs_metadata=obs, epoch=epoch, camera=camera)
+        pixelList = calculatePixelCoordinates(ra=ra, dec=dec, chipNames=chipNameList, obs_metadata=obs,
+                                           epoch=epoch, camera=camera)
+
+        raTest, decTest = raDecFromPixelCoordinates(pixelList[0], pixelList[1], chipNameList,
+                                                    obs_metadata=obs, epoch=epoch, camera=camera)
+
+
+
+        raControl = numpy.array([rr if name is not None else numpy.NaN for (rr, name) in zip(ra, chipNameList)])
+        decControl = numpy.array([dd if name is not None else numpy.NaN for (dd, name) in zip(dec, chipNameList)])
+
+        numpy.testing.assert_array_almost_equal(arcsecFromRadians(raControl), arcsecFromRadians(raTest), decimal=10)
+        numpy.testing.assert_array_almost_equal(arcsecFromRadians(decControl), arcsecFromRadians(decTest), decimal=10)
+
 
 
 

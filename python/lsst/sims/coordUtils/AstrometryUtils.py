@@ -5,7 +5,7 @@ from lsst.sims.utils import haversine
 
 __all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
            "observedFromICRS", "calculatePupilCoordinates", "calculateGnomonicProjection",
-           "refractionCoefficients", "applyRefraction"]
+           "refractionCoefficients", "applyRefraction", "raDecFromPupilCoordinates"]
 
 
 def refractionCoefficients(wavelength=0.5, site=None):
@@ -562,6 +562,73 @@ def calculatePupilCoordinates(raObj, decObj, obs_metadata=None, epoch=None):
     y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
 
     return numpy.array([x_out, y_out])
+
+
+def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
+    """
+    @param [in] xPupil -- pupil coordinates in radians
+
+    @param [in] yPupil -- pupil coordinates in radians
+
+    @param [in] obs_metadata -- an instantiation of ObservationMetaData characterizing
+    the state of the telescope
+
+    @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
+    transforations (in years)
+
+    @param [out] ra -- the right ascension in radians
+
+    @param [out] dec -- the declination in radians
+    """
+
+    if obs_metadata is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinates without obs_metadata")
+
+    if epoch is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinates without rotSkyPos " + \
+                           "in obs_metadata")
+
+    if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
+        raise RuntimeError("Cannot call calculatePupilCoordinaes "+ \
+                          "without unrefractedRA, unrefractedDec in obs_metadata")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd " + \
+                           "in obs_metadata")
+
+    if len(xPupil)!=len(yPupil):
+        raise RuntimeError("You passed %d RAs but %d Decs into calculatePupilCoordinates" % \
+                           (len(raObj), len(decObj)))
+
+
+    #This is the same as theta in calculatePupilCoordinates, except without the minus sign.
+    #This is because we will be reversing the rotation performed in that other method.
+    theta = obs_metadata._rotSkyPos
+
+    #correct for precession and nutation
+    pointingRA=numpy.array([obs_metadata._unrefractedRA])
+    pointingDec=numpy.array([obs_metadata._unrefractedDec])
+
+    #transform from mean, ICRS pointing coordinates to observed pointing coordinates
+    boreRA, boreDec = observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
+
+    x_rot = xPupil*numpy.cos(theta) - yPupil*numpy.sin(theta)
+    y_rot = xPupil*numpy.sin(theta) + yPupil*numpy.cos(theta)
+
+    #now y_rot is the difference in declination between the bore site and the objects.
+
+    decObj = boreDec + y_rot
+
+    hh = numpy.sqrt(x_rot*x_rot + y_rot*y_rot)
+    t1 = numpy.power(numpy.sin(0.5*hh),2)
+    t2 = numpy.power(numpy.sin(0.5*y_rot),2)
+    arg = numpy.sqrt((t1-t2)/(numpy.cos(boreDec)*numpy.cos(decObj)))
+    dLambda = numpy.sign(x_rot)*2.0*numpy.arcsin(arg)
+
+    return boreRA+dLambda, decObj
 
 
 def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
