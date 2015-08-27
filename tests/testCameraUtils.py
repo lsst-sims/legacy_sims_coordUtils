@@ -367,7 +367,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
         numpy.testing.assert_array_almost_equal(arcsecFromRadians(decControl), arcsecFromRadians(decTest), decimal=10)
 
 
-    def testFindChipNameNaN(self):
+    def testFindChipNameNaNPupil(self):
         """
         Test that findChipName returns 'None' for objects with NaN pupil coordinates
         """
