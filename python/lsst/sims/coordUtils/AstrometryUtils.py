@@ -631,7 +631,7 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
         raOut.append(rr)
         decOut.append(dd)
 
-    return raOut, decOut
+    return numpy.array(raOut), numpy.array(decOut)
 
 
 def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
