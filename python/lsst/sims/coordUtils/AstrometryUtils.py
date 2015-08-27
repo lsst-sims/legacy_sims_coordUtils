@@ -593,9 +593,6 @@ def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
     if len(ra_in)!=len(dec_in):
         raise RuntimeError("You passed %d RAs but %d Decs to calculatePupilCoordinates" % (len(ra_in), len(dec_in)))
 
-    x_out=numpy.zeros(len(ra_in))
-    y_out=numpy.zeros(len(ra_in))
-
     if obs_metadata.rotSkyPos is None:
         #there is no observation meta data on which to base astrometry
         raise RuntimeError("Cannot calculate [x,y]_focal_nominal without obs_metadata.rotSkyPos")
