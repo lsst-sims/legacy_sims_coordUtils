@@ -577,9 +577,9 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
     @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
     transforations (in years)
 
-    @param [out] raOut -- the right ascension in radians
+    @param [out] raOut -- the right ascension in radians (a numpy array)
 
-    @param [out] decOut -- the declination in radians
+    @param [out] decOut -- the declination in radians (a numpy array)
     """
 
     if obs_metadata is None:
