@@ -504,17 +504,17 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
     """
 
     if obs_metadata is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates without obs_metadata")
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates without obs_metadata")
 
     if epoch is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates; epoch is None")
 
     if obs_metadata.rotSkyPos is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates without rotSkyPos " + \
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates without rotSkyPos " + \
                            "in obs_metadata")
 
     if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinaes "+ \
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates "+ \
                           "without unrefractedRA, unrefractedDec in obs_metadata")
 
     if obs_metadata.mjd is None:
@@ -522,7 +522,7 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
                            "in obs_metadata")
 
     if len(xPupil)!=len(yPupil):
-        raise RuntimeError("You passed %d RAs but %d Decs into calculatePupilCoordinates" % \
+        raise RuntimeError("You passed %d RAs but %d Decs into raDecFromPupilCoordinates" % \
                            (len(raObj), len(decObj)))
 
 
