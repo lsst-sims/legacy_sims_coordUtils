@@ -610,7 +610,23 @@ def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
     #palpy.ds2tp performs the gnomonic projection on ra_in and dec_in
     #with a tangent point at (trueRA, trueDec)
     #
-    x, y = palpy.ds2tpVector(ra_in,dec_in,boreRA[0],boreDec[0])
+    try:
+        x, y = palpy.ds2tpVector(ra_in,dec_in,boreRA[0],boreDec[0])
+    except:
+        # apparently, one of your ra/dec values was improper; we will have to do this
+        # element-wise, putting NaN in the place of the bad values
+        x = []
+        y = []
+        for rr, dd in zip(ra_in, dec_in):
+            try:
+                xx, yy = palpy.ds2tp(rr, dd, boreRA[0], boreDec[0])
+            except:
+                xx = numpy.NaN
+                yy = numpy.NaN
+            x.append(xx)
+            y.append(yy)
+        x = numpy.array(x)
+        y = numpy.array(y)
 
     # The extra negative sign on x_out comes from the following:
     # The Gnomonic projection as calculated by palpy is such that,

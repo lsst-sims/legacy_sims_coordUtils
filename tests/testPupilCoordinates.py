@@ -176,7 +176,41 @@ class PupilCoordinateUnitTest(unittest.TestCase):
         numpy.testing.assert_array_almost_equal(decTest, dec, decimal=10)
 
 
+    def testNaNs(self):
+        """
+        Test how calculatePupilCoordinates handles improper values
+        """
+        obs = ObservationMetaData(unrefractedRA=42.0, unrefractedDec=-28.0,
+                                  rotSkyPos=111.0, mjd=42356.0)
+        nSamples = 100
+        numpy.random.seed(42)
+        raList = numpy.radians(numpy.random.random_sample(nSamples)*2.0 + 42.0)
+        decList = numpy.radians(numpy.random.random_sample(nSamples)*2.0 -28.0)
 
+        xControl, yControl = calculatePupilCoordinates(raList, decList,
+                                                       obs_metadata=obs,
+                                                       epoch=2000.0)
+
+        raList[5] = numpy.NaN
+        decList[5] = numpy.NaN
+        raList[15] = numpy.NaN
+        decList[20] = numpy.NaN
+        raList[30] = numpy.radians(42.0) + numpy.pi
+
+        xTest, yTest = calculatePupilCoordinates(raList, decList,
+                                                 obs_metadata=obs,
+                                                 epoch=2000.0)
+
+        for ix, (xc, yc, xt, yt) in \
+        enumerate(zip(xControl, yControl, xTest, yTest)):
+            if ix!=5 and ix!=15 and ix!=20 and ix!=30:
+                self.assertAlmostEqual(xc, xt, 10)
+                self.assertAlmostEqual(yc, yt, 10)
+                self.assertFalse(numpy.isnan(xt))
+                self.assertFalse(numpy.isnan(yt))
+            else:
+                self.assertTrue(numpy.isnan(xt))
+                self.assertTrue(numpy.isnan(yt))
 
 
 def suite():
