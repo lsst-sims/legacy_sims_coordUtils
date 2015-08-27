@@ -399,6 +399,50 @@ class CameraUtilsUnitTest(unittest.TestCase):
                 self.assertTrue(nameList2[ix] is None)
 
 
+    def testFindChipNameNaNRaDec(self):
+        """
+        Test that findChipName returns 'None' for objects with NaN RA, Dec coordinates
+        """
+        baseDir = os.path.join(getPackageDir('sims_coordUtils'),'tests','cameraData')
+        camera = ReturnCamera(baseDir)
+
+        obs = ObservationMetaData(unrefractedRA=45.0, unrefractedDec=87.0, rotSkyPos=65.0,
+                                  mjd=43520.0)
+
+        raCenter, decCenter = observedFromICRS(numpy.array([obs._unrefractedRA]),
+                                               numpy.array([obs._unrefractedDec]),
+                                               obs_metadata=obs, epoch=2000.0)
+
+        nSamples = 100
+        numpy.random.seed(42)
+        raList = radiansFromArcsec(numpy.random.random_sample(nSamples)*100.0) + raCenter[0]
+        decList = radiansFromArcsec(numpy.random.random_sample(nSamples)*100.0) + decCenter[0]
+
+        nameList = findChipName(ra=raList, dec=decList, obs_metadata=obs, camera=camera, epoch=2000.0)
+
+        for name in nameList:
+            self.assertTrue(name is not None)
+
+        raList[4] = numpy.NaN
+        decList[4] = numpy.NaN
+
+        raList[10] = numpy.NaN
+
+        decList[15] = numpy.NaN
+
+        raList[30] = raCenter[0] + numpy.pi
+
+        decList[40] = decCenter[0] + numpy.pi
+
+        nameList2 = findChipName(ra=raList, dec=decList, obs_metadata=obs, camera=camera, epoch=2000.0)
+        for ix in range(len(nameList2)):
+            if ix!=4 and ix!=10 and ix!=15 and ix!=30 and ix!=40:
+                self.assertTrue(nameList2[ix]==nameList[ix])
+                self.assertFalse(nameList2[ix] is None)
+            else:
+                self.assertTrue(nameList2[ix] is None)
+
+
 def suite():
     utilsTests.init()
     suites = []
