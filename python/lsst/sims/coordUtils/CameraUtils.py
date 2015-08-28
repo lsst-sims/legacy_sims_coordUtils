@@ -91,8 +91,8 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
 
     detList = camera.findDetectorsList(cameraPointList, PUPIL)
 
-    for det in detList:
-        if len(det)==0:
+    for pt, det in zip(cameraPointList, detList):
+        if len(det)==0 or numpy.isnan(pt.getX()) or numpy.isnan(pt.getY()):
             chipNames.append(None)
         else:
             names = [dd.getName() for dd in det if dd.getType()==SCIENCE]

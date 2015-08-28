@@ -4,8 +4,9 @@ from lsst.sims.utils import arcsecFromRadians, cartesianFromSpherical, spherical
 from lsst.sims.utils import haversine
 
 __all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
-           "observedFromICRS", "calculatePupilCoordinates", "calculateGnomonicProjection",
-           "refractionCoefficients", "applyRefraction", "raDecFromPupilCoordinates"]
+           "observedFromICRS", "calculatePupilCoordinates", "refractionCoefficients",
+           "applyRefraction", "raDecFromPupilCoordinates"]
+
 
 
 def refractionCoefficients(wavelength=0.5, site=None):
@@ -485,85 +486,6 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
     return numpy.array([ra_out,dec_out])
 
 
-
-def calculatePupilCoordinates(raObj, decObj, obs_metadata=None, epoch=None):
-    """
-    @param [in] raObj is a numpy array of RAs in radians
-
-    @param [in] decObj is a numpy array of Decs in radians
-
-    @param [in] obs_metadata is an ObservationMetaData object containing information
-    about the telescope pointing
-
-    @param [in] epoch is the julian epoch of the mean equinox used for the coordinate
-    transforations (in years)
-
-    @param [out] a numpy array in which the first row is the x pupil coordinate and the second
-    row is the y pupil coordinate
-
-    Take an input RA and dec from the sky and convert it to coordinates
-    in the pupil.
-
-    This routine will use the haversine formula to calculate the arc distance h
-    between the bore sight and the object.  It will convert this into pupil coordinates
-    by assuming that the y-coordinate is identically the declination of the object.
-    It will find the x-coordinate by demanding that
-
-    h^2 = (y_bore - y_obj)^2 + (x_bore - x_obj)^2
-    """
-
-    if obs_metadata is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates without obs_metadata")
-
-    if epoch is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
-
-    if obs_metadata.rotSkyPos is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates without rotSkyPos " + \
-                           "in obs_metadata")
-
-    if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinaes "+ \
-                          "without unrefractedRA, unrefractedDec in obs_metadata")
-
-    if obs_metadata.mjd is None:
-        raise RuntimeError("Cannot calculate x_pupil, y_pupil without mjd " + \
-                           "in obs_metadata")
-
-    if len(raObj)!=len(decObj):
-        raise RuntimeError("You passed %d RAs but %d Decs into calculatePupilCoordinates" % \
-                           (len(raObj), len(decObj)))
-
-    theta = -1.0*obs_metadata._rotSkyPos
-
-    #correct for precession and nutation
-
-    pointingRA=numpy.array([obs_metadata._unrefractedRA])
-    pointingDec=numpy.array([obs_metadata._unrefractedDec])
-
-    #transform from mean, ICRS pointing coordinates to observed pointing coordinates
-    boreRA, boreDec = observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
-
-    #we should now have the true tangent point for the gnomonic projection
-    dPhi = decObj - boreDec
-    dLambda = raObj - boreRA
-
-    #see en.wikipedia.org/wiki/Haversine_formula
-    #Phi is latitude on the sphere (declination)
-    #Lambda is longitude on the sphere (RA)
-
-    h = haversine(raObj, decObj, boreRA, boreDec)
-
-    #demand that the Euclidean distance on the pupil matches
-    #the haversine distance on the sphere
-    dx = numpy.sign(dLambda)*numpy.sqrt(h**2 - dPhi**2)
-    #correct for rotation of the telescope
-    x_out = dx*numpy.cos(theta) - dPhi*numpy.sin(theta)
-    y_out = dx*numpy.sin(theta) + dPhi*numpy.cos(theta)
-
-    return numpy.array([x_out, y_out])
-
-
 def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
     """
     @param [in] xPupil -- pupil coordinates in radians
@@ -576,23 +498,23 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
     @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
     transforations (in years)
 
-    @param [out] ra -- the right ascension in radians
+    @param [out] raOut -- the right ascension in radians (a numpy array)
 
-    @param [out] dec -- the declination in radians
+    @param [out] decOut -- the declination in radians (a numpy array)
     """
 
     if obs_metadata is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates without obs_metadata")
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates without obs_metadata")
 
     if epoch is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates; epoch is None")
 
     if obs_metadata.rotSkyPos is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates without rotSkyPos " + \
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates without rotSkyPos " + \
                            "in obs_metadata")
 
     if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinaes "+ \
+        raise RuntimeError("Cannot call raDecFromPupilCoordinates "+ \
                           "without unrefractedRA, unrefractedDec in obs_metadata")
 
     if obs_metadata.mjd is None:
@@ -600,13 +522,13 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
                            "in obs_metadata")
 
     if len(xPupil)!=len(yPupil):
-        raise RuntimeError("You passed %d RAs but %d Decs into calculatePupilCoordinates" % \
+        raise RuntimeError("You passed %d RAs but %d Decs into raDecFromPupilCoordinates" % \
                            (len(raObj), len(decObj)))
 
 
     #This is the same as theta in calculatePupilCoordinates, except without the minus sign.
     #This is because we will be reversing the rotation performed in that other method.
-    theta = obs_metadata._rotSkyPos
+    theta = -1.0*obs_metadata._rotSkyPos
 
     #correct for precession and nutation
     pointingRA=numpy.array([obs_metadata._unrefractedRA])
@@ -615,23 +537,25 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
     #transform from mean, ICRS pointing coordinates to observed pointing coordinates
     boreRA, boreDec = observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
 
-    x_rot = xPupil*numpy.cos(theta) - yPupil*numpy.sin(theta)
-    y_rot = xPupil*numpy.sin(theta) + yPupil*numpy.cos(theta)
+    x_g = xPupil*numpy.cos(theta) - yPupil*numpy.sin(theta)
+    y_g = xPupil*numpy.sin(theta) + yPupil*numpy.cos(theta)
 
-    #now y_rot is the difference in declination between the bore site and the objects.
+    x_g *= -1.0
 
-    decObj = boreDec + y_rot
+    # x_g and y_g are now the x and y coordinates
+    # can now use the PALPY method palDtp2s to convert to RA, Dec.
+    # Unfortunately, that method has not yet been vectorized.
+    raOut = []
+    decOut = []
+    for xx, yy in zip(x_g, y_g):
+        rr, dd = palpy.dtp2s(xx, yy, boreRA[0], boreDec[0])
+        raOut.append(rr)
+        decOut.append(dd)
 
-    hh = numpy.sqrt(x_rot*x_rot + y_rot*y_rot)
-    t1 = numpy.power(numpy.sin(0.5*hh),2)
-    t2 = numpy.power(numpy.sin(0.5*y_rot),2)
-    arg = numpy.sqrt((t1-t2)/(numpy.cos(boreDec)*numpy.cos(decObj)))
-    dLambda = numpy.sign(x_rot)*2.0*numpy.arcsin(arg)
-
-    return boreRA+dLambda, decObj
+    return numpy.array(raOut), numpy.array(decOut)
 
 
-def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
+def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
     """
     Take an input RA and dec from the sky and convert it to coordinates
     on the focal plane.
@@ -653,24 +577,21 @@ def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
     provided, this method will try to get it from the db_obj member variable, assuming this
     method is part of an InstanceCatalog)
 
-    @param [out] returns a numpy array whose first row is the x coordinate according to a naive
-    gnomonic projection and whose second row is the y coordinate
+    @param [out] returns a numpy array whose first row is the x coordinate on the pupil in
+    radians and whose second row is the y coordinate in radians
     """
 
     if obs_metadata is None:
-        raise RuntimeError("Cannot call calculateGnomonicProjection without obs_metadata")
+        raise RuntimeError("Cannot call calculatePupilCoordinates without obs_metadata")
 
     if obs_metadata.mjd is None:
-        raise RuntimeError("Cannot call calculatGnomonicProjection; obs_metadata.mjd is None")
+        raise RuntimeError("Cannot call calculatePupilCoordinates; obs_metadata.mjd is None")
 
     if epoch is None:
-        raise RuntimeError("Cannot call calculateGnomonicProjection; epoch is None")
+        raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
 
     if len(ra_in)!=len(dec_in):
-        raise RuntimeError("You passed %d RAs but %d Decs to calculateGnomonicProjection" % (len(ra_in), len(dec_in)))
-
-    x_out=numpy.zeros(len(ra_in))
-    y_out=numpy.zeros(len(ra_in))
+        raise RuntimeError("You passed %d RAs but %d Decs to calculatePupilCoordinates" % (len(ra_in), len(dec_in)))
 
     if obs_metadata.rotSkyPos is None:
         #there is no observation meta data on which to base astrometry
@@ -679,28 +600,45 @@ def calculateGnomonicProjection(ra_in, dec_in, obs_metadata=None, epoch=None):
     if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
         raise RuntimeError("Cannot calculate [x,y]_focal_nominal without unrefracted RA and Dec in obs_metadata")
 
-    theta = -1.0*obs_metadata._rotSkyPos
+    theta = obs_metadata._rotSkyPos
 
-    #correct RA and Dec for refraction, precession and nutation
-    #
-    #correct for precession and nutation
-    inRA=numpy.array([obs_metadata._unrefractedRA])
-    inDec=numpy.array([obs_metadata._unrefractedDec])
-
-    x, y = appGeoFromICRS(inRA, inDec, epoch=epoch, mjd=obs_metadata.mjd)
-
-    #correct for refraction
-    trueRA, trueDec = observedFromAppGeo(x, y, obs_metadata=obs_metadata)
-    #we should now have the true tangent point for the gnomonic projection
+    # convert pointing RA, Dec from above-the-atmosphere mean RA, Dec to observed RA, Dec
+    pointingRA=numpy.array([obs_metadata._unrefractedRA])
+    pointingDec=numpy.array([obs_metadata._unrefractedDec])
+    boreRA, boreDec = observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
 
     #palpy.ds2tp performs the gnomonic projection on ra_in and dec_in
     #with a tangent point at (trueRA, trueDec)
     #
-    x, y = palpy.ds2tpVector(ra_in,dec_in,trueRA[0],trueDec[0])
+    try:
+        x, y = palpy.ds2tpVector(ra_in,dec_in,boreRA[0],boreDec[0])
+    except:
+        # apparently, one of your ra/dec values was improper; we will have to do this
+        # element-wise, putting NaN in the place of the bad values
+        x = []
+        y = []
+        for rr, dd in zip(ra_in, dec_in):
+            try:
+                xx, yy = palpy.ds2tp(rr, dd, boreRA[0], boreDec[0])
+            except:
+                xx = numpy.NaN
+                yy = numpy.NaN
+            x.append(xx)
+            y.append(yy)
+        x = numpy.array(x)
+        y = numpy.array(y)
+
+    # The extra negative sign on x_out comes from the following:
+    # The Gnomonic projection as calculated by palpy is such that,
+    # if north is in the +y direction, then west is in the -x direction,
+    # which is the opposite of the behavior we want (I do not know how to
+    # express this analytically; I have just confirmed it numerically)
+    x *= -1.0
 
     #rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
     #camera cooridnates" according to phoSim documentation) to account for
     #the rotation of the focal plane about the telescope pointing
+
 
     x_out = x*numpy.cos(theta) - y*numpy.sin(theta)
     y_out = x*numpy.sin(theta) + y*numpy.cos(theta)
