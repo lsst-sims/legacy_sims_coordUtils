@@ -26,7 +26,7 @@ import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
+from lsst.sims.utils import _getRotTelPos, _raDecFromAltAz, calcObsDefaults, \
                             radiansFromArcsec, arcsecFromRadians, Site
 
 from lsst.sims.coordUtils import _applyPrecession, _applyProperMotion
@@ -42,8 +42,8 @@ def makeObservationMetaData():
     band = 'r'
     testSite = Site(latitude=0.5, longitude=1.1, height=3000, meanTemperature=260.0,
                     meanPressure=725.0, lapseRate=0.005)
-    centerRA, centerDec = raDecFromAltAz(alt,az,testSite.longitude,testSite.latitude,mjd)
-    rotTel = getRotTelPos(centerRA, centerDec, testSite.longitude, testSite.latitude, mjd, 0.0)
+    centerRA, centerDec = _raDecFromAltAz(alt,az,testSite.longitude,testSite.latitude,mjd)
+    rotTel = _getRotTelPos(centerRA, centerDec, testSite.longitude, testSite.latitude, mjd, 0.0)
 
     obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band,
                  testSite.longitude, testSite.latitude)
