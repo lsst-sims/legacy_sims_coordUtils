@@ -3,7 +3,8 @@ import palpy
 from lsst.sims.utils import arcsecFromRadians, cartesianFromSpherical, sphericalFromCartesian
 from lsst.sims.utils import haversine
 
-__all__ = ["_applyPrecession", "_applyProperMotion", "_appGeoFromICRS", "_observedFromAppGeo",
+__all__ = ["_applyPrecession", "applyPrecession",
+           "_applyProperMotion", "_appGeoFromICRS", "_observedFromAppGeo",
            "_observedFromICRS", "_calculatePupilCoordinates", "refractionCoefficients",
            "applyRefraction", "_raDecFromPupilCoordinates"]
 
@@ -71,9 +72,41 @@ def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
     return refractedZenith
 
 
-def _applyPrecession(ra, dec, epoch=2000.0, mjd=None):
+def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     """
     applyPrecession() applies precesion and nutation to coordinates between two epochs.
+    Accepts RA and dec as inputs.  Returns corrected RA and dec (in degrees).
+
+    Assumes FK5 as the coordinate system
+    units:  ra_in (radians), dec_in (radians)
+
+    The precession-nutation matrix is calculated by the palpy.prenut method
+    which uses the IAU 2006/2000A model
+
+    @param [in] ra in degrees
+
+    @param [in] dec in degrees
+
+    @param [in] epoch is the epoch of the mean equinox (in years; default 2000)
+
+    @param [in] mjd is the MJD of the observation
+
+    @param [out] raOut is ra corrected for precession and nutation in degrees
+
+    @param [out] decOut is dec corrected for precession and nutation in degrees
+
+    """
+
+    raOut, decOut = _applyPrecession(numpy.radians(ra), numpy.radians(dec),
+                                     epoch=epoch, mjd=mjd)
+
+    return numpy.degrees(raOut), numpy.degrees(decOut)
+
+
+
+def _applyPrecession(ra, dec, epoch=2000.0, mjd=None):
+    """
+    _applyPrecession() applies precesion and nutation to coordinates between two epochs.
     Accepts RA and dec as inputs.  Returns corrected RA and dec (in radians).
 
     Assumes FK5 as the coordinate system
