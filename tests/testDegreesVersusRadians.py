@@ -36,8 +36,6 @@ class AstrometryDegreesTest(unittest.TestCase):
 
 
     def testApplyProperMotion(self):
-
-
         for mjd in self.mjdList:
             raRad, decRad = coordUtils._applyProperMotion(self.raList, self.decList,
                                                           self.pm_raList, self.pm_decList,
@@ -70,6 +68,27 @@ class AstrometryDegreesTest(unittest.TestCase):
 
             self.assertAlmostEqual((ra-raRad)/(ra-numpy.radians(raDeg)), 1.0, 9)
             self.assertAlmostEqual((dec-decRad)/(dec-numpy.radians(decDeg)), 1.0, 9)
+
+
+    def testAppGeoFromICRS(self):
+        for mjd in self.mjdList:
+            raRad, decRad = coordUtils._appGeoFromICRS(self.raList, self.decList,
+                                                          self.pm_raList, self.pm_decList,
+                                                          self.pxList, self.v_radList, mjd=mjd)
+
+            raDeg, decDeg = coordUtils.appGeoFromICRS(numpy.degrees(self.raList),
+                                                         numpy.degrees(self.decList),
+                                                         arcsecFromRadians(self.pm_raList),
+                                                         arcsecFromRadians(self.pm_decList),
+                                                         arcsecFromRadians(self.pxList),
+                                                         self.v_radList, mjd=mjd)
+
+            numpy.testing.assert_array_almost_equal((raRad-self.raList)/(numpy.radians(raDeg)-self.raList),
+                                                    numpy.ones(self.nStars), 9)
+
+            numpy.testing.assert_array_almost_equal((decRad-self.decList)/(numpy.radians(decDeg)-self.decList),
+                                                    numpy.ones(self.nStars), 9)
+
 
 
 

@@ -6,7 +6,8 @@ from lsst.sims.utils import haversine
 
 __all__ = ["_applyPrecession", "applyPrecession",
            "_applyProperMotion", "applyProperMotion",
-           "_appGeoFromICRS", "_observedFromAppGeo",
+           "_appGeoFromICRS", "appGeoFromICRS",
+           "_observedFromAppGeo",
            "_observedFromICRS", "_calculatePupilCoordinates", "refractionCoefficients",
            "applyRefraction", "_raDecFromPupilCoordinates"]
 
@@ -289,6 +290,71 @@ def _applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
 
 
 
+def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
+                   v_rad=None, epoch=2000.0, mjd = None):
+    """
+    Convert the mean position (RA, Dec) in the International Celestial Reference
+    System (ICRS) to the mean apparent geocentric position in
+    (Ra, Dec)-like coordinates
+
+    Uses PAL mappa routine, which computes precession and nutation
+
+    units:  ra (degrees), dec (degrees), pm_ra (arcsec/year), pm_dec
+    (arcsec/year), parallax (arcsec), v_rad (km/sec; positive if receding),
+    epoch (Julian years)
+
+    Returns corrected RA and Dec
+
+    This calls palpy.mapqk(z) which accounts for proper motion, parallax,
+    radial velocity, aberration, precession-nutation
+
+    @param [in] ra in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] dec in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] pm_ra is ra proper motion multiplied by cos(Dec) in arcsec/year
+
+    @param [in] pm_dec is dec proper motion in arcsec/year
+
+    @param [in] parallax in arcsec
+
+    @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
+
+    @param [in] epoch is the julian epoch (in years) of the equinox against which to
+    measure RA (default: 2000.0)
+
+    @param[in] MJD is the date of the observation
+
+    @param [out] raOut is apparent geocentric RA-like coordinate in degrees
+
+    @param [out] decOut is apparent geocentric Dec-like coordinate in degrees
+
+    """
+
+    if pm_ra is not None:
+        pm_ra_in = radiansFromArcsec(pm_ra)
+    else:
+        pm_ra_in = None
+
+    if pm_dec is not None:
+        pm_dec_in = radiansFromArcsec(pm_dec)
+    else:
+        pm_dec_in = None
+
+    if parallax is not None:
+        px_in = radiansFromArcsec(parallax)
+    else:
+        px_in = None
+
+    raOut, \
+    decOut = _appGeoFromICRS(numpy.radians(ra), numpy.radians(dec),
+                             pm_ra=pm_ra_in, pm_dec=pm_dec_in,
+                             parallax=px_in, v_rad=v_rad, epoch=epoch, mjd=mjd)
+
+
+    return numpy.degrees(raOut), numpy.degrees(decOut)
+
+
 def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
                    v_rad=None, epoch=2000.0, mjd = None):
     """
@@ -299,7 +365,7 @@ def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     Uses PAL mappa routine, which computes precession and nutation
 
     units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
-    (radians/year), parallax (arcsec), v_rad (km/sec; positive if receding),
+    (radians/year), parallax (radians), v_rad (km/sec; positive if receding),
     epoch (Julian years)
 
     Returns corrected RA and Dec
