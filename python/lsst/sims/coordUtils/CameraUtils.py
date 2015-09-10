@@ -2,10 +2,10 @@ import numpy
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
-from lsst.sims.coordUtils.AstrometryUtils import calculatePupilCoordinates, raDecFromPupilCoordinates
+from lsst.sims.coordUtils.AstrometryUtils import _calculatePupilCoordinates, _raDecFromPupilCoordinates
 
 __all__ = ["findChipName", "calculatePixelCoordinates", "calculateFocalPlaneCoordinates",
-           "raDecFromPixelCoordinates", "pupilCoordinatesFromPixelCoordinates"]
+           "_raDecFromPixelCoordinates", "pupilCoordinatesFromPixelCoordinates"]
 
 def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
                  obs_metadata=None, epoch=None, camera=None,
@@ -15,9 +15,9 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
     either (xPupil, yPupil) or (ra, dec).  Note: this method does not return
     the name of guide, focus, or wavefront detectors.
 
-    @param [in] xPupil a numpy array of x pupil coordinates
+    @param [in] xPupil a numpy array of x pupil coordinates in radians
 
-    @param [in] yPupil a numpy array of y pupil coordinates
+    @param [in] yPupil a numpy array of y pupil coordinates in radians
 
     @param [in] ra in radians (optional; should not specify both ra/dec and pupil coordinates)
 
@@ -80,7 +80,7 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
             raise RuntimeError("You have to specifay an ObservationMetaData to run " + \
                                "findChipName on these inputs")
 
-        xPupil, yPupil = calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
+        xPupil, yPupil = _calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
 
     if camera is None:
         raise RuntimeError("No camera defined.  Cannot rin findChipName.")
@@ -114,9 +114,9 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     """
     Get the pixel positions (or nan if not on a chip) for all objects in the catalog
 
-    @param [in] xPupil a numpy array containing x pupil coordinates
+    @param [in] xPupil a numpy array containing x pupil coordinates in radians
 
-    @param [in] yPupil a numpy array containing y pupil coordinates
+    @param [in] yPupil a numpy array containing y pupil coordinates in radians
 
     @param [in] ra one could alternatively provide a numpy array of ra and...
 
@@ -202,9 +202,9 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
             raise RuntimeError("You need to specify an ObservationMetaDAta to run " + \
                                    "calculatePixelCoordinates on these inputs")
 
-        xPupil, yPupil = calculatePupilCoordinates(ra, dec,
-                                                   obs_metadata=obs_metadata,
-                                                   epoch=epoch)
+        xPupil, yPupil = _calculatePupilCoordinates(ra, dec,
+                                                    obs_metadata=obs_metadata,
+                                                    epoch=epoch)
 
     if chipNames is None:
         chipNames = findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
@@ -293,7 +293,7 @@ def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camer
     return xPupilList, yPupilList
 
 
-def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
+def _raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
                               obs_metadata=None, epoch=None, includeDistortion=True):
     """
     Convert pixel coordinates into observed RA, Dec
@@ -317,9 +317,9 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
-    @param [out] ra is a numpy array of observed RA
+    @param [out] ra is a numpy array of observed RA in radians
 
-    @param [out] dec is a numpy array of observed Dec
+    @param [out] dec is a numpy array of observed Dec in radians
 
     Note: to see what is mean by 'observed' ra/dec, see the docstring for
     observedFromICRS in AstrometryUtils.py
@@ -329,8 +329,8 @@ def raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
                                      camera=camera, obs_metadata=obs_metadata, epoch=epoch,
                                      includeDistortion=includeDistortion)
 
-    raOut, decOut = raDecFromPupilCoordinates(xPupilList, yPupilList,
-                                 obs_metadata=obs_metadata, epoch=epoch)
+    raOut, decOut = _raDecFromPupilCoordinates(xPupilList, yPupilList,
+                                  obs_metadata=obs_metadata, epoch=epoch)
 
     return raOut, decOut
 
@@ -395,8 +395,8 @@ def calculateFocalPlaneCoordinates(xPupil=None, yPupil=None, ra=None, dec=None,
             raise RuntimeError("You have to specify an ObservationMetaData to run " + \
                                    "calculateFocalPlaneCoordinates on these inputs")
 
-        xPupil, yPupil = calculatePupilCoordinates(ra ,dec,
-                                                   obs_metadata=obs_metadata, epoch=epoch)
+        xPupil, yPupil = _calculatePupilCoordinates(ra ,dec,
+                                                    obs_metadata=obs_metadata, epoch=epoch)
 
     xPix = []
     yPix = []

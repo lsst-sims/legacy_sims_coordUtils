@@ -10,10 +10,10 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import arcsecFromRadians, radiansFromArcsec
 from lsst.sims.coordUtils import findChipName, calculatePixelCoordinates
 from lsst.sims.coordUtils.utils import ReturnCamera
-from lsst.sims.coordUtils import raDecFromPixelCoordinates
+from lsst.sims.coordUtils import _raDecFromPixelCoordinates
 from lsst.sims.coordUtils import pupilCoordinatesFromPixelCoordinates
 from lsst.sims.coordUtils import calculateFocalPlaneCoordinates
-from lsst.sims.coordUtils import observedFromICRS, calculatePupilCoordinates
+from lsst.sims.coordUtils import _observedFromICRS, _calculatePupilCoordinates
 
 class CameraUtilsUnitTest(unittest.TestCase):
 
@@ -32,7 +32,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
         ra = numpy.array(numpy.radians(obs.unrefractedRA) - numpy.array([1.01, 1.02])*numpy.radians(1.0/3600.0))
         dec = numpy.array(numpy.radians(obs.unrefractedDec) - numpy.array([2.02, 2.01])*numpy.radians(1.0/3600.0))
 
-        ra, dec = observedFromICRS(ra, dec, obs_metadata=obs, epoch=2000.0)
+        ra, dec = _observedFromICRS(ra, dec, obs_metadata=obs, epoch=2000.0)
 
         xPupil = numpy.array([-0.000262243770, -0.00000234])
         yPupil = numpy.array([0.000199467792, 0.000189334])
@@ -241,7 +241,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
         ra = numpy.random.random_sample(nSamples)*radiansFromArcsec(100.0) + numpy.radians(obs.unrefractedRA)
         dec = numpy.random.random_sample(nSamples)*radiansFromArcsec(100.0) + numpy.radians(obs.unrefractedDec)
 
-        pupilCoordinateArray = calculatePupilCoordinates(ra, dec, obs_metadata=obs,
+        pupilCoordinateArray = _calculatePupilCoordinates(ra, dec, obs_metadata=obs,
                                                          epoch=2000.0)
 
         pixelCoordinateArray = calculatePixelCoordinates(ra=ra, dec=dec,
@@ -280,7 +280,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
                                   rotSkyPos=23.0,
                                   mjd=52000.0)
 
-        raTrue, decTrue = observedFromICRS(numpy.array([numpy.radians(raCenter)]),
+        raTrue, decTrue = _observedFromICRS(numpy.array([numpy.radians(raCenter)]),
                                            numpy.array([numpy.radians(decCenter)]),
                                            obs_metadata=obs, epoch=epoch)
 
@@ -298,7 +298,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
         ra = numpy.array(ra)
         dec = numpy.array(dec)
 
-        xp, yp = calculatePupilCoordinates(ra, dec, obs_metadata=obs, epoch=2000.0)
+        xp, yp = _calculatePupilCoordinates(ra, dec, obs_metadata=obs, epoch=2000.0)
         chipNameList = findChipName(xPupil=xp, yPupil=yp, obs_metadata=obs, epoch=epoch,
                                     camera=camera)
         xPixList, yPixList = calculatePixelCoordinates(xPupil=xp, yPupil=yp, chipNames=chipNameList,
@@ -315,7 +315,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
 
 
 
-    def testRaDecFromPixelCoordinates(self):
+    def test_raDecFromPixelCoordinates(self):
         """
         Test conversion from pixel coordinates to Ra, Dec
         """
@@ -333,7 +333,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
                                   rotSkyPos=23.0,
                                   mjd=52000.0)
 
-        raTrue, decTrue = observedFromICRS(numpy.array([numpy.radians(raCenter)]),
+        raTrue, decTrue = _observedFromICRS(numpy.array([numpy.radians(raCenter)]),
                                            numpy.array([numpy.radians(decCenter)]),
                                            obs_metadata=obs, epoch=epoch)
 
@@ -355,7 +355,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
         pixelList = calculatePixelCoordinates(ra=ra, dec=dec, chipNames=chipNameList, obs_metadata=obs,
                                            epoch=epoch, camera=camera)
 
-        raTest, decTest = raDecFromPixelCoordinates(pixelList[0], pixelList[1], chipNameList,
+        raTest, decTest = _raDecFromPixelCoordinates(pixelList[0], pixelList[1], chipNameList,
                                                     obs_metadata=obs, epoch=epoch, camera=camera)
 
 
@@ -409,7 +409,7 @@ class CameraUtilsUnitTest(unittest.TestCase):
         obs = ObservationMetaData(unrefractedRA=45.0, unrefractedDec=87.0, rotSkyPos=65.0,
                                   mjd=43520.0)
 
-        raCenter, decCenter = observedFromICRS(numpy.array([obs._unrefractedRA]),
+        raCenter, decCenter = _observedFromICRS(numpy.array([obs._unrefractedRA]),
                                                numpy.array([obs._unrefractedDec]),
                                                obs_metadata=obs, epoch=2000.0)
 
