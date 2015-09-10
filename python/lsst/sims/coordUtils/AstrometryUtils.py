@@ -1,10 +1,12 @@
 import numpy
 import palpy
 from lsst.sims.utils import arcsecFromRadians, cartesianFromSpherical, sphericalFromCartesian
+from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.utils import haversine
 
 __all__ = ["_applyPrecession", "applyPrecession",
-           "_applyProperMotion", "_appGeoFromICRS", "_observedFromAppGeo",
+           "_applyProperMotion", "applyProperMotion",
+           "_appGeoFromICRS", "_observedFromAppGeo",
            "_observedFromICRS", "_calculatePupilCoordinates", "refractionCoefficients",
            "applyRefraction", "_raDecFromPupilCoordinates"]
 
@@ -153,13 +155,59 @@ def _applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     return raOut,decOut
 
 
+def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
+                      epoch=2000.0, mjd=None):
+    """Applies proper motion between two epochs.
+
+    units:  ra (degrees), dec (degrees), pm_ra (arcsec/year), pm_dec
+    (arcsec/year), parallax (arcsec), v_rad (km/sec, positive if receding),
+    epoch (Julian years)
+
+    Returns corrected ra and dec (in radians)
+
+    The function palpy.pm does not work properly if the parallax is below
+    0.00045 arcseconds
+
+    @param [in] ra in degrees.  Can be a float or a numpy array (not a list).
+
+    @param [in] dec in degrees.  Can be a float or a numpy array (not a list).
+
+    @param [in] pm_ra is ra proper motion multiplied by cos(Dec) in arcsec/year.
+    Can be a float or a numpy array (not a list).
+
+    @param [in] pm_dec is dec proper motion in arcsec/year.
+    Can be a float or a numpy array (not a list).
+
+    @param [in] parallax in arcsec. Can be a float or a numpy array (not a list).
+
+    @param [in] v_rad is radial velocity in km/sec (positive if the object is receding).
+    Can be a float or a numpy array (not a list).
+
+    @param [in] epoch is epoch in Julian years (default: 2000.0)
+
+    @param [in] mjd is the MJD of the actual observation
+
+    @param [out] raOut is corrected ra in degrees
+
+    @param [out] decOut is corrected dec in degrees
+    """
+
+    raOut, \
+    decOut = _applyProperMotion(numpy.radians(ra), numpy.radians(dec),
+                                radiansFromArcsec(pm_ra),
+                                radiansFromArcsec(pm_dec),
+                                radiansFromArcsec(parallax),
+                                v_rad, epoch=epoch, mjd=mjd)
+
+    return numpy.degrees(raOut), numpy.degrees(decOut)
+
 
 def _applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
                       epoch=2000.0, mjd=None):
     """Applies proper motion between two epochs.
 
     units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
-    (radians/year), parallax (arcsec), v_rad (km/sec, positive if receding),
+    (radians/year), parallax (radians), v_rad (km/sec, positive if receding),
     epoch (Julian years)
 
     Returns corrected ra and dec (in radians)
