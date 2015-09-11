@@ -4,37 +4,104 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.coordUtils.AstrometryUtils import _calculatePupilCoordinates, _raDecFromPupilCoordinates
 
-__all__ = ["findChipName", "calculatePixelCoordinates", "calculateFocalPlaneCoordinates",
+__all__ = ["findChipNameFromPupilCoords", "findChipNameFromRaDec", "_findChipNameFromRaDec",
+           "calculatePixelCoordinates", "calculateFocalPlaneCoordinates",
            "_raDecFromPixelCoordinates", "pupilCoordinatesFromPixelCoordinates"]
 
-def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
-                 obs_metadata=None, epoch=None, camera=None,
-                 allow_multiple_chips=False):
+
+def findChipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
+                           allow_multiple_chips=False):
     """
     Return the names of science detectors that see the object specified by
-    either (xPupil, yPupil) or (ra, dec).  Note: this method does not return
+    either (xPupil, yPupil).  Note: this method does not return
+    the name of guide, focus, or wavefront detectors.
+
+    @param [in] ra in degrees (a numpy array)
+
+    @param [in] dec in degrees (a numpy array)
+
+    WARNING: make sure RA and DEc are in the observed reference system, as opposed to the mean,
+    International Celestial Reference System (ICRS).  You can transform from the ICRS to the
+    observed reference system using the method observedFromICRS in AstrometryUtils.py.  The bore
+    site will be in the observed reference system when calculating where on the focal plane your
+    RA and Dec fall.  Thus, the result will be wrong if you do not transform your RA and Dec
+    before passing them in.
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
+
+    @param [in] epoch is the epoch in Julian years of the equinox against which RA and Dec are
+    measured
+
+    @param [in] camera is an afw.cameraGeom camera instance characterizing the camera
+
+    @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
+    this method will allow objects to be visible on more than one chip.  If it is 'False'
+    and an object appears on more than one chip, an exception will be raised.  If it is 'True'
+    and an object falls on more than one chip, it will still only return the first chip in the
+    list of chips returned. THIS BEHAVIOR SHOULD BE FIXED IN A FUTURE TICKET.
+
+    @param [out] a numpy array of chip names (science detectors only)
+    """
+
+    return _findChipNameFromRaDec(numpy.radians(ra), numpy.radians(dec),
+                                  obs_metadata=obs_metadata, epoch=epoch,
+                                  camera=camera, allow_multiple_chips=allow_multiple_chips)
+
+
+def _findChipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
+                           allow_multiple_chips=False):
+    """
+    Return the names of science detectors that see the object specified by
+    either (xPupil, yPupil).  Note: this method does not return
+    the name of guide, focus, or wavefront detectors.
+
+    @param [in] ra in radians (a numpy array)
+
+    @param [in] dec in radians (a numpy array)
+
+    WARNING: make sure RA and DEc are in the observed reference system, as opposed to the mean,
+    International Celestial Reference System (ICRS).  You can transform from the ICRS to the
+    observed reference system using the method observedFromICRS in AstrometryUtils.py.  The bore
+    site will be in the observed reference system when calculating where on the focal plane your
+    RA and Dec fall.  Thus, the result will be wrong if you do not transform your RA and Dec
+    before passing them in.
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
+
+    @param [in] epoch is the epoch in Julian years of the equinox against which RA and Dec are
+    measured
+
+    @param [in] camera is an afw.cameraGeom camera instance characterizing the camera
+
+    @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
+    this method will allow objects to be visible on more than one chip.  If it is 'False'
+    and an object appears on more than one chip, an exception will be raised.  If it is 'True'
+    and an object falls on more than one chip, it will still only return the first chip in the
+    list of chips returned. THIS BEHAVIOR SHOULD BE FIXED IN A FUTURE TICKET.
+
+    @param [out] a numpy array of chip names (science detectors only)
+    """
+
+    if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+        raise RuntimeError("You need to pass numpy arrays of RA and Dec to findChipnameFromRaDec")
+
+    if len(ra) != len(dec):
+        raise RuntimeError("You passed %d RAs and %d Decs " % (len(ra), len(dec)) +
+                           "to findChipNameFromRaDec.")
+
+    xp, yp = _calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+    return findChipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
+
+
+def findChipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):
+    """
+    Return the names of science detectors that see the object specified by
+    either (xPupil, yPupil).  Note: this method does not return
     the name of guide, focus, or wavefront detectors.
 
     @param [in] xPupil a numpy array of x pupil coordinates in radians
 
     @param [in] yPupil a numpy array of y pupil coordinates in radians
-
-    @param [in] ra in radians (optional; should not specify both ra/dec and pupil coordinates)
-
-    @param [in] dec in radians (optional; should not specify both ra/dec and pupil coordinates)
-
-    WARNING: if you are passing in RA and Dec, you should make sure they are in
-    the observed reference system, as opposed to the mean, International Celestial Reference
-    System (ICRS).  You can transform from the ICRS to the observed reference system using
-    the method observedFromICRS in AstrometryUtils.py.  The bore site will be in the observed
-    reference system when calculating where on the focal plane your RA and Dec fall.  Thus, the result will
-    be wrong if you do not transform your RA and Dec before passing them in.
-
-    @param [in] obs_metadata is an ObservationMetaData object describing the telescope
-    pointing (only if specifying RA and Dec rather than pupil coordinates)
-
-    @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
-    (in years; only if specifying RA and Dec rather than pupil coordinates)
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
@@ -47,43 +114,16 @@ def findChipName(xPupil=None, yPupil=None, ra=None, dec=None,
     @param [out] a numpy array of chip names (science detectors only)
 
     """
-    specifiedPupil = (xPupil is not None and yPupil is not None)
-    specifiedRaDec = (ra is not None and dec is not None)
 
-    if not specifiedPupil and not specifiedRaDec:
-        raise RuntimeError("You must specifyeither pupil coordinates or equatorial coordinates in findChipName")
+    if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+        raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to findChipnameFromPupilCoords")
 
-    if specifiedPupil and specifiedRaDec:
-        raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in findChipName")
-
-    if specifiedPupil:
-        if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
-            raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to findChipname")
-
-        if len(xPupil) != len(yPupil):
-            raise RuntimeError("You passed %d xPupils and %d yPupils " % (len(xPupil), len(yPupil)) +
-                               "to findChipName.")
-
-    if specifiedRaDec:
-
-        if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
-            raise RuntimeError("You need to pass numpy arrays of RA and Dec to findChipName")
-
-        if len(ra) != len(dec):
-            raise RuntimeError("You passed %d RAs and %d Decs to findChipName" % (len(ra), len(dec)))
-
-        if epoch is None:
-            raise RuntimeError("You have to specify an epoch to run " + \
-                               "findChipName on these inputs")
-
-        if obs_metadata is None:
-            raise RuntimeError("You have to specifay an ObservationMetaData to run " + \
-                               "findChipName on these inputs")
-
-        xPupil, yPupil = _calculatePupilCoordinates(ra, dec, epoch=epoch, obs_metadata=obs_metadata)
+    if len(xPupil) != len(yPupil):
+        raise RuntimeError("You passed %d xPupils and %d yPupils " % (len(xPupil), len(yPupil)) +
+                           "to findChipNameFromPupilCoords.")
 
     if camera is None:
-        raise RuntimeError("No camera defined.  Cannot rin findChipName.")
+        raise RuntimeError("No camera defined.  Cannot rin findChipNameFromPupilCoords.")
 
     chipNames = []
 
