@@ -7,6 +7,8 @@ from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils.utils import ReturnCamera
+from lsst.sims.coordUtils import calculatePupilCoordinates
+from lsst.sims.coordUtils import observedFromICRS
 from lsst.sims.coordUtils import findChipNameFromRaDec, \
                                  findChipNameFromPupilCoords, \
                                  _findChipNameFromRaDec
@@ -21,6 +23,56 @@ class FindChipNameTest(unittest.TestCase):
 
     def setUp(self):
         numpy.random.seed(45532)
+
+
+    def testRuns(self):
+        """
+        Test that findChipName runs, and that the various iterations of that method
+        are all self-consistent
+        """
+        nStars = 100
+        ra0 = 45.0
+        dec0 = -112.0
+        rotSkyPos=135.0
+        mjd = 42350.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  mjd=mjd, rotSkyPos=rotSkyPos)
+
+        raListRaw = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + ra0
+        decListRaw = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + dec0
+
+        raList, decList = observedFromICRS(raListRaw, decListRaw, obs_metadata=obs,
+                                           epoch=2000.0)
+
+        xpList, ypList = calculatePupilCoordinates(raList, decList,
+                                                   obs_metadata=obs,
+                                                   epoch=2000.0)
+
+        names1 = findChipNameFromRaDec(raList, decList,
+                                        obs_metadata=obs,
+                                        epoch=2000.0,
+                                        camera=self.camera)
+
+        names2 = _findChipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
+                                         obs_metadata=obs,
+                                         epoch=2000.0,
+                                         camera=self.camera)
+
+        names3 = findChipNameFromPupilCoords(xpList, ypList, camera=self.camera)
+
+        numpy.testing.assert_array_equal(names1, names2)
+        numpy.testing.assert_array_equal(names1, names3)
+
+        isNone = 0
+        isNotNone = 0
+        for name in names1:
+            if name is None:
+                isNone += 1
+            else:
+                isNotNone += 1
+
+        self.assertTrue(isNotNone>0)
+
 
     def testExceptions(self):
         """
