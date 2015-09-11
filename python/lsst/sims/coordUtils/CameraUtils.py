@@ -83,11 +83,23 @@ def _findChipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     """
 
     if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of RA and Dec to findChipnameFromRaDec")
+        raise RuntimeError("You need to pass numpy arrays of RA and Dec to findChipName")
 
     if len(ra) != len(dec):
         raise RuntimeError("You passed %d RAs and %d Decs " % (len(ra), len(dec)) +
-                           "to findChipNameFromRaDec.")
+                           "to findChipName.")
+
+    if epoch is None:
+        raise RuntimeError("You need to pass an epoch into findChipName")
+
+    if obs_metadata is None:
+        raise RuntimeError("You need to pass an ObservationMetaData into findChipName")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into findChipName")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into findChipName")
 
     xp, yp = _calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
     return findChipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
@@ -120,10 +132,10 @@ def findChipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chip
 
     if len(xPupil) != len(yPupil):
         raise RuntimeError("You passed %d xPupils and %d yPupils " % (len(xPupil), len(yPupil)) +
-                           "to findChipNameFromPupilCoords.")
+                           "to findChipName.")
 
     if camera is None:
-        raise RuntimeError("No camera defined.  Cannot rin findChipNameFromPupilCoords.")
+        raise RuntimeError("No camera defined.  Cannot rin findChipName.")
 
     chipNames = []
 
