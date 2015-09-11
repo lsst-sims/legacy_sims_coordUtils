@@ -8,7 +8,7 @@ import lsst.sims.coordUtils as coordUtils
 class AstrometryDegreesTest(unittest.TestCase):
 
     def setUp(self):
-        self.nStars = 100
+        self.nStars = 10
         numpy.random.seed(8273)
         self.raList = numpy.random.random_sample(self.nStars)*2.0*numpy.pi
         self.decList = (numpy.random.random_sample(self.nStars)-0.5)*numpy.pi
