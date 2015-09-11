@@ -72,23 +72,27 @@ class AstrometryDegreesTest(unittest.TestCase):
 
 
     def testAppGeoFromICRS(self):
-        for mjd in self.mjdList:
-            raRad, decRad = coordUtils._appGeoFromICRS(self.raList, self.decList,
-                                                          self.pm_raList, self.pm_decList,
-                                                          self.pxList, self.v_radList, mjd=mjd)
+        mjd = 42350.0
+        for pmRaList in [self.pm_raList, None]:
+            for pmDecList in [self.pm_decList, None]:
+                for pxList in [self.pxList, None]:
+                    for vRadList in [self.v_radList, None]:
+                        raRad, decRad = coordUtils._appGeoFromICRS(self.raList, self.decList,
+                                                                   pmRaList, pmDecList,
+                                                                   pxList, vRadList, mjd=mjd)
 
-            raDeg, decDeg = coordUtils.appGeoFromICRS(numpy.degrees(self.raList),
-                                                         numpy.degrees(self.decList),
-                                                         arcsecFromRadians(self.pm_raList),
-                                                         arcsecFromRadians(self.pm_decList),
-                                                         arcsecFromRadians(self.pxList),
-                                                         self.v_radList, mjd=mjd)
+                        raDeg, decDeg = coordUtils.appGeoFromICRS(numpy.degrees(self.raList),
+                                                                 numpy.degrees(self.decList),
+                                                                 arcsecFromRadians(pmRaList),
+                                                                 arcsecFromRadians(pmDecList),
+                                                                 arcsecFromRadians(pxList),
+                                                                 vRadList, mjd=mjd)
 
-            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
-            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
+                        dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+                        numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
 
-            dDec = arcsecFromRadians(raRad-numpy.radians(raDeg))
-            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
+                        dDec = arcsecFromRadians(raRad-numpy.radians(raDeg))
+                        numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
 
 
 
