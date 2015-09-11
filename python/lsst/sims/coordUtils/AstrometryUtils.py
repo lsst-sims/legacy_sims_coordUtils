@@ -8,7 +8,8 @@ __all__ = ["_applyPrecession", "applyPrecession",
            "_applyProperMotion", "applyProperMotion",
            "_appGeoFromICRS", "appGeoFromICRS",
            "_observedFromAppGeo", "observedFromAppGeo",
-           "_observedFromICRS", "_calculatePupilCoordinates", "refractionCoefficients",
+           "_observedFromICRS", "observedFromICRS",
+           "_calculatePupilCoordinates", "refractionCoefficients",
            "applyRefraction", "_raDecFromPupilCoordinates"]
 
 
@@ -627,6 +628,68 @@ def _observedFromAppGeo(ra, dec, includeRefraction = True,
         az, alt = palpy.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
         return raOut, decOut, alt, az
     return raOut, decOut
+
+
+def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+                     obs_metadata=None, epoch=None, includeRefraction=True):
+    """
+    Convert mean position (RA, Dec) in the International Celestial Reference Frame
+    to observed (RA, Dec)-like coordinates
+
+    included are precession-nutation, aberration, proper motion, parallax, refraction,
+    radial velocity, diurnal aberration,
+
+    @param [in] ra is the unrefracted RA in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] dec is the unrefracted Dec in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] pm_ra is proper motion in RA multiplied by cos(Dec) (arcsec/yr)
+
+    @param [in] pm_dec is proper motion in dec (arcsec/yr)
+
+    @param [in] parallax is parallax in arcsec
+
+    @param [in] v_rad is radial velocity (km/s)
+
+    @param [in] obs_metadata is an ObservationMetaData object describing the
+    telescope pointing.  If it is None, the code will try to set it from self
+    assuming that this method is being called from within an InstanceCatalog
+    daughter class.  If that is not the case, an exception will be raised
+
+    @param [in] epoch is the julian epoch (in years) against which the mean
+    equinoxes are measured.
+
+    @param [in] includeRefraction toggles whether or not to correct for refraction
+
+    @param [out] ra_out RA in radians corrected for all included effects
+
+    @param [out] dec_out Dec in radians corrected for all included effects
+
+    """
+
+    if pm_ra is not None:
+        pm_ra_in = radiansFromArcsec(pm_ra)
+    else:
+        pm_ra_in = None
+
+    if pm_dec is not None:
+        pm_dec_in = radiansFromArcsec(pm_dec)
+    else:
+        pm_dec_in = None
+
+    if parallax is not None:
+        parallax_in = radiansFromArcsec(parallax)
+    else:
+        parallax_in = None
+
+    raOut, \
+    decOut = _observedFromICRS(numpy.radians(ra), numpy.radians(dec),
+                               pm_ra=pm_ra_in, pm_dec=pm_dec_in, parallax=parallax_in,
+                               v_rad=v_rad, obs_metadata=obs_metadata, epoch=epoch,
+                               includeRefraction=includeRefraction)
+
+    return numpy.degrees(raOut), numpy.degrees(decOut)
+
 
 
 def _observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,

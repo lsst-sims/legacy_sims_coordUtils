@@ -135,6 +135,38 @@ class AstrometryDegreesTest(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(dAlt, numpy.zeros(self.nStars), 9)
 
 
+    def testObservedFromICRS(self):
+        obs = ObservationMetaData(unrefractedRA=35.0, unrefractedDec=-45.0,
+                                  mjd=43572.0)
+        for pmRaList in [self.pm_raList, None]:
+            for pmDecList in [self.pm_decList, None]:
+                for pxList in [self.pxList, None]:
+                    for vRadList in [self.v_radList, None]:
+                        for includeRefraction in [True, False]:
+
+
+                            raRad, decRad = coordUtils._observedFromICRS(self.raList, self.decList,
+                                                                         pm_ra=pmRaList, pm_dec=pmDecList,
+                                                                         parallax=pxList, v_rad=vRadList,
+                                                                         obs_metadata=obs, epoch=2000.0,
+                                                                         includeRefraction=includeRefraction)
+
+                            raDeg, decDeg = coordUtils.observedFromICRS(numpy.degrees(self.raList), numpy.degrees(self.decList),
+                                                                         pm_ra=arcsecFromRadians(pmRaList),
+                                                                         pm_dec=arcsecFromRadians(pmDecList),
+                                                                         parallax=arcsecFromRadians(pxList),
+                                                                         v_rad=vRadList,
+                                                                         obs_metadata=obs, epoch=2000.0,
+                                                                     includeRefraction=includeRefraction)
+
+
+                            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+                            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
+
+                            dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
+                            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
+
+
 
 def suite():
     utilsTests.init()
