@@ -10,7 +10,7 @@ __all__ = ["applyRefraction", "refractionCoefficients",
            "_appGeoFromICRS", "appGeoFromICRS",
            "_observedFromAppGeo", "observedFromAppGeo",
            "_observedFromICRS", "observedFromICRS",
-           "_calculatePupilCoordinates",
+           "_calculatePupilCoordinates", "calculatePupilCoordinates",
            "_raDecFromPupilCoordinates", "raDecFromPupilCoordinates"]
 
 
@@ -843,6 +843,37 @@ def _raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
         decOut.append(dd)
 
     return numpy.array(raOut), numpy.array(decOut)
+
+
+
+def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
+    """
+    Take an input RA and dec from the sky and convert it to coordinates
+    on the focal plane.
+
+    This uses PAL's gnonomonic projection routine which assumes that the focal
+    plane is perfectly flat.  The output is in Cartesian coordinates, assuming
+    that the Celestial Sphere is a unit sphere.
+
+    @param [in] ra_in is a numpy array of RAs in degrees
+
+    @param [in] dec_in in degrees
+
+    @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
+    telescope location and pointing (optional; if not provided, the method will try to
+    get it from the InstanceCatalog member variable, assuming this is part of an
+    InstanceCatalog)
+
+    @param [in] epoch is the epoch of mean ra and dec in julian years (optional; if not
+    provided, this method will try to get it from the db_obj member variable, assuming this
+    method is part of an InstanceCatalog)
+
+    @param [out] returns a numpy array whose first row is the x coordinate on the pupil in
+    radians and whose second row is the y coordinate in radians
+    """
+
+    return _calculatePupilCoordinates(numpy.radians(ra_in), numpy.radians(dec_in),
+                                      obs_metadata=obs_metadata, epoch=epoch)
 
 
 def _calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):

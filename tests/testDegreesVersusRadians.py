@@ -189,6 +189,29 @@ class AstrometryDegreesTest(unittest.TestCase):
 
 
 
+    def testCalculatePupilCoordinates(self):
+        obs = ObservationMetaData(unrefractedRA=23.5, unrefractedDec=-115.0, mjd=42351.0, rotSkyPos=127.0)
+
+        # need to make sure the test points are tightly distributed around the bore site, or
+        # PALPY will throw an error
+        raList = numpy.random.random_sample(self.nStars)*numpy.radians(1.0) + numpy.radians(23.5)
+        decList = numpy.random.random_sample(self.nStars)*numpy.radians(1.0) + numpy.radians(-115.0)
+
+        xpControl, ypControl = coordUtils._calculatePupilCoordinates(raList, decList,
+                                                                     obs_metadata=obs, epoch=2000.0)
+
+        xpTest, ypTest = coordUtils.calculatePupilCoordinates(numpy.degrees(raList), numpy.degrees(decList),
+                                                              obs_metadata=obs, epoch=2000.0)
+
+        dx = arcsecFromRadians(xpControl-xpTest)
+        numpy.testing.assert_array_almost_equal(dx, numpy.zeros(self.nStars), 9)
+
+        dy = arcsecFromRadians(ypControl-ypTest)
+        numpy.testing.assert_array_almost_equal(dy, numpy.zeros(self.nStars), 9)
+
+
+
+
 def suite():
     utilsTests.init()
     suites = []
