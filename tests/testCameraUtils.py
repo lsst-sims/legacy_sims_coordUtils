@@ -194,7 +194,56 @@ class FindChipNameTest(unittest.TestCase):
         self.assertTrue('findChipName' in context.exception.message)
 
 
+    def testNaNbecomesNone(self):
+        """
+        Test that findChipName maps NaNs and Nones in RA, Dec, and
+        pupil coordinates to None as chip name
+        """
+        nStars = 100
+        ra0 = 45.0
+        dec0 = -112.0
+        rotSkyPos=135.0
+        mjd = 42350.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  mjd=mjd, rotSkyPos=rotSkyPos)
 
+        for badVal in [numpy.NaN, None]:
+
+            raListRaw = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + ra0
+            decListRaw = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + dec0
+
+            raListRaw[5] = badVal
+            raListRaw[10] = badVal
+            decListRaw[10] = badVal
+            decListRaw[25] = badVal
+
+            raList, decList = observedFromICRS(raListRaw, decListRaw, obs_metadata=obs,
+                                               epoch=2000.0)
+
+            xpList, ypList = calculatePupilCoordinates(raList, decList,
+                                                       obs_metadata=obs,
+                                                       epoch=2000.0)
+
+            names1 = findChipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
+                                            camera=self.camera)
+
+            names2 = _findChipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
+                                            obs_metadata=obs, epoch=2000.0, camera=self.camera)
+
+            names3 = findChipNameFromPupilCoords(xpList, ypList, camera=self.camera)
+
+            numpy.testing.assert_array_equal(names1, names2)
+            numpy.testing.assert_array_equal(names1, names3)
+
+            for ix in range(len(names1)):
+                if ix != 5 and ix != 10 and ix != 25:
+                    self.assertTrue(names1[ix] == 'Det22')
+                    self.assertTrue(names2[ix] == 'Det22')
+                    self.assertTrue(names3[ix] == 'Det22')
+                else:
+                    self.assertTrue(names1[ix] is None)
+                    self.assertTrue(names2[ix] is None)
+                    self.assertTrue(names3[ix] is None)
 
 def suite():
     utilsTests.init()
