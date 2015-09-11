@@ -7,7 +7,7 @@ from lsst.sims.utils import haversine
 __all__ = ["_applyPrecession", "applyPrecession",
            "_applyProperMotion", "applyProperMotion",
            "_appGeoFromICRS", "appGeoFromICRS",
-           "_observedFromAppGeo",
+           "_observedFromAppGeo", "observedFromAppGeo",
            "_observedFromICRS", "_calculatePupilCoordinates", "refractionCoefficients",
            "applyRefraction", "_raDecFromPupilCoordinates"]
 
@@ -444,6 +444,61 @@ def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     return raOut,decOut
 
+
+def observedFromAppGeo(ra, dec, includeRefraction = True,
+                       altAzHr=False, wavelength=0.5, obs_metadata = None):
+    """
+    Convert apparent geocentric (RA, Dec)-like coordinates to observed
+    (RA, Dec)-like coordinates.  More specifically, apply refraction and
+    diurnal aberration.
+
+    Uses PAL aoppa routines
+
+    This will call palpy.aopqk
+
+    @param [in] ra is geocentric apparent RA (degrees).  Must be a numpy array.
+
+    @param [in] dec is geocentric apparent Dec (degrees).  Must be a numpy array.
+
+    @param [in] includeRefraction is a boolean to turn refraction on and off
+
+    @param [in] altAzHr is a boolean indicating whether or not to return altitude
+    and azimuth
+
+    @param [in] wavelength is effective wavelength in microns (default: 0.5)
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the
+    observation (optional; if not included, the code will try to set it from
+    self assuming it is in an InstanceCatalog daughter class.  If that is not
+    the case, an exception will be raised.)
+
+    @param [out] raOut is oberved RA (degrees)
+
+    @param [out] decOut is observed Dec (degrees)
+
+    @param [out] alt is altitude angle (only returned if altAzHr == True) (degrees)
+
+    @param [out] az is azimuth angle (only returned if altAzHr == True) (degrees)
+
+    """
+
+    if altAzHr:
+        raOut, decOut, \
+        altOut, azOut = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
+                                            includeRefraction=includeRefraction,
+                                            altAzHr=altAzHr, wavelength=wavelength,
+                                            obs_metadata=obs_metadata)
+
+        return numpy.degrees(raOut), numpy.degrees(decOut), \
+               numpy.degrees(altOut), numpy.degrees(azOut)
+
+    else:
+        raOut, decOut = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
+                                            includeRefraction=includeRefraction,
+                                            altAzHr=altAzHr, wavelength=wavelength,
+                                            obs_metadata=obs_metadata)
+
+        return numpy.degrees(raOut), numpy.degrees(decOut)
 
 
 def _observedFromAppGeo(ra, dec, includeRefraction = True,

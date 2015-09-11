@@ -2,6 +2,7 @@ import unittest
 import numpy
 import lsst.utils.tests as utilsTests
 from lsst.sims.utils import arcsecFromRadians, radiansFromArcsec
+from lsst.sims.utils import ObservationMetaData
 import lsst.sims.coordUtils as coordUtils
 
 class AstrometryDegreesTest(unittest.TestCase):
@@ -28,11 +29,11 @@ class AstrometryDegreesTest(unittest.TestCase):
                                                        numpy.degrees(self.decList),
                                                        mjd=mjd)
 
-            numpy.testing.assert_array_almost_equal((raRad-self.raList)/(numpy.radians(raDeg)-self.raList),
-                                                    numpy.ones(self.nStars), 9)
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
 
-            numpy.testing.assert_array_almost_equal((decRad-self.decList)/(numpy.radians(decDeg)-self.decList),
-                                                    numpy.ones(self.nStars), 9)
+            dDec = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
 
 
     def testApplyProperMotion(self):
@@ -48,11 +49,11 @@ class AstrometryDegreesTest(unittest.TestCase):
                                                          arcsecFromRadians(self.pxList),
                                                          self.v_radList, mjd=mjd)
 
-            numpy.testing.assert_array_almost_equal((raRad-self.raList)/(numpy.radians(raDeg)-self.raList),
-                                                    numpy.ones(self.nStars), 9)
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
 
-            numpy.testing.assert_array_almost_equal((decRad-self.decList)/(numpy.radians(decDeg)-self.decList),
-                                                    numpy.ones(self.nStars), 9)
+            dDec = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
 
 
         for ra, dec, pm_ra, pm_dec, px, v_rad in \
@@ -66,8 +67,8 @@ class AstrometryDegreesTest(unittest.TestCase):
                                                          arcsecFromRadians(pm_ra), arcsecFromRadians(pm_dec),
                                                          arcsecFromRadians(px), v_rad, mjd=self.mjdList[0])
 
-            self.assertAlmostEqual((ra-raRad)/(ra-numpy.radians(raDeg)), 1.0, 9)
-            self.assertAlmostEqual((dec-decRad)/(dec-numpy.radians(decDeg)), 1.0, 9)
+            self.assertAlmostEqual(arcsecFromRadians(raRad-numpy.radians(raDeg)), 0.0, 9)
+            self.assertAlmostEqual(arcsecFromRadians(decRad-numpy.radians(decDeg)), 0.0, 9)
 
 
     def testAppGeoFromICRS(self):
@@ -83,12 +84,55 @@ class AstrometryDegreesTest(unittest.TestCase):
                                                          arcsecFromRadians(self.pxList),
                                                          self.v_radList, mjd=mjd)
 
-            numpy.testing.assert_array_almost_equal((raRad-self.raList)/(numpy.radians(raDeg)-self.raList),
-                                                    numpy.ones(self.nStars), 9)
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
 
-            numpy.testing.assert_array_almost_equal((decRad-self.decList)/(numpy.radians(decDeg)-self.decList),
-                                                    numpy.ones(self.nStars), 9)
+            dDec = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
 
+
+
+    def testObservedFromAppGeo(self):
+        obs = ObservationMetaData(unrefractedRA=35.0, unrefractedDec=-45.0,
+                                  mjd=43572.0)
+
+        for includeRefraction in [True, False]:
+            raRad, decRad = coordUtils._observedFromAppGeo(self.raList, self.decList,
+                                                           includeRefraction=includeRefraction,
+                                                           altAzHr=False, obs_metadata=obs)
+
+            raDeg, decDeg = coordUtils.observedFromAppGeo(numpy.degrees(self.raList),
+                                                          numpy.degrees(self.decList),
+                                                          includeRefraction=includeRefraction,
+                                                          altAzHr=False, obs_metadata=obs)
+
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
+
+            dDec = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
+
+
+            raRad, decRad, altRad, azRad = coordUtils._observedFromAppGeo(self.raList, self.decList,
+                                                                          includeRefraction=includeRefraction,
+                                                                          altAzHr=True, obs_metadata=obs)
+
+            raDeg, decDeg, altDeg, azDeg = coordUtils.observedFromAppGeo(numpy.degrees(self.raList),
+                                                                         numpy.degrees(self.decList),
+                                                                         includeRefraction=includeRefraction,
+                                                                         altAzHr=True, obs_metadata=obs)
+
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
+
+            dDec = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
+
+            dAz = arcsecFromRadians(azRad-numpy.radians(azDeg))
+            numpy.testing.assert_array_almost_equal(dAz, numpy.zeros(self.nStars), 9)
+
+            dAlt = arcsecFromRadians(altRad-numpy.radians(altDeg))
+            numpy.testing.assert_array_almost_equal(dAlt, numpy.zeros(self.nStars), 9)
 
 
 
