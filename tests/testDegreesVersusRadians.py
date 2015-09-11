@@ -172,6 +172,23 @@ class AstrometryDegreesTest(unittest.TestCase):
 
 
 
+    def testRaDecFromPupilCoordinates(self):
+        obs = ObservationMetaData(unrefractedRA=23.5, unrefractedDec=-115.0, mjd=42351.0, rotSkyPos=127.0)
+
+        xpList = numpy.random.random_sample(100)*0.25*numpy.pi
+        ypList = numpy.random.random_sample(100)*0.25*numpy.pi
+
+        raRad, decRad = coordUtils._raDecFromPupilCoordinates(xpList, ypList, obs_metadata=obs, epoch=2000.0)
+        raDeg, decDeg = coordUtils.raDecFromPupilCoordinates(xpList, ypList, obs_metadata=obs, epoch=2000.0)
+
+        dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+        numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(len(xpList)), 9)
+
+        dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
+        numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(len(xpList)), 9)
+
+
+
 def suite():
     utilsTests.init()
     suites = []

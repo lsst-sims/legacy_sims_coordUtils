@@ -4,13 +4,14 @@ from lsst.sims.utils import arcsecFromRadians, cartesianFromSpherical, spherical
 from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.utils import haversine
 
-__all__ = ["_applyPrecession", "applyPrecession",
+__all__ = ["applyRefraction", "refractionCoefficients",
+           "_applyPrecession", "applyPrecession",
            "_applyProperMotion", "applyProperMotion",
            "_appGeoFromICRS", "appGeoFromICRS",
            "_observedFromAppGeo", "observedFromAppGeo",
            "_observedFromICRS", "observedFromICRS",
-           "_calculatePupilCoordinates", "refractionCoefficients",
-           "applyRefraction", "_raDecFromPupilCoordinates"]
+           "_calculatePupilCoordinates",
+           "_raDecFromPupilCoordinates", "raDecFromPupilCoordinates"]
 
 
 
@@ -749,6 +750,30 @@ def _observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=Non
                                                includeRefraction = includeRefraction)
 
     return numpy.array([ra_out,dec_out])
+
+
+
+def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
+    """
+    @param [in] xPupil -- pupil coordinates in radians
+
+    @param [in] yPupil -- pupil coordinates in radians
+
+    @param [in] obs_metadata -- an instantiation of ObservationMetaData characterizing
+    the state of the telescope
+
+    @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
+    transforations (in years)
+
+    @param [out] raOut -- the right ascension in degrees (a numpy array)
+
+    @param [out] decOut -- the declination in degrees (a numpy array)
+    """
+
+    raOut, decOut = _raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=obs_metadata,
+                                               epoch=epoch)
+
+    return numpy.degrees(raOut), numpy.degrees(decOut)
 
 
 def _raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
