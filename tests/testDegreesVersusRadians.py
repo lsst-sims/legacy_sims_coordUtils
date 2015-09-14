@@ -172,14 +172,14 @@ class AstrometryDegreesTest(unittest.TestCase):
 
 
 
-    def testRaDecFromPupilCoordinates(self):
+    def testraDecFromPupilCoords(self):
         obs = ObservationMetaData(unrefractedRA=23.5, unrefractedDec=-115.0, mjd=42351.0, rotSkyPos=127.0)
 
         xpList = numpy.random.random_sample(100)*0.25*numpy.pi
         ypList = numpy.random.random_sample(100)*0.25*numpy.pi
 
-        raRad, decRad = coordUtils._raDecFromPupilCoordinates(xpList, ypList, obs_metadata=obs, epoch=2000.0)
-        raDeg, decDeg = coordUtils.raDecFromPupilCoordinates(xpList, ypList, obs_metadata=obs, epoch=2000.0)
+        raRad, decRad = coordUtils._raDecFromPupilCoords(xpList, ypList, obs_metadata=obs, epoch=2000.0)
+        raDeg, decDeg = coordUtils.raDecFromPupilCoords(xpList, ypList, obs_metadata=obs, epoch=2000.0)
 
         dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
         numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(len(xpList)), 9)
@@ -189,7 +189,7 @@ class AstrometryDegreesTest(unittest.TestCase):
 
 
 
-    def testCalculatePupilCoordinates(self):
+    def testpupilCoordsFromRaDec(self):
         obs = ObservationMetaData(unrefractedRA=23.5, unrefractedDec=-115.0, mjd=42351.0, rotSkyPos=127.0)
 
         # need to make sure the test points are tightly distributed around the bore site, or
@@ -197,10 +197,10 @@ class AstrometryDegreesTest(unittest.TestCase):
         raList = numpy.random.random_sample(self.nStars)*numpy.radians(1.0) + numpy.radians(23.5)
         decList = numpy.random.random_sample(self.nStars)*numpy.radians(1.0) + numpy.radians(-115.0)
 
-        xpControl, ypControl = coordUtils._calculatePupilCoordinates(raList, decList,
+        xpControl, ypControl = coordUtils._pupilCoordsFromRaDec(raList, decList,
                                                                      obs_metadata=obs, epoch=2000.0)
 
-        xpTest, ypTest = coordUtils.calculatePupilCoordinates(numpy.degrees(raList), numpy.degrees(decList),
+        xpTest, ypTest = coordUtils.pupilCoordsFromRaDec(numpy.degrees(raList), numpy.degrees(decList),
                                                               obs_metadata=obs, epoch=2000.0)
 
         dx = arcsecFromRadians(xpControl-xpTest)

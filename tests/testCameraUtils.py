@@ -7,7 +7,7 @@ from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils.utils import ReturnCamera
-from lsst.sims.coordUtils import calculatePupilCoordinates
+from lsst.sims.coordUtils import pupilCoordsFromRaDec
 from lsst.sims.coordUtils import observedFromICRS
 from lsst.sims.coordUtils import chipNameFromRaDec, \
                                  chipNameFromPupilCoords, \
@@ -44,7 +44,7 @@ class ChipNameTest(unittest.TestCase):
         raList, decList = observedFromICRS(raListRaw, decListRaw, obs_metadata=obs,
                                            epoch=2000.0)
 
-        xpList, ypList = calculatePupilCoordinates(raList, decList,
+        xpList, ypList = pupilCoordsFromRaDec(raList, decList,
                                                    obs_metadata=obs,
                                                    epoch=2000.0)
 
@@ -220,7 +220,7 @@ class ChipNameTest(unittest.TestCase):
             raList, decList = observedFromICRS(raListRaw, decListRaw, obs_metadata=obs,
                                                epoch=2000.0)
 
-            xpList, ypList = calculatePupilCoordinates(raList, decList,
+            xpList, ypList = pupilCoordsFromRaDec(raList, decList,
                                                        obs_metadata=obs,
                                                        epoch=2000.0)
 
