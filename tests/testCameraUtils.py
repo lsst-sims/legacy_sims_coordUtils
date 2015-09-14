@@ -93,80 +93,93 @@ class ChipNameTest(unittest.TestCase):
         # verify that an exception is raised if you do not pass in a camera
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpList, ypList)
-        self.assertTrue('No camera defined' in context.exception.message)
+        self.assertEqual('No camera defined.  Cannot run chipName.',
+                          context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
-        self.assertTrue('No camera defined' in context.exception.message)
+        self.assertEqual('No camera defined.  Cannot run chipName.',
+                          context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
-        self.assertTrue('No camera defined' in context.exception.message)
+        self.assertEqual('No camera defined.  Cannot run chipName.',
+                          context.exception.message)
 
         # verify that an exception is raised if you do not pass in a numpy array
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(list(xpList), ypList)
-        self.assertTrue('numpy arrays' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass numpy arrays of ' \
+                         + 'xPupil and yPupil to chipNameFromPupilCoords')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(list(xpList), ypList, obs_metadata=obs, epoch=2000.0)
-        self.assertTrue('numpy arrays' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                        'You need to pass numpy arrays of RA and Dec to chipName')
+
+        with self.assertRaises(RuntimeError) as context:
+            chipNameFromPupilCoords(xpList, list(ypList))
+        self.assertEqual(context.exception.message,
+                         'You need to pass numpy arrays of ' \
+                         + 'xPupil and yPupil to chipNameFromPupilCoords')
+
+        with self.assertRaises(RuntimeError) as context:
+            _chipNameFromRaDec(xpList, list(ypList), obs_metadata=obs, epoch=2000.0)
+        self.assertEqual(context.exception.message,
+                         'You need to pass numpy arrays of RA and Dec to chipName')
         # do not need to run the above test on chipNameFromRaDec because
         # the conversion from degrees to radians that happens inside that
         # method automatically casts lists as numpy arrays
 
-        with self.assertRaises(RuntimeError) as context:
-            chipNameFromPupilCoords(xpList, list(ypList))
-        self.assertTrue('numpy arrays' in context.exception.message)
-
-        with self.assertRaises(RuntimeError) as context:
-            _chipNameFromRaDec(xpList, list(ypList), obs_metadata=obs, epoch=2000.0)
-        self.assertTrue('numpy arrays' in context.exception.message)
 
         # verify that an exception is raised if the two coordinate arrays contain
         # different numbers of elements
         xpDummy = numpy.random.random_sample(nStars/2)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
-        self.assertTrue('xPupils' in context.exception.message)
-        self.assertTrue('yPupils' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed %d xPupils and ' % (nStars/2) \
+                         + '%d yPupils to chipName.' % nStars)
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                                   camera=self.camera)
-        self.assertTrue('RAs' in context.exception.message)
-        self.assertTrue('Decs' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed %d RAs and ' % (nStars/2) \
+                         + '%d Decs to chipName.' % nStars)
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                                    camera=self.camera)
-        self.assertTrue('RAs' in context.exception.message)
-        self.assertTrue('Decs' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed %d RAs and ' % (nStars/2) \
+                         + '%d Decs to chipName.' % nStars)
 
 
         # verify that an exception is raised if you call chipNameFromRaDec
         # without an epoch
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
-        self.assertTrue('epoch' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an epoch into chipName')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
-        self.assertTrue('epoch' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an epoch into chipName')
 
         # verify that an exception is raised if you call chipNameFromRaDec
         # without an ObservationMetaData
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
-        self.assertTrue('ObservationMetaData' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData into chipName')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
-        self.assertTrue('ObservationMetaData' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData into chipName')
 
         # verify that an exception is raised if you call chipNameFromRaDec
         # with an ObservationMetaData that has no mjd
@@ -175,14 +188,14 @@ class ChipNameTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
-        self.assertTrue('mjd' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData with an mjd into chipName')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
-        self.assertTrue('mjd' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData with an mjd into chipName')
 
         # verify that an exception is raised if you all chipNameFromRaDec
         # using an ObservationMetaData without a rotSkyPos
@@ -191,14 +204,14 @@ class ChipNameTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
-        self.assertTrue('rotSkyPos' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData with a rotSkyPos into chipName')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
-        self.assertTrue('rotSkyPos' in context.exception.message)
-        self.assertTrue('chipName' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData with a rotSkyPos into chipName')
 
 
     def testNaNbecomesNone(self):

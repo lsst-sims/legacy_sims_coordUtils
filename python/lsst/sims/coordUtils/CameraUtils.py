@@ -136,7 +136,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                            "to chipName.")
 
     if camera is None:
-        raise RuntimeError("No camera defined.  Cannot rin chipName.")
+        raise RuntimeError("No camera defined.  Cannot run chipName.")
 
     chipNames = []
 
