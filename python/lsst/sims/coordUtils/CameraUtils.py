@@ -245,7 +245,7 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
                            + "pixelCoordsFromRaDec")
 
     if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of ra and dec to pixelCoordsFromRaDec")
+        raise RuntimeError("You need to pass numpy arrays of RA and Dec to pixelCoordsFromRaDec")
 
     if len(ra) != len(dec):
         raise RuntimeError("You passed %d RA and %d Dec coordinates " % (len(ra), len(dec)) +
@@ -253,7 +253,7 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
 
     if chipNames is not None:
         if len(ra) != len(chipNames):
-            raise RuntimeError("You passed %d points but only %d chipNames to pixelCoordsFromRaDec" %
+            raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromRaDec" %
                                (len(ra), len(chipNames)))
 
     xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
@@ -293,7 +293,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
         pixelType = TAN_PIXELS
 
     if not camera:
-        raise RuntimeError("You need a camera to calculate pixel coordinates")
+        raise RuntimeError("Camera not specified.  Cannot calculate pixel coordinates.")
 
     if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
         raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to pixelCoordsFromPupilCoords")
@@ -304,7 +304,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
 
     if chipNames is not None:
         if len(xPupil) != len(chipNames):
-            raise RuntimeError("You passed %d points but only %d chipNames to pixelCoordsFromPupilCoords" %
+            raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromPupilCoords" %
                                (len(xPupil), len(chipNames)))
 
     if chipNames is None:

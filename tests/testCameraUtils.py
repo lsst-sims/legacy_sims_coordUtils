@@ -298,22 +298,22 @@ class PixelCoordTest(unittest.TestCase):
         # pass in a camera
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, ypList)
-        self.assertTrue('camera' in context.exception.message)
-        self.assertTrue('pixel' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'Camera not specified.  Cannot calculate pixel coordinates.')
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList, obs_metadata=obs,
                                  epoch=2000.0)
-        self.assertTrue('camera' in context.exception.message)
-        self.assertTrue('pixel' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'Camera not specified.  Cannot calculate pixel coordinates.')
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(numpy.radians(raList),
                                   numpy.radians(decList),
                                   obs_metadata=obs,
                                   epoch=2000.0)
-        self.assertTrue('camera' in context.exception.message)
-        self.assertTrue('pixel' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'Camera not specified.  Cannot calculate pixel coordinates.')
 
 
         # test that an exception is raised when you pass in something
@@ -321,7 +321,16 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(list(xpList), ypList,
                                        camera=self.camera)
-        self.assertTrue('numpy array' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass numpy arrays of xPupil and yPupil ' \
+                         + 'to pixelCoordsFromPupilCoords')
+
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromPupilCoords(xpList, list(ypList),
+                                       camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         'You need to pass numpy arrays of xPupil and yPupil ' \
+                         + 'to pixelCoordsFromPupilCoords')
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(list(numpy.radians(raList)),
@@ -329,7 +338,19 @@ class PixelCoordTest(unittest.TestCase):
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
-        self.assertTrue('numpy array' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You need to pass numpy arrays of RA and Dec ' \
+                         + 'to pixelCoordsFromRaDec')
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(numpy.radians(raList),
+                                  list(numpy.radians(decList)),
+                                  obs_metadata=obs,
+                                  epoch=2000.0,
+                                  camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         'You need to pass numpy arrays of RA and Dec ' \
+                         + 'to pixelCoordsFromRaDec')
         # do not need to run the above test on pixelCoordsFromRaDec,
         # because the conversion from degrees to radians  that happens
         # inside that method automatically casts lists as numpy arrays
@@ -340,20 +361,18 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, ypList[0:10],
                                        camera=self.camera)
-        self.assertTrue(' 10 ' in context.exception.message)
-        self.assertTrue(' 100 ' in context.exception.message)
-        self.assertTrue(' xPupil ' in context.exception.message)
-        self.assertTrue(' yPupil ' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed 100 xPupil and 10 yPupil coordinates ' \
+                         + 'to pixelCoordsFromPupilCoords')
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList[0:10],
                                  obs_metadata=obs,
                                  epoch=2000.0,
                                  camera=self.camera)
-        self.assertTrue(' 10 ' in context.exception.message)
-        self.assertTrue(' 100 ' in context.exception.message)
-        self.assertTrue(' RA ' in context.exception.message)
-        self.assertTrue(' Dec ' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed 100 RA and 10 Dec coordinates ' \
+                         'to pixelCoordsFromRaDec')
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(numpy.radians(raList),
@@ -361,10 +380,9 @@ class PixelCoordTest(unittest.TestCase):
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
-        self.assertTrue(' 10 ' in context.exception.message)
-        self.assertTrue(' 100 ' in context.exception.message)
-        self.assertTrue(' RA ' in context.exception.message)
-        self.assertTrue(' Dec ' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed 100 RA and 10 Dec coordinates ' \
+                         'to pixelCoordsFromRaDec')
 
 
         # test that an error is raised if you pass an incorrect
@@ -372,20 +390,16 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, ypList, chipNames=['Det22']*10,
                                  camera=self.camera)
-        self.assertTrue(' 100 ' in context.exception.message)
-        self.assertTrue(' 10 ' in context.exception.message)
-        self.assertTrue(' points ' in context.exception.message)
-        self.assertTrue(' chipNames ' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed 100 points but 10 chipNames to pixelCoordsFromPupilCoords')
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList, chipNames=['Det22']*10,
                                  camera=self.camera,
                                  obs_metadata=obs,
                                  epoch=2000.0)
-        self.assertTrue(' 100 ' in context.exception.message)
-        self.assertTrue(' 10 ' in context.exception.message)
-        self.assertTrue(' points ' in context.exception.message)
-        self.assertTrue(' chipNames ' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed 100 points but 10 chipNames to pixelCoordsFromRaDec')
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(numpy.radians(raList),
@@ -394,10 +408,8 @@ class PixelCoordTest(unittest.TestCase):
                                   camera=self.camera,
                                   obs_metadata=obs,
                                   epoch=2000.0)
-        self.assertTrue(' 100 ' in context.exception.message)
-        self.assertTrue(' 10 ' in context.exception.message)
-        self.assertTrue(' points ' in context.exception.message)
-        self.assertTrue(' chipNames ' in context.exception.message)
+        self.assertEqual(context.exception.message,
+                         'You passed 100 points but 10 chipNames to pixelCoordsFromRaDec')
 
         # test that an exception is raised if you call one of the
         # pixelCoordsFromRaDec methods without an epoch
