@@ -278,6 +278,81 @@ class PixelCoordTest(unittest.TestCase):
         numpy.random.seed(11324)
 
 
+    def testConsistency(self):
+        """
+        Test that all of the pixelCoord calculation methods agree with
+        each other
+        """
+        ra0 = 95.0
+        dec0 = -33.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  mjd=52350.0, rotSkyPos=27.0)
+
+        nStars = 100
+        raList = (numpy.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        decList = (numpy.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
+
+        xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
+
+        chipNameList = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
+                                         camera=self.camera)
+
+        for includeDistortion in [True, False]:
+
+            xx1, yy1 = pixelCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
+                                            camera=self.camera, includeDistortion=includeDistortion)
+
+            xx2, yy2 = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
+                                             obs_metadata=obs, epoch=2000.0,
+                                             camera=self.camera, includeDistortion=includeDistortion)
+
+            xx3, yy3 = pixelCoordsFromPupilCoords(xpList, ypList, camera=self.camera,
+                                                  includeDistortion=includeDistortion)
+
+            xx4, yy4 = pixelCoordsFromPupilCoords(xpList, ypList, chipNames=chipNameList,
+                                                  camera=self.camera,
+                                                  includeDistortion=includeDistortion)
+
+            xx5, yy5 = pixelCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
+                                            camera=self.camera, includeDistortion=includeDistortion,
+                                            chipNames=chipNameList)
+
+            xx6, yy6 = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
+                                             obs_metadata=obs, epoch=2000.0,
+                                             camera=self.camera, includeDistortion=includeDistortion,
+                                             chipNames=chipNameList)
+
+
+            numpy.testing.assert_array_equal(xx1, xx2)
+            numpy.testing.assert_array_equal(xx1, xx3)
+            numpy.testing.assert_array_equal(xx1, xx4)
+            numpy.testing.assert_array_equal(xx1, xx5)
+            numpy.testing.assert_array_equal(xx1, xx6)
+
+            numpy.testing.assert_array_equal(yy1, yy2)
+            numpy.testing.assert_array_equal(yy1, yy3)
+            numpy.testing.assert_array_equal(yy1, yy4)
+            numpy.testing.assert_array_equal(yy1, yy5)
+            numpy.testing.assert_array_equal(yy1, yy6)
+
+            # make sure that objects which do not fall on a chip
+            # get NaN pixel coords
+            ctNaN = 0
+            ctNotNaN = 0
+            for x, y, name in zip(xx1, yy1, chipNameList):
+                if name is None:
+                    self.assertTrue(numpy.isnan(x))
+                    self.assertTrue(numpy.isnan(y))
+                    ctNaN += 1
+                else:
+                    self.assertFalse(numpy.isnan(x))
+                    self.assertFalse(numpy.isnan(y))
+                    ctNotNaN += 1
+
+            self.assertTrue(ctNaN>0)
+            self.assertTrue(ctNotNaN>0)
+
+
     def testExceptions(self):
         """
         Test that pixelCoord calculation methods raise exceptions when
