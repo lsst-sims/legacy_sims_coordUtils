@@ -4,12 +4,12 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.coordUtils.AstrometryUtils import _calculatePupilCoordinates, _raDecFromPupilCoordinates
 
-__all__ = ["findChipNameFromPupilCoords", "findChipNameFromRaDec", "_findChipNameFromRaDec",
+__all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "calculatePixelCoordinates", "calculateFocalPlaneCoordinates",
            "_raDecFromPixelCoordinates", "pupilCoordinatesFromPixelCoordinates"]
 
 
-def findChipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
+def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
                            allow_multiple_chips=False):
     """
     Return the names of science detectors that see the object specified by
@@ -43,12 +43,12 @@ def findChipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     @param [out] a numpy array of chip names (science detectors only)
     """
 
-    return _findChipNameFromRaDec(numpy.radians(ra), numpy.radians(dec),
+    return _chipNameFromRaDec(numpy.radians(ra), numpy.radians(dec),
                                   obs_metadata=obs_metadata, epoch=epoch,
                                   camera=camera, allow_multiple_chips=allow_multiple_chips)
 
 
-def _findChipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
+def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
                            allow_multiple_chips=False):
     """
     Return the names of science detectors that see the object specified by
@@ -83,29 +83,29 @@ def _findChipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     """
 
     if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of RA and Dec to findChipName")
+        raise RuntimeError("You need to pass numpy arrays of RA and Dec to chipName")
 
     if len(ra) != len(dec):
         raise RuntimeError("You passed %d RAs and %d Decs " % (len(ra), len(dec)) +
-                           "to findChipName.")
+                           "to chipName.")
 
     if epoch is None:
-        raise RuntimeError("You need to pass an epoch into findChipName")
+        raise RuntimeError("You need to pass an epoch into chipName")
 
     if obs_metadata is None:
-        raise RuntimeError("You need to pass an ObservationMetaData into findChipName")
+        raise RuntimeError("You need to pass an ObservationMetaData into chipName")
 
     if obs_metadata.mjd is None:
-        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into findChipName")
+        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into chipName")
 
     if obs_metadata.rotSkyPos is None:
-        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into findChipName")
+        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
 
     xp, yp = _calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
-    return findChipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
+    return chipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
 
 
-def findChipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):
+def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):
     """
     Return the names of science detectors that see the object specified by
     either (xPupil, yPupil).  Note: this method does not return
@@ -128,14 +128,14 @@ def findChipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chip
     """
 
     if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to findChipnameFromPupilCoords")
+        raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to chipNameFromPupilCoords")
 
     if len(xPupil) != len(yPupil):
         raise RuntimeError("You passed %d xPupils and %d yPupils " % (len(xPupil), len(yPupil)) +
-                           "to findChipName.")
+                           "to chipName.")
 
     if camera is None:
-        raise RuntimeError("No camera defined.  Cannot rin findChipName.")
+        raise RuntimeError("No camera defined.  Cannot rin chipName.")
 
     chipNames = []
 
@@ -174,9 +174,9 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
 
     @param [in] ...dec (both in radians)
 
-    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call findChipName
+    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
     to find the array.  The option exists for the user to specify chipNames, just in case the user
-    has already called findChipName for some reason.
+    has already called chipName for some reason.
 
     @param [in] obs_metadata is an ObservationMetaData object describing the telescope pointing
     (only if specifying RA and Dec rather than pupil coordinates)
@@ -185,7 +185,7 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     (in years; only if specifying RA and Dec rather than pupil coordinates)
 
     @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
-    This is an optional argument to be passed to findChipName.
+    This is an optional argument to be passed to chipName.
 
     @param [in] includeDistortion is a boolean.  If True (default), then this method will
     return the true pixel coordinates with optical distortion included.  If False, this
@@ -259,7 +259,7 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
                                                     epoch=epoch)
 
     if chipNames is None:
-        chipNames = findChipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
+        chipNames = chipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
 
     xPix = []
     yPix = []

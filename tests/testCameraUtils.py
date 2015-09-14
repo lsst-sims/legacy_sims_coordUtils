@@ -9,11 +9,11 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils.utils import ReturnCamera
 from lsst.sims.coordUtils import calculatePupilCoordinates
 from lsst.sims.coordUtils import observedFromICRS
-from lsst.sims.coordUtils import findChipNameFromRaDec, \
-                                 findChipNameFromPupilCoords, \
-                                 _findChipNameFromRaDec
+from lsst.sims.coordUtils import chipNameFromRaDec, \
+                                 chipNameFromPupilCoords, \
+                                 _chipNameFromRaDec
 
-class FindChipNameTest(unittest.TestCase):
+class ChipNameTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -27,7 +27,7 @@ class FindChipNameTest(unittest.TestCase):
 
     def testRuns(self):
         """
-        Test that findChipName runs, and that the various iterations of that method
+        Test that chipName runs, and that the various iterations of that method
         are all self-consistent
         """
         nStars = 100
@@ -48,17 +48,17 @@ class FindChipNameTest(unittest.TestCase):
                                                    obs_metadata=obs,
                                                    epoch=2000.0)
 
-        names1 = findChipNameFromRaDec(raList, decList,
-                                        obs_metadata=obs,
-                                        epoch=2000.0,
-                                        camera=self.camera)
+        names1 = chipNameFromRaDec(raList, decList,
+                                   obs_metadata=obs,
+                                   epoch=2000.0,
+                                   camera=self.camera)
 
-        names2 = _findChipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
-                                         obs_metadata=obs,
-                                         epoch=2000.0,
-                                         camera=self.camera)
+        names2 = _chipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
+                                    obs_metadata=obs,
+                                    epoch=2000.0,
+                                    camera=self.camera)
 
-        names3 = findChipNameFromPupilCoords(xpList, ypList, camera=self.camera)
+        names3 = chipNameFromPupilCoords(xpList, ypList, camera=self.camera)
 
         numpy.testing.assert_array_equal(names1, names2)
         numpy.testing.assert_array_equal(names1, names3)
@@ -88,115 +88,115 @@ class FindChipNameTest(unittest.TestCase):
 
         # verify that an exception is raised if you do not pass in a camera
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromPupilCoords(xpList, ypList)
+            chipNameFromPupilCoords(xpList, ypList)
         self.assertTrue('No camera defined' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
+            chipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
         self.assertTrue('No camera defined' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
+            _chipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
         self.assertTrue('No camera defined' in context.exception.message)
 
         # verify that an exception is raised if you do not pass in a numpy array
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromPupilCoords(list(xpList), ypList)
+            chipNameFromPupilCoords(list(xpList), ypList)
         self.assertTrue('numpy arrays' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(list(xpList), ypList, obs_metadata=obs, epoch=2000.0)
+            _chipNameFromRaDec(list(xpList), ypList, obs_metadata=obs, epoch=2000.0)
         self.assertTrue('numpy arrays' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromPupilCoords(xpList, list(ypList))
+            chipNameFromPupilCoords(xpList, list(ypList))
         self.assertTrue('numpy arrays' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(xpList, list(ypList), obs_metadata=obs, epoch=2000.0)
+            _chipNameFromRaDec(xpList, list(ypList), obs_metadata=obs, epoch=2000.0)
         self.assertTrue('numpy arrays' in context.exception.message)
 
         # verify that an exception is raised if the two coordinate arrays contain
         # different numbers of elements
         xpDummy = numpy.random.random_sample(nStars/2)
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
+            chipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
         self.assertTrue('xPupils' in context.exception.message)
         self.assertTrue('yPupils' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
+            chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                                   camera=self.camera)
         self.assertTrue('RAs' in context.exception.message)
         self.assertTrue('Decs' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
+            _chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                                    camera=self.camera)
         self.assertTrue('RAs' in context.exception.message)
         self.assertTrue('Decs' in context.exception.message)
 
 
-        # verify that an exception is raised if you call findChipNameFromRaDec
+        # verify that an exception is raised if you call chipNameFromRaDec
         # without an epoch
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
+            chipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
         self.assertTrue('epoch' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
+            _chipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
         self.assertTrue('epoch' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
-        # verify that an exception is raised if you call findChipNameFromRaDec
+        # verify that an exception is raised if you call chipNameFromRaDec
         # without an ObservationMetaData
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
+            chipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
         self.assertTrue('ObservationMetaData' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
+            _chipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
         self.assertTrue('ObservationMetaData' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
-        # verify that an exception is raised if you call findChipNameFromRaDec
+        # verify that an exception is raised if you call chipNameFromRaDec
         # with an ObservationMetaData that has no mjd
         obsDummy = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-112.0,
                                        rotSkyPos=112.0)
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
+            chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
         self.assertTrue('mjd' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
+            _chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
         self.assertTrue('mjd' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
-        # verify that an exception is raised if you all findChipNameFromRaDec
+        # verify that an exception is raised if you all chipNameFromRaDec
         # using an ObservationMetaData without a rotSkyPos
         obsDummy = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-112.0,
                                        mjd=52350.0)
         with self.assertRaises(RuntimeError) as context:
-            findChipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
+            chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
         self.assertTrue('rotSkyPos' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
         with self.assertRaises(RuntimeError) as context:
-            _findChipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
+            _chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                   camera=self.camera)
         self.assertTrue('rotSkyPos' in context.exception.message)
-        self.assertTrue('findChipName' in context.exception.message)
+        self.assertTrue('chipName' in context.exception.message)
 
 
     def testNaNbecomesNone(self):
         """
-        Test that findChipName maps NaNs and Nones in RA, Dec, and
+        Test that chipName maps NaNs and Nones in RA, Dec, and
         pupil coordinates to None as chip name
         """
         nStars = 100
@@ -224,13 +224,13 @@ class FindChipNameTest(unittest.TestCase):
                                                        obs_metadata=obs,
                                                        epoch=2000.0)
 
-            names1 = findChipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
+            names1 = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                             camera=self.camera)
 
-            names2 = _findChipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
+            names2 = _chipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
                                             obs_metadata=obs, epoch=2000.0, camera=self.camera)
 
-            names3 = findChipNameFromPupilCoords(xpList, ypList, camera=self.camera)
+            names3 = chipNameFromPupilCoords(xpList, ypList, camera=self.camera)
 
             numpy.testing.assert_array_equal(names1, names2)
             numpy.testing.assert_array_equal(names1, names3)
@@ -248,7 +248,7 @@ class FindChipNameTest(unittest.TestCase):
 def suite():
     utilsTests.init()
     suites = []
-    suites += unittest.makeSuite(FindChipNameTest)
+    suites += unittest.makeSuite(ChipNameTest)
     return unittest.TestSuite(suites)
 
 def run(shouldExit=False):
