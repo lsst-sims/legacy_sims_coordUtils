@@ -2,11 +2,11 @@ import numpy
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
-from lsst.sims.coordUtils.AstrometryUtils import _pupilCoordsFromRaDec, _raDecFromPupilCoords, \
-                                                 pupilCoordsFromRaDec
+from lsst.sims.coordUtils.AstrometryUtils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
 __all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
-           "calculatePixelCoordinates", "calculateFocalPlaneCoordinates",
+           "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
+           "calculateFocalPlaneCoordinates",
            "_raDecFromPixelCoordinates", "pupilCoordinatesFromPixelCoordinates"]
 
 
@@ -102,7 +102,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
 
-    xp, yp = _calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+    xp, yp = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
     return chipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
 
 
@@ -161,29 +161,25 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     return numpy.array(chipNames)
 
 
-
-def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipNames=None,
-                              obs_metadata=None, epoch=None, camera=None, includeDistortion=True):
+def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
+                          chipNames=None, camera=None, includeDistortion=True):
     """
-    Get the pixel positions (or nan if not on a chip) for all objects in the catalog
+    Get the pixel positions (or nan if not on a chip) for objects based
+    on their RA, and Dec (in degrees)
 
-    @param [in] xPupil a numpy array containing x pupil coordinates in radians
+    @param [in] ra is a numpy array containing the RA of the objects in degrees.
 
-    @param [in] yPupil a numpy array containing y pupil coordinates in radians
+    @param [in] dec is a numpy array containing the Dec of the objects in degrees.
 
-    @param [in] ra one could alternatively provide a numpy array of ra and...
+    @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
+    pointing.
 
-    @param [in] ...dec (both in radians)
+    @param [in] epoch is the epoch in Julian years of the equinox against which
+    RA is measured.
 
     @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
     to find the array.  The option exists for the user to specify chipNames, just in case the user
     has already called chipName for some reason.
-
-    @param [in] obs_metadata is an ObservationMetaData object describing the telescope pointing
-    (only if specifying RA and Dec rather than pupil coordinates)
-
-    @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
-    (in years; only if specifying RA and Dec rather than pupil coordinates)
 
     @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
     This is an optional argument to be passed to chipName.
@@ -195,7 +191,100 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
     details.
 
     @param [out] a numpy array of pixel coordinates
+    """
 
+    return _pixelCoordsFromRaDec(numpy.radians(ra), numpy.radians(dec),
+                                 chipNames=chipNames, camera=camera,
+                                 includeDistortion=includeDistortion,
+                                 obs_metadata=obs_metadata, epoch=epoch)
+
+def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
+                          chipNames=None, camera=None, includeDistortion=True):
+    """
+    Get the pixel positions (or nan if not on a chip) for objects based
+    on their RA, and Dec (in radians)
+
+    @param [in] ra is a numpy array containing the RA of the objects in radians.
+
+    @param [in] dec is a numpy array containing the Dec of the objects in radians.
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
+    pointing.
+
+    @param [in] epoch is the epoch in Julian years of the equinox against which
+    RA is measured.
+
+    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
+    to find the array.  The option exists for the user to specify chipNames, just in case the user
+    has already called chipName for some reason.
+
+    @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
+    This is an optional argument to be passed to chipName.
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    return the true pixel coordinates with optical distortion included.  If False, this
+    method will return TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a numpy array of pixel coordinates
+    """
+
+    if epoch is None:
+        raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
+
+    if obs_metadata is None:
+        raise RuntimeError("You need to pass an ObservationMetaData into pixelCoordsFromRaDec")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into " \
+                           + "pixelCoordsFromRaDec")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into " \
+                           + "pixelCoordsFromRaDec")
+
+    if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+        raise RuntimeError("You need to pass numpy arrays of ra and dec to pixelCoordsFromRaDec")
+
+    if len(ra) != len(dec):
+        raise RuntimeError("You passed %d RA and %d Dec coordinates " % (len(ra), len(dec)) +
+                           "to pixelCoordsFromRaDec")
+
+    if chipNames is not None:
+        if len(ra) != len(chipNames):
+            raise RuntimeError("You passed %d points but only %d chipNames to pixelCoordsFromRaDec" %
+                               (len(ra), len(chipNames)))
+
+    xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=chipNames, camera=camera,
+                                      includeDistortion=includeDistortion)
+
+
+def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
+                               camera=None, includeDistortion=True):
+    """
+    Get the pixel positions (or nan if not on a chip) for objects based
+    on their pupil coordinates.
+
+    @param [in] xPupil a numpy array containing x pupil coordinates in radians
+
+    @param [in] yPupil a numpy array containing y pupil coordinates in radians
+
+    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
+    to find the array.  The option exists for the user to specify chipNames, just in case the user
+    has already called chipName for some reason.
+
+    @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
+    This is an optional argument to be passed to chipName.
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    return the true pixel coordinates with optical distortion included.  If False, this
+    method will return TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a numpy array of pixel coordinates
     """
 
     if includeDistortion:
@@ -204,63 +293,22 @@ def calculatePixelCoordinates(xPupil=None, yPupil=None, ra=None, dec=None, chipN
         pixelType = TAN_PIXELS
 
     if not camera:
-        raise RuntimeError("You need to pass a camera to calculatePixelCoordinates")
+        raise RuntimeError("You need a camera to calculate pixel coordinates")
 
-    specifiedPupil = False
-    specifiedRaDec = False
+    if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+        raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to pixelCoordsFromPupilCoords")
 
-    specifiedPupil = (xPupil is not None and yPupil is not None)
-    specifiedRaDec = (ra is not None and dec is not None)
+    if len(xPupil) != len(yPupil):
+        raise RuntimeError("You passed %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
+                           "to pixelCoordsFromPupilCoords")
 
-    if not specifiedPupil and not specifiedRaDec:
-        raise RuntimeError("You need to specifiy either pupil coordinates or equatorial coordinates in calculatePixelCoordinates")
-
-    if specifiedPupil and specifiedRaDec:
-        raise RuntimeError("You cannot specify both pupil coordinates and equatorial coordinates in calculatePixelCoordinates")
-
-    if specifiedPupil:
-
-        if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
-            raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to calculatePixelCoordinates")
-
-        if len(xPupil) != len(yPupil):
-            raise RuntimeError("You passed %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
-                           "to calculatePixelCoordinates")
-
-        if chipNames is not None:
-            if len(xPupil) != len(chipNames):
-                raise RuntimeError("You passed %d points but only %d chipNames to calculatePixelCoordinates" %
-                                   (len(xPupil), len(chipNames)))
-
-
-    if specifiedRaDec:
-
-        if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
-            raise RuntimeError("You must pass numpy arrays of RA and Dec to calculatePixelCoordinates")
-
-        if len(ra) != len(dec):
-            raise RuntimeError("You passed %d RAs and %d Decs to calculatePixelCoordinates" %
-                               (len(ra), len(dec)))
-
-        if chipNames is not None:
-            if len(ra) != len(chipNames):
-                raise RuntimeError("You passed %d points but only %d chipNames to calculatePixelCoordinates" %
-                                   (len(ra), len(chipNames)))
-
-        if epoch is None:
-            raise RuntimeError("You need to specify an epoch to run calculatePixelCoordinates " + \
-                                   "on these inputs")
-
-        if obs_metadata is None:
-            raise RuntimeError("You need to specify an ObservationMetaDAta to run " + \
-                                   "calculatePixelCoordinates on these inputs")
-
-        xPupil, yPupil = _calculatePupilCoordinates(ra, dec,
-                                                    obs_metadata=obs_metadata,
-                                                    epoch=epoch)
+    if chipNames is not None:
+        if len(xPupil) != len(chipNames):
+            raise RuntimeError("You passed %d points but only %d chipNames to pixelCoordsFromPupilCoords" %
+                               (len(xPupil), len(chipNames)))
 
     if chipNames is None:
-        chipNames = chipName(xPupil = xPupil, yPupil = yPupil, camera=camera)
+        chipNames = chipNameFromPupilCoords(xPupil, yPupil, camera=camera)
 
     xPix = []
     yPix = []
@@ -382,7 +430,7 @@ def _raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
                                      camera=camera, obs_metadata=obs_metadata, epoch=epoch,
                                      includeDistortion=includeDistortion)
 
-    raOut, decOut = _raDecFromPupilCoordinates(xPupilList, yPupilList,
+    raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
                                   obs_metadata=obs_metadata, epoch=epoch)
 
     return raOut, decOut
@@ -448,7 +496,7 @@ def calculateFocalPlaneCoordinates(xPupil=None, yPupil=None, ra=None, dec=None,
             raise RuntimeError("You have to specify an ObservationMetaData to run " + \
                                    "calculateFocalPlaneCoordinates on these inputs")
 
-        xPupil, yPupil = _calculatePupilCoordinates(ra ,dec,
+        xPupil, yPupil = _pupilCoordsFromRaDec(ra ,dec,
                                                     obs_metadata=obs_metadata, epoch=epoch)
 
     xPix = []

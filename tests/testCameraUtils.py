@@ -13,6 +13,10 @@ from lsst.sims.coordUtils import chipNameFromRaDec, \
                                  chipNameFromPupilCoords, \
                                  _chipNameFromRaDec
 
+from lsst.sims.coordUtils import pixelCoordsFromPupilCoords, \
+                                 pixelCoordsFromRaDec, \
+                                 _pixelCoordsFromRaDec
+
 class ChipNameTest(unittest.TestCase):
 
     @classmethod
@@ -107,6 +111,9 @@ class ChipNameTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(list(xpList), ypList, obs_metadata=obs, epoch=2000.0)
         self.assertTrue('numpy arrays' in context.exception.message)
+        # do not need to run the above test on chipNameFromRaDec because
+        # the conversion from degrees to radians that happens inside that
+        # method automatically casts lists as numpy arrays
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpList, list(ypList))
@@ -245,10 +252,228 @@ class ChipNameTest(unittest.TestCase):
                     self.assertTrue(names2[ix] is None)
                     self.assertTrue(names3[ix] is None)
 
+
+class PixelCoordTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cameraDir = getPackageDir('sims_coordUtils')
+        cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
+        cls.camera = ReturnCamera(cameraDir)
+
+    def setUp(self):
+        numpy.random.seed(11324)
+
+
+    def testExceptions(self):
+        """
+        Test that pixelCoord calculation methods raise exceptions when
+        they should
+        """
+        nPoints = 100
+        xpList = numpy.random.random_sample(nPoints)*numpy.radians(1.0)
+        ypList = numpy.random.random_sample(nPoints)*numpy.radians(1.0)
+        obs = ObservationMetaData(unrefractedRA=25.0,
+                                  unrefractedDec=-36.0,
+                                  rotSkyPos=122.0,
+                                  mjd=41325.0)
+
+        raList = numpy.random.random_sample(nPoints)*1.0+25.0
+        decList = numpy.random.random_sample(nPoints)*1.0-36.0
+
+        # check that an error is raised when you forget to
+        # pass in a camera
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromPupilCoords(xpList, ypList)
+        self.assertTrue('camera' in context.exception.message)
+        self.assertTrue('pixel' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromRaDec(raList, decList, obs_metadata=obs,
+                                 epoch=2000.0)
+        self.assertTrue('camera' in context.exception.message)
+        self.assertTrue('pixel' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(numpy.radians(raList),
+                                  numpy.radians(decList),
+                                  obs_metadata=obs,
+                                  epoch=2000.0)
+        self.assertTrue('camera' in context.exception.message)
+        self.assertTrue('pixel' in context.exception.message)
+
+
+        # test that an exception is raised when you pass in something
+        # that is not a numpy array
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromPupilCoords(list(xpList), ypList,
+                                       camera=self.camera)
+        self.assertTrue('numpy array' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(list(numpy.radians(raList)),
+                                  numpy.radians(decList),
+                                  obs_metadata=obs,
+                                  epoch=2000.0,
+                                  camera=self.camera)
+        self.assertTrue('numpy array' in context.exception.message)
+        # do not need to run the above test on pixelCoordsFromRaDec,
+        # because the conversion from degrees to radians  that happens
+        # inside that method automatically casts lists as numpy arrays
+
+
+        # test that an exception is raised if you pass in mis-matched
+        # input arrays
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromPupilCoords(xpList, ypList[0:10],
+                                       camera=self.camera)
+        self.assertTrue(' 10 ' in context.exception.message)
+        self.assertTrue(' 100 ' in context.exception.message)
+        self.assertTrue(' xPupil ' in context.exception.message)
+        self.assertTrue(' yPupil ' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromRaDec(raList, decList[0:10],
+                                 obs_metadata=obs,
+                                 epoch=2000.0,
+                                 camera=self.camera)
+        self.assertTrue(' 10 ' in context.exception.message)
+        self.assertTrue(' 100 ' in context.exception.message)
+        self.assertTrue(' RA ' in context.exception.message)
+        self.assertTrue(' Dec ' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(numpy.radians(raList),
+                                  numpy.radians(decList[0:10]),
+                                  obs_metadata=obs,
+                                  epoch=2000.0,
+                                  camera=self.camera)
+        self.assertTrue(' 10 ' in context.exception.message)
+        self.assertTrue(' 100 ' in context.exception.message)
+        self.assertTrue(' RA ' in context.exception.message)
+        self.assertTrue(' Dec ' in context.exception.message)
+
+
+        # test that an error is raised if you pass an incorrect
+        # number of chipNames to pixelCoordsFromPupilCoords
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromPupilCoords(xpList, ypList, chipNames=['Det22']*10,
+                                 camera=self.camera)
+        self.assertTrue(' 100 ' in context.exception.message)
+        self.assertTrue(' 10 ' in context.exception.message)
+        self.assertTrue(' points ' in context.exception.message)
+        self.assertTrue(' chipNames ' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromRaDec(raList, decList, chipNames=['Det22']*10,
+                                 camera=self.camera,
+                                 obs_metadata=obs,
+                                 epoch=2000.0)
+        self.assertTrue(' 100 ' in context.exception.message)
+        self.assertTrue(' 10 ' in context.exception.message)
+        self.assertTrue(' points ' in context.exception.message)
+        self.assertTrue(' chipNames ' in context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(numpy.radians(raList),
+                                  numpy.radians(decList),
+                                  chipNames=['Det22']*10,
+                                  camera=self.camera,
+                                  obs_metadata=obs,
+                                  epoch=2000.0)
+        self.assertTrue(' 100 ' in context.exception.message)
+        self.assertTrue(' 10 ' in context.exception.message)
+        self.assertTrue(' points ' in context.exception.message)
+        self.assertTrue(' chipNames ' in context.exception.message)
+
+        # test that an exception is raised if you call one of the
+        # pixelCoordsFromRaDec methods without an epoch
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromRaDec(raList, decList,
+                                 camera=self.camera,
+                                 obs_metadata=obs)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an epoch into ' \
+                         + 'pixelCoordsFromRaDec')
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(raList, decList,
+                                  camera=self.camera,
+                                  obs_metadata=obs)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an epoch into ' \
+                         + 'pixelCoordsFromRaDec')
+
+        # test that an exception is raised if you call one of the
+        # pixelCoordsFromRaDec methods without an ObservationMetaData
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromRaDec(raList, decList,
+                                 camera=self.camera, epoch=2000.0)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData into ' \
+                         + 'pixelCoordsFromRaDec')
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(raList, decList,
+                                  camera=self.camera, epoch=2000.0)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData into ' \
+                         + 'pixelCoordsFromRaDec')
+
+        # test that an exception is raised if you try to use an
+        # ObservationMetaData without an mjd
+        obsDummy = ObservationMetaData(unrefractedRA=25.0,
+                                       unrefractedDec=-36.0,
+                                       rotSkyPos=112.0)
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromRaDec(raList, decList,
+                                 camera=self.camera,
+                                 epoch=2000.0,
+                                 obs_metadata=obsDummy)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData ' \
+                         + 'with an mjd into pixelCoordsFromRaDec')
+
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(raList, decList,
+                                  camera=self.camera,
+                                  epoch=2000.0,
+                                  obs_metadata=obsDummy)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData ' \
+                         + 'with an mjd into pixelCoordsFromRaDec')
+
+        # test that an exception is raised if you try to use an
+        # ObservationMetaData without a rotSkyPos
+        obsDummy = ObservationMetaData(unrefractedRA=25.0,
+                                       unrefractedDec=-36.0,
+                                       mjd=53000.0)
+        with self.assertRaises(RuntimeError) as context:
+            pixelCoordsFromRaDec(raList, decList,
+                                 camera=self.camera,
+                                 epoch=2000.0,
+                                 obs_metadata=obsDummy)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData ' \
+                         + 'with a rotSkyPos into pixelCoordsFromRaDec')
+
+        obsDummy = ObservationMetaData(unrefractedRA=25.0,
+                                       unrefractedDec=-36.0,
+                                       mjd=53000.0)
+        with self.assertRaises(RuntimeError) as context:
+            _pixelCoordsFromRaDec(raList, decList,
+                                  camera=self.camera,
+                                  epoch=2000.0,
+                                  obs_metadata=obsDummy)
+        self.assertEqual(context.exception.message,
+                         'You need to pass an ObservationMetaData ' \
+                         + 'with a rotSkyPos into pixelCoordsFromRaDec')
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(ChipNameTest)
+    suites += unittest.makeSuite(PixelCoordTest)
     return unittest.TestSuite(suites)
 
 def run(shouldExit=False):
