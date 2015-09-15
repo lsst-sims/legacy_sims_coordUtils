@@ -1542,6 +1542,8 @@ class ConversionFromPixelTest(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(arcsecFromRadians(yu), arcsecFromRadians(yd), 4)
 
 
+
+
 def suite():
     utilsTests.init()
     suites = []
