@@ -1183,6 +1183,12 @@ class ConversionFromPixelTest(unittest.TestCase):
         dy = arcsecFromRadians(yPupTest-yPupList)
         numpy.testing.assert_array_almost_equal(dy, numpy.zeros(len(dy)), 9)
 
+        ctNaN = 0
+        for x, y in zip(xPupTest, yPupTest):
+            if numpy.isnan(x) or numpy.isnan(y):
+                ctNaN += 1
+        self.assertTrue(ctNaN<len(xPupTest)/10)
+
 
 def suite():
     utilsTests.init()
