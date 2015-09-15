@@ -607,21 +607,21 @@ class PixelCoordTest(unittest.TestCase):
         dyPixList = numpy.array(dyPixList)
 
         # convert to raidans
-        dxList = radiansFromArcsec(dxPixList*arcsecPerPixel)
-        dyList = radiansFromArcsec(dyPixList*arcsecPerPixel)
+        dxPupList = radiansFromArcsec(dxPixList*arcsecPerPixel)
+        dyPupList = radiansFromArcsec(dyPixList*arcsecPerPixel)
 
         # assemble a bunch of test pupil coordinate pairs
-        xPupList = x22 + dxList
-        yPupList = y22 + dyList
-        xPupList = numpy.append(xPupList, x32 + dxList)
-        yPupList = numpy.append(yPupList, y32 + dyList)
-        xPupList = numpy.append(xPupList, x40 + dxList)
-        yPupList = numpy.append(yPupList, y40 + dyList)
+        xPupList = x22 + dxPupList
+        yPupList = y22 + dyPupList
+        xPupList = numpy.append(xPupList, x32 + dxPupList)
+        yPupList = numpy.append(yPupList, y32 + dyPupList)
+        xPupList = numpy.append(xPupList, x40 + dxPupList)
+        yPupList = numpy.append(yPupList, y40 + dyPupList)
 
         # this is what the chipNames ought to be for these points
-        chipNameControl = numpy.array(['Det22'] * len(dxList))
-        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxList))
-        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxList))
+        chipNameControl = numpy.array(['Det22'] * len(dxPupList))
+        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxPupList))
+        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxPupList))
 
         chipNameTest = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
 
@@ -646,6 +646,168 @@ class PixelCoordTest(unittest.TestCase):
 
         numpy.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
         numpy.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
+
+    def testOffChipResults(self):
+        """
+        Test that the results of the pixelCoords methods make sense in the case
+        that you specify a chip name that is not necessarily the chip on which
+        the object actually fell.
+
+        Note that the test camera has a platescale of 0.02 arcsec per pixel
+        (2.0 arcsec per mm encoded in CameraForUnitTests.py and 10 microns per
+        pixel encoded in cameraData/focalplanelayout.txt). We will use that to
+        set the control values for our unit test.
+
+        Note: This unit test will fail if the test camera ever changes.
+        """
+
+        arcsecPerPixel = 0.02
+        arcsecPerMicron = 0.002
+
+        #list a bunch of detector centers in radians
+        x22 = 0.0
+        y22 = 0.0
+
+        x32 = radiansFromArcsec(40000.0 * arcsecPerMicron)
+        y32 = 0.0
+
+        x40 = radiansFromArcsec(80000.0 * arcsecPerMicron)
+        y40 = radiansFromArcsec(-80000.0 * arcsecPerMicron)
+
+        # assemble a bunch of displacements in pixels
+        dxPixList = []
+        dyPixList = []
+        for xx in numpy.arange(-1999.0, 1999.0, 500.0):
+            for yy in numpy.arange(-1999.0, 1999.0, 500.0):
+                dxPixList.append(xx)
+                dyPixList.append(yy)
+
+        dxPixList = numpy.array(dxPixList)
+        dyPixList = numpy.array(dyPixList)
+
+        # convert to raidans
+        dxPupList = radiansFromArcsec(dxPixList*arcsecPerPixel)
+        dyPupList = radiansFromArcsec(dyPixList*arcsecPerPixel)
+
+        # assemble a bunch of test pupil coordinate pairs
+        xPupList = x22 + dxPupList
+        yPupList = y22 + dyPupList
+        xPupList = numpy.append(xPupList, x32 + dxPupList)
+        yPupList = numpy.append(yPupList, y32 + dyPupList)
+        xPupList = numpy.append(xPupList, x40 + dxPupList)
+        yPupList = numpy.append(yPupList, y40 + dyPupList)
+
+        # this is what the chipNames ought to be for these points
+        chipNameControl = numpy.array(['Det22'] * len(dxPupList))
+        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxPupList))
+        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxPupList))
+
+        chipNameTest = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
+
+        # verify that the test points fall on the expected chips
+        numpy.testing.assert_array_equal(chipNameControl, chipNameTest)
+
+        # Note, the somewhat backwards way in which we go from dxPupList to
+        # xPixControl is due to the fact that pixel coordinates are actually
+        # aligned so that the x-axis is along the read-out direction, which
+        # makes positive x in pixel coordinates correspond to positive y
+        # in pupil coordinates
+        xPixControl = 1999.5 + arcsecFromRadians(yPupList - y40)/arcsecPerPixel
+        yPixControl = 1999.5 - arcsecFromRadians(xPupList - x40)/arcsecPerPixel
+
+        # verify that the pixel coordinates are as expected to within 0.01 pixel
+        inputChipNames = ['Det40'] * len(xPupList)
+        xPixTest, yPixTest = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera,
+                                                        includeDistortion=False,
+                                                        chipNames=inputChipNames)
+
+        numpy.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
+        numpy.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
+
+
+
+    def testNaN(self):
+        """
+        Verify that NaNs and Nones input to pixelCoordinate calculation methods result
+        in NaNs coming out
+        """
+        ra0 = 25.0
+        dec0 = -35.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  rotSkyPos=42.0, mjd=42356.0)
+
+        raCenter, decCenter = observedFromICRS(numpy.array([ra0]), numpy.array([dec0]),
+                                               obs_metadata=obs, epoch=2000.0)
+
+        nStars = 10
+        raList = numpy.random.random_sample(100)*100.0/3600.0 + raCenter[0]
+        decList = numpy.random.random_sample(100)*100.0/3600.0 + decCenter[0]
+        chipNameList = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
+                                         camera=self.camera)
+
+        # make sure that all of the test points actually fall on chips
+        for name in chipNameList:
+            self.assertTrue(name is not None)
+
+        xPupList, yPupList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
+
+        # make sure that none of the test points already result in NaN pixel coordinates
+        xPixList, yPixList = pixelCoordsFromRaDec(raList, decList, obs_metadata=obs,
+                                                  epoch=2000.0, camera=self.camera)
+
+        for xx, yy in zip(xPixList, yPixList):
+            self.assertFalse(numpy.isnan(xx))
+            self.assertFalse(numpy.isnan(yy))
+            self.assertFalse(xx is None)
+            self.assertFalse(yy is None)
+
+        for badVal in [numpy.NaN, None]:
+            raList[5] = badVal
+            decList[7] = badVal
+            raList[9] = badVal
+            decList[9] = badVal
+
+            xPixList, yPixList = pixelCoordsFromRaDec(raList, decList, obs_metadata=obs,
+                                                      epoch=2000.0, camera=self.camera)
+
+            for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
+                if ix in [5, 7, 9]:
+                    self.assertTrue(numpy.isnan(xx))
+                    self.assertTrue(numpy.isnan(yy))
+                else:
+                    self.assertFalse(numpy.isnan(xx))
+                    self.assertFalse(numpy.isnan(yy))
+                    self.assertFalse(xx is None)
+                    self.assertFalse(yy is None)
+
+            xPixList, yPixList = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
+                                                       obs_metadata=obs, epoch=2000.0, camera=self.camera)
+
+            for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
+                if ix in [5, 7, 9]:
+                    self.assertTrue(numpy.isnan(xx))
+                    self.assertTrue(numpy.isnan(yy))
+                else:
+                    self.assertFalse(numpy.isnan(xx))
+                    self.assertFalse(numpy.isnan(yy))
+                    self.assertFalse(xx is None)
+                    self.assertFalse(yy is None)
+
+            xPupList[5] = badVal
+            yPupList[7] = badVal
+            xPupList[9] = badVal
+            yPupList[9] = badVal
+            xPixList, yPixList = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
+            for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
+                if ix in [5, 7, 9]:
+                    self.assertTrue(numpy.isnan(xx))
+                    self.assertTrue(numpy.isnan(yy))
+                else:
+                    self.assertFalse(numpy.isnan(xx))
+                    self.assertFalse(numpy.isnan(yy))
+                    self.assertFalse(xx is None)
+                    self.assertFalse(yy is None)
+
 
 
 def suite():
