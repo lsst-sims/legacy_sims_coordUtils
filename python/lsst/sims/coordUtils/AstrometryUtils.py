@@ -96,16 +96,16 @@ def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
 
     @param [in] mjd is the MJD of the observation
 
-    @param [out] raOut is ra corrected for precession and nutation in degrees
-
-    @param [out] decOut is dec corrected for precession and nutation in degrees
+    @param [out] a 2-D numpy array in which the first row is the RA
+    corrected for precession and nutation and the second row is the
+    Dec corrected for precession and nutation (both in degrees)
 
     """
 
-    raOut, decOut = _applyPrecession(numpy.radians(ra), numpy.radians(dec),
-                                     epoch=epoch, mjd=mjd)
+    output = _applyPrecession(numpy.radians(ra), numpy.radians(dec),
+                              epoch=epoch, mjd=mjd)
 
-    return numpy.degrees(raOut), numpy.degrees(decOut)
+    return numpy.degrees(output)
 
 
 
@@ -128,10 +128,9 @@ def _applyPrecession(ra, dec, epoch=2000.0, mjd=None):
 
     @param [in] mjd is the MJD of the observation
 
-    @param [out] raOut is ra corrected for precession and nutation in radians
-
-    @param [out] decOut is dec corrected for precession and nutation in radians
-
+    @param [out] a 2-D numpy array in which the first row is the RA
+    corrected for precession and nutation and the second row is the
+    Dec corrected for precession and nutation (both in radians)
     """
 
     if hasattr(ra, '__len__'):
@@ -155,7 +154,7 @@ def _applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     xyz =  numpy.dot(rmat,xyz.transpose()).transpose()
 
     raOut,decOut = sphericalFromCartesian(xyz)
-    return raOut,decOut
+    return numpy.array([raOut,decOut])
 
 
 def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
@@ -190,19 +189,18 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
 
     @param [in] mjd is the MJD of the actual observation
 
-    @param [out] raOut is corrected ra in degrees
-
-    @param [out] decOut is corrected dec in degrees
+    @param [out] a 2-D numpy array in which the first row is the RA corrected
+    for proper motion and the second row is the Dec corrected for proper motion
+    (both in degrees)
     """
 
-    raOut, \
-    decOut = _applyProperMotion(numpy.radians(ra), numpy.radians(dec),
+    output = _applyProperMotion(numpy.radians(ra), numpy.radians(dec),
                                 radiansFromArcsec(pm_ra),
                                 radiansFromArcsec(pm_dec),
                                 radiansFromArcsec(parallax),
                                 v_rad, epoch=epoch, mjd=mjd)
 
-    return numpy.degrees(raOut), numpy.degrees(decOut)
+    return numpy.degrees(output)
 
 
 def _applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
@@ -237,9 +235,9 @@ def _applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
 
     @param [in] mjd is the MJD of the actual observation
 
-    @param [out] raOut is corrected ra in radians
-
-    @param [out] decOut is corrected dec in radians
+    @param [out] a 2-D numpy array in which the first row is the RA corrected
+    for proper motion and the second row is the Dec corrected for proper motion
+    (both in radians)
 
     """
 
@@ -288,7 +286,7 @@ def _applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     else:
         raOut, decOut = palpy.pm(ra, dec, pm_ra_corrected, pm_dec, parallaxArcsec, v_rad, epoch, julianEpoch)
 
-    return raOut,decOut
+    return numpy.array([raOut,decOut])
 
 
 
@@ -327,10 +325,9 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     @param[in] MJD is the date of the observation
 
-    @param [out] raOut is apparent geocentric RA-like coordinate in degrees
-
-    @param [out] decOut is apparent geocentric Dec-like coordinate in degrees
-
+    @param [out] a 2-D numpy array in which the first row is the apparent
+    geocentric RA and the second row is the apparent geocentric Dec
+    coordinate (both in degrees)
     """
 
     if pm_ra is not None:
@@ -348,13 +345,12 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     else:
         px_in = None
 
-    raOut, \
-    decOut = _appGeoFromICRS(numpy.radians(ra), numpy.radians(dec),
+    output = _appGeoFromICRS(numpy.radians(ra), numpy.radians(dec),
                              pm_ra=pm_ra_in, pm_dec=pm_dec_in,
                              parallax=px_in, v_rad=v_rad, epoch=epoch, mjd=mjd)
 
 
-    return numpy.degrees(raOut), numpy.degrees(decOut)
+    return numpy.degrees(output)
 
 
 def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
@@ -392,10 +388,9 @@ def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     @param[in] MJD is the date of the observation
 
-    @param [out] raOut is apparent geocentric RA-like coordinate in radians
-
-    @param [out] decOut is apparent geocentric Dec-like coordinate in radians
-
+    @param [out] a 2-D numpy array in which the first row is the apparent
+    geocentric RA-like coordinate and the second row is the apparent
+    geocentric Dec-like coordinate (both in radians)
     """
 
     if mjd is None:
@@ -444,7 +439,7 @@ def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra_corrected,pm_dec,arcsecFromRadians(parallax),v_rad,prms)
 
-    return raOut,decOut
+    return numpy.array([raOut,decOut])
 
 
 def observedFromAppGeo(ra, dec, includeRefraction = True,
@@ -474,33 +469,30 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
     self assuming it is in an InstanceCatalog daughter class.  If that is not
     the case, an exception will be raised.)
 
-    @param [out] raOut is oberved RA (degrees)
+    @param [out] a 2-D numpy array in which the first row is the observed RA
+    and the second row is the observed Dec (both in degrees)
 
-    @param [out] decOut is observed Dec (degrees)
-
-    @param [out] alt is altitude angle (only returned if altAzHr == True) (degrees)
-
-    @param [out] az is azimuth angle (only returned if altAzHr == True) (degrees)
-
+    @param [out] a 2-D numpy array in which the first row is the altitude
+    and the second row is the azimuth (both in degrees).  Only returned
+    if altAzHr == True.
     """
 
     if altAzHr:
-        raOut, decOut, \
-        altOut, azOut = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
+        raDec, \
+        altAz = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
                                             includeRefraction=includeRefraction,
                                             altAzHr=altAzHr, wavelength=wavelength,
                                             obs_metadata=obs_metadata)
 
-        return numpy.degrees(raOut), numpy.degrees(decOut), \
-               numpy.degrees(altOut), numpy.degrees(azOut)
+        return numpy.degrees(raDec), numpy.degrees(altAz)
 
     else:
-        raOut, decOut = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
+        output = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
                                             includeRefraction=includeRefraction,
                                             altAzHr=altAzHr, wavelength=wavelength,
                                             obs_metadata=obs_metadata)
 
-        return numpy.degrees(raOut), numpy.degrees(decOut)
+        return numpy.degrees(output)
 
 
 def _observedFromAppGeo(ra, dec, includeRefraction = True,
@@ -530,13 +522,12 @@ def _observedFromAppGeo(ra, dec, includeRefraction = True,
     self assuming it is in an InstanceCatalog daughter class.  If that is not
     the case, an exception will be raised.)
 
-    @param [out] raOut is oberved RA (radians)
+    @param [out] a 2-D numpy array in which the first row is the observed RA
+    and the second row is the observed Dec (both in radians)
 
-    @param [out] decOut is observed Dec (radians)
-
-    @param [out] alt is altitude angle (only returned if altAzHr == True) (radians)
-
-    @param [out] az is azimuth angle (only returned if altAzHr == True) (radians)
+    @param [out] a 2-D numpy array in which the first row is the altitude
+    and the second row is the azimuth (both in radians).  Only returned
+    if altAzHr == True.
 
     """
 
@@ -627,8 +618,8 @@ def _observedFromAppGeo(ra, dec, includeRefraction = True,
         #palpy.de2h converts equatorial to horizon coordinates
         #
         az, alt = palpy.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
-        return raOut, decOut, alt, az
-    return raOut, decOut
+        return numpy.array([raOut, decOut]), numpy.array([alt, az])
+    return numpy.array([raOut, decOut])
 
 
 def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
@@ -662,10 +653,8 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
 
     @param [in] includeRefraction toggles whether or not to correct for refraction
 
-    @param [out] ra_out RA in radians corrected for all included effects
-
-    @param [out] dec_out Dec in radians corrected for all included effects
-
+    @param [out] a 2-D numpy array in which the first row is the observed
+    RA and the second row is the observed Dec (both in degrees)
     """
 
     if pm_ra is not None:
@@ -683,13 +672,12 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
     else:
         parallax_in = None
 
-    raOut, \
-    decOut = _observedFromICRS(numpy.radians(ra), numpy.radians(dec),
+    output = _observedFromICRS(numpy.radians(ra), numpy.radians(dec),
                                pm_ra=pm_ra_in, pm_dec=pm_dec_in, parallax=parallax_in,
                                v_rad=v_rad, obs_metadata=obs_metadata, epoch=epoch,
                                includeRefraction=includeRefraction)
 
-    return numpy.degrees(raOut), numpy.degrees(decOut)
+    return numpy.degrees(output)
 
 
 
@@ -724,9 +712,8 @@ def _observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=Non
 
     @param [in] includeRefraction toggles whether or not to correct for refraction
 
-    @param [out] ra_out RA in radians corrected for all included effects
-
-    @param [out] dec_out Dec in radians corrected for all included effects
+    @param [out] a 2-D numpy array in which the first row is the observed
+    RA and the second row is the observed Dec (both in radians)
 
     """
 
@@ -765,15 +752,14 @@ def raDecFromPupilCoords(xPupil, yPupil, obs_metadata=None, epoch=None):
     @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
     transforations (in years)
 
-    @param [out] raOut -- the right ascension in degrees (a numpy array)
-
-    @param [out] decOut -- the declination in degrees (a numpy array)
+    @param [out] a 2-D numpy array in which the first row is RA and the second
+    row is Dec (both in degrees)
     """
 
-    raOut, decOut = _raDecFromPupilCoords(xPupil, yPupil, obs_metadata=obs_metadata,
+    output = _raDecFromPupilCoords(xPupil, yPupil, obs_metadata=obs_metadata,
                                                epoch=epoch)
 
-    return numpy.degrees(raOut), numpy.degrees(decOut)
+    return numpy.degrees(output)
 
 
 def _raDecFromPupilCoords(xPupil, yPupil, obs_metadata=None, epoch=None):
@@ -788,9 +774,8 @@ def _raDecFromPupilCoords(xPupil, yPupil, obs_metadata=None, epoch=None):
     @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
     transforations (in years)
 
-    @param [out] raOut -- the right ascension in radians (a numpy array)
-
-    @param [out] decOut -- the declination in radians (a numpy array)
+    @param [out] a 2-D numpy array in which the first row is RA and the second
+    row is Dec (both in radians)
     """
 
     if obs_metadata is None:
@@ -842,7 +827,7 @@ def _raDecFromPupilCoords(xPupil, yPupil, obs_metadata=None, epoch=None):
         raOut.append(rr)
         decOut.append(dd)
 
-    return numpy.array(raOut), numpy.array(decOut)
+    return numpy.array([raOut, decOut])
 
 
 

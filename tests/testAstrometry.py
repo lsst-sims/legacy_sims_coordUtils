@@ -437,20 +437,20 @@ class astrometryUnitTest(unittest.TestCase):
 
         output=_observedFromAppGeo(ra,dec,altAzHr=True, wavelength=wv, obs_metadata=obs_metadata)
 
-        self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
-        self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
-        self.assertAlmostEqual(output[2][0],1.168920017932007643e-01,6)
-        self.assertAlmostEqual(output[3][0],8.745379535264000692e-01,6)
+        self.assertAlmostEqual(output[0][0][0],2.547475965605183745e+00,6)
+        self.assertAlmostEqual(output[0][1][0],5.187045152602967057e-01,6)
+        self.assertAlmostEqual(output[1][0][0],1.168920017932007643e-01,6)
+        self.assertAlmostEqual(output[1][1][0],8.745379535264000692e-01,6)
 
-        self.assertAlmostEqual(output[0][1],4.349858626308809040e-01,6)
-        self.assertAlmostEqual(output[1][1],-5.191213875880701378e-01,6)
-        self.assertAlmostEqual(output[2][1],6.766119585479937193e-01,6)
-        self.assertAlmostEqual(output[3][1],4.433969998336554141e+00,6)
+        self.assertAlmostEqual(output[0][0][1],4.349858626308809040e-01,6)
+        self.assertAlmostEqual(output[0][1][1],-5.191213875880701378e-01,6)
+        self.assertAlmostEqual(output[1][0][1],6.766119585479937193e-01,6)
+        self.assertAlmostEqual(output[1][1][1],4.433969998336554141e+00,6)
 
-        self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
-        self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
-        self.assertAlmostEqual(output[2][2],5.275840601437552513e-01,6)
-        self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
+        self.assertAlmostEqual(output[0][0][2],7.743528611421227614e-01,6)
+        self.assertAlmostEqual(output[0][1][2],2.755070101670137328e-01,6)
+        self.assertAlmostEqual(output[1][0][2],5.275840601437552513e-01,6)
+        self.assertAlmostEqual(output[1][1][2],5.479759580847959555e+00,6)
 
         output=_observedFromAppGeo(ra,dec,includeRefraction=False,
                                   wavelength=wv, obs_metadata=obs_metadata)
@@ -467,20 +467,20 @@ class astrometryUnitTest(unittest.TestCase):
         output=_observedFromAppGeo(ra,dec,includeRefraction=False,
                                   altAzHr=True, wavelength=wv, obs_metadata=obs_metadata)
 
-        self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
-        self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
-        self.assertAlmostEqual(output[2][0],1.150652107618796299e-01,6)
-        self.assertAlmostEqual(output[3][0],8.745379535264000692e-01,6)
+        self.assertAlmostEqual(output[0][0][0],2.549091783674975353e+00,6)
+        self.assertAlmostEqual(output[0][1][0],5.198746844679964507e-01,6)
+        self.assertAlmostEqual(output[1][0][0],1.150652107618796299e-01,6)
+        self.assertAlmostEqual(output[1][1][0],8.745379535264000692e-01,6)
 
-        self.assertAlmostEqual(output[0][1],4.346695674418772359e-01,6)
-        self.assertAlmostEqual(output[1][1],-5.190436610150490626e-01,6)
-        self.assertAlmostEqual(output[2][1],6.763265401447272618e-01,6)
-        self.assertAlmostEqual(output[3][1],4.433969998336554141e+00,6)
+        self.assertAlmostEqual(output[0][0][1],4.346695674418772359e-01,6)
+        self.assertAlmostEqual(output[0][1][1],-5.190436610150490626e-01,6)
+        self.assertAlmostEqual(output[1][0][1],6.763265401447272618e-01,6)
+        self.assertAlmostEqual(output[1][1][1],4.433969998336554141e+00,6)
 
-        self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
-        self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
-        self.assertAlmostEqual(output[2][2],5.271912536356709866e-01,6)
-        self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
+        self.assertAlmostEqual(output[0][0][2],7.740875471580924705e-01,6)
+        self.assertAlmostEqual(output[0][1][2],2.758055401087299296e-01,6)
+        self.assertAlmostEqual(output[1][0][2],5.271912536356709866e-01,6)
+        self.assertAlmostEqual(output[1][1][2],5.479759580847959555e+00,6)
 
     def test_observedFromAppGeo_NoRefraction(self):
 
@@ -503,14 +503,14 @@ class astrometryUnitTest(unittest.TestCase):
         output=_observedFromAppGeo(ra,dec,altAzHr=True,
                                   includeRefraction=False, obs_metadata=obs_metadata)
 
-        self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
-        self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
-        self.assertAlmostEqual(output[0][1],4.346695674418772359e-01,6)
-        self.assertAlmostEqual(output[1][1],-5.190436610150490626e-01,6)
-        self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
-        self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
-        self.assertAlmostEqual(output[2][2],5.271914342095551653e-01,6)
-        self.assertAlmostEqual(output[3][2],5.479759402150099490e+00,6)
+        self.assertAlmostEqual(output[0][0][0],2.549091783674975353e+00,6)
+        self.assertAlmostEqual(output[0][1][0],5.198746844679964507e-01,6)
+        self.assertAlmostEqual(output[0][0][1],4.346695674418772359e-01,6)
+        self.assertAlmostEqual(output[0][1][1],-5.190436610150490626e-01,6)
+        self.assertAlmostEqual(output[0][0][2],7.740875471580924705e-01,6)
+        self.assertAlmostEqual(output[0][1][2],2.758055401087299296e-01,6)
+        self.assertAlmostEqual(output[1][0][2],5.271914342095551653e-01,6)
+        self.assertAlmostEqual(output[1][1][2],5.479759402150099490e+00,6)
 
     def testRefractionCoefficients(self):
         output=refractionCoefficients(wavelength=5000.0, site=self.obs_metadata.site)

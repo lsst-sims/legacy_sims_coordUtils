@@ -117,14 +117,24 @@ class AstrometryDegreesTest(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
 
 
-            raRad, decRad, altRad, azRad = coordUtils._observedFromAppGeo(self.raList, self.decList,
-                                                                          includeRefraction=includeRefraction,
-                                                                          altAzHr=True, obs_metadata=obs)
+            raDec, altAz = coordUtils._observedFromAppGeo(self.raList, self.decList,
+                                                          includeRefraction=includeRefraction,
+                                                          altAzHr=True, obs_metadata=obs)
 
-            raDeg, decDeg, altDeg, azDeg = coordUtils.observedFromAppGeo(numpy.degrees(self.raList),
-                                                                         numpy.degrees(self.decList),
-                                                                         includeRefraction=includeRefraction,
-                                                                         altAzHr=True, obs_metadata=obs)
+            raRad = raDec[0]
+            decRad = raDec[1]
+            altRad = altAz[0]
+            azRad = altAz[1]
+
+            raDec, altAz = coordUtils.observedFromAppGeo(numpy.degrees(self.raList),
+                                                         numpy.degrees(self.decList),
+                                                         includeRefraction=includeRefraction,
+                                                         altAzHr=True, obs_metadata=obs)
+
+            raDeg = raDec[0]
+            decDeg = raDec[1]
+            altDeg = altAz[0]
+            azDeg = altAz[1]
 
             dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
             numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
