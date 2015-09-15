@@ -495,7 +495,7 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=No
                                "focalPlaneCoordsFromRaDec on these inputs")
 
 
-    xPupil, yPupil = _pupilCoordinatesFromRaDec(ra, dec, obs_metadata=obs_metadata,
+    xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata,
                                                 epoch=epoch)
 
     return focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=camera)
