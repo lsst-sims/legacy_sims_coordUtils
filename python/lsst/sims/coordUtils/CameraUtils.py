@@ -388,7 +388,7 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     xPupilList = numpy.array(xPupilList)
     yPupilList = numpy.array(yPupilList)
 
-    return xPupilList, yPupilList
+    return numpy.array([xPupilList, yPupilList])
 
 
 def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
