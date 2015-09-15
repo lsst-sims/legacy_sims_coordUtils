@@ -576,9 +576,8 @@ class PixelCoordTest(unittest.TestCase):
         """
         Test that the results of the pixelCoords methods make sense.  Note that the test
         camera has a platescale of 0.02 arcsec per pixel (2.0 arcsec per mm encoded in
-        CameraForUnitTests.py and 10 microns per pixel encoded in
-        cameraData/focalplanelayout.txt).  We will use that (combined with the fact that
-        the test camera has no encoded distortions) to set the control values for our unit test.
+        CameraForUnitTests.py and 10 microns per pixel encoded in cameraData/focalplanelayout.txt).
+        We will use that to set the control values for our unit test.
 
         Note: This unit test will fail if the test camera ever changes.
         """
@@ -596,23 +595,57 @@ class PixelCoordTest(unittest.TestCase):
         x40 = radiansFromArcsec(80000.0 * arcsecPerMicron)
         y40 = radiansFromArcsec(-80000.0 * arcsecPerMicron)
 
+        # assemble a bunch of displacements in pixels
+        dxPixList = []
+        dyPixList = []
+        for xx in numpy.arange(-1999.0, 1999.0, 500.0):
+            for yy in numpy.arange(-1999.0, 1999.0, 500.0):
+                dxPixList.append(xx)
+                dyPixList.append(yy)
 
-        dxList = radiansFromArcsec(numpy.arange(-1500.0, 1500.0, 100.0)*arcsecPerPixel)
-        dyList = radiansFromArcsec(numpy.arange(-1500.0, 1500.0, 100.0)*arcsecPerPixel)
+        dxPixList = numpy.array(dxPixList)
+        dyPixList = numpy.array(dyPixList)
 
-        xpList = x22 + dxList
-        ypList = y22 + dyList
-        xpList = numpy.append(xpList, x32 + dxList)
-        ypList = numpy.append(ypList, y32 + dyList)
-        xpList = numpy.append(xpList, x40 + dxList)
-        ypList = numpy.append(ypList, y40 + dyList)
+        # convert to raidans
+        dxList = radiansFromArcsec(dxPixList*arcsecPerPixel)
+        dyList = radiansFromArcsec(dyPixList*arcsecPerPixel)
 
+        # assemble a bunch of test pupil coordinate pairs
+        xPupList = x22 + dxList
+        yPupList = y22 + dyList
+        xPupList = numpy.append(xPupList, x32 + dxList)
+        yPupList = numpy.append(yPupList, y32 + dyList)
+        xPupList = numpy.append(xPupList, x40 + dxList)
+        yPupList = numpy.append(yPupList, y40 + dyList)
+
+        # this is what the chipNames ought to be for these points
         chipNameControl = numpy.array(['Det22'] * len(dxList))
         chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxList))
         chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxList))
 
-        chipNameTest = chipNameFromPupilCoords(xpList, ypList, camera=self.camera)
+        chipNameTest = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
+
+        # verify that the test points fall on the expected chips
         numpy.testing.assert_array_equal(chipNameControl, chipNameTest)
+
+        # Note, the somewhat backwards way in which we go from dxPixList to
+        # xPixControl is due to the fact that pixel coordinates are actually
+        # aligned so that the x-axis is along the read-out direction, which
+        # makes positive x in pixel coordinates correspond to positive y
+        # in pupil coordinates
+        xPixControl = 1999.5 + dyPixList
+        yPixControl = 1999.5 - dxPixList
+        xPixControl = numpy.append(xPixControl, 1999.5 + dyPixList)
+        yPixControl = numpy.append(yPixControl, 1999.5 - dxPixList)
+        xPixControl = numpy.append(xPixControl, 1999.5 + dyPixList)
+        yPixControl = numpy.append(yPixControl, 1999.5 - dxPixList)
+
+        # verify that the pixel coordinates are as expected to within 0.01 pixel
+        xPixTest, yPixTest = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera,
+                                                        includeDistortion=False)
+
+        numpy.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
+        numpy.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
 
 
 def suite():
