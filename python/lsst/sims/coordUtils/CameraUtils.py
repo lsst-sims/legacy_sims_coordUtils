@@ -199,6 +199,7 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
                                  includeDistortion=includeDistortion,
                                  obs_metadata=obs_metadata, epoch=epoch)
 
+
 def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
                           chipNames=None, camera=None, includeDistortion=True):
     """
