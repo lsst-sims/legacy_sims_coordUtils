@@ -421,9 +421,9 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     Note: to see what is mean by 'observed' ra/dec, see the docstring for
     observedFromICRS in AstrometryUtils.py
     """
-    raOut, decOut = _raDecFromPixelCoordinates(xPixList, yPixList, chipNameList,
-                                               camera=camera, obs_metadata=obs_metadata,
-                                               epoch=epoch, includeDistortion=includeDistortion)
+    raOut, decOut = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
+                                          camera=camera, obs_metadata=obs_metadata,
+                                          epoch=epoch, includeDistortion=includeDistortion)
 
     return numpy.degrees(raOut), numpy.degrees(decOut)
 
@@ -460,9 +460,37 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     observedFromICRS in AstrometryUtils.py
     """
 
-    xPupilList, yPupilList = pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList,
-                                     camera=camera, obs_metadata=obs_metadata, epoch=epoch,
-                                     includeDistortion=includeDistortion)
+    if camera is None:
+        raise RuntimeError("You cannot call raDecFromPixelCoords without specifying a camera")
+
+    if epoch is None:
+        raise RuntimeError("You cannot call raDecFromPixelCoords without specifying an epoch")
+
+    if obs_metadata is None:
+        raise RuntimeError("You cannot call raDecFromPixelCoords without an ObservationMetaData")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have an mjd")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
+
+    if not isinstance(xPixList, numpy.ndarray) or not isinstance(yPixList, numpy.ndarray):
+        raise RuntimeError("You must pass numpy arrays of xPix and yPix to raDecFromPixelCoords")
+
+    if len(xPixList)!=len(yPixList):
+        raise RuntimeError("You passed %d xPix coordinates but %d yPix coordinates " \
+                           % (len(xPixList), len(yPixList)) \
+                           +"to raDecFromPixelCoords")
+
+    if len(xPixList)!=len(chipNameList):
+        raise RuntimeError("You passed %d pixel coordinate pairs but %d chip names " \
+                          % (len(xPixList), len(chipNameList)) \
+                          +"to raDecFromPixelCoords")
+
+
+    xPupilList, yPupilList = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList,
+                                                        camera=camera, includeDistortion=includeDistortion)
 
     raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
                                   obs_metadata=obs_metadata, epoch=epoch)
