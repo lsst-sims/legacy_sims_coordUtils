@@ -8,7 +8,7 @@ __all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
            "pupilCoordsFromPixelCoords",
-           "_raDecFromPixelCoordinates"]
+           "raDecFromPixelCoords", "_raDecFromPixelCoords"]
 
 
 def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
@@ -390,8 +390,46 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     return xPupilList, yPupilList
 
 
-def _raDecFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
-                              obs_metadata=None, epoch=None, includeDistortion=True):
+def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
+                         obs_metadata=None, epoch=None, includeDistortion=True):
+    """
+    Convert pixel coordinates into observed RA, Dec
+
+    @param [in] xPixList is a numpy array of x pixel coordinates
+
+    @param [in] yPixList is a numpy array of y pixel coordinates
+
+    @param [in] chipNameList is a numpy array of chip names (corresponding to the points
+    in xPixList and yPixList)
+
+    @param [in] camera is an afw.CameraGeom.camera object defining the camera
+
+    @param [in] obs_metadata is an ObservationMetaData defining the pointing
+
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    expect the true pixel coordinates with optical distortion included.  If False, this
+    method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] ra is a numpy array of observed RA in degrees
+
+    @param [out] dec is a numpy array of observed Dec in degrees
+
+    Note: to see what is mean by 'observed' ra/dec, see the docstring for
+    observedFromICRS in AstrometryUtils.py
+    """
+    raOut, decOut = _raDecFromPixelCoordinates(xPixList, yPixList, chipNameList,
+                                               camera=camera, obs_metadata=obs_metadata,
+                                               epoch=epoch, includeDistortion=includeDistortion)
+
+    return numpy.degrees(raOut), numpy.degrees(decOut)
+
+
+def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
+                          obs_metadata=None, epoch=None, includeDistortion=True):
     """
     Convert pixel coordinates into observed RA, Dec
 

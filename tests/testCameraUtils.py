@@ -25,6 +25,8 @@ from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, \
 
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 
+from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
+
 class ChipNameTest(unittest.TestCase):
 
     @classmethod
