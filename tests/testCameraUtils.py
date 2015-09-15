@@ -1238,8 +1238,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         xPixList = numpy.random.random_sample(nStars)*4000.0
         yPixList = numpy.random.random_sample(nStars)*4000.0
 
-        chipDexList = numpy.random.random_integers(0, len(self.camera), nStars)
-        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]] for ii in chipDexList]
+        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         # test that an error is raised if you do not pass in a camera
         with self.assertRaises(RuntimeError) as context:
@@ -1383,6 +1383,108 @@ class ConversionFromPixelTest(unittest.TestCase):
         self.assertEqual(context.exception.message,
                          "You passed 20 pixel coordinate pairs but 22 chip names to "\
                          + "raDecFromPixelCoords")
+
+
+    def testResults(self):
+        """
+        Test that raDecFromPixelCoords results are consistent with
+        pixelCoordsFromRaDec
+        """
+        nStars = 200
+        ra0 = 45.0
+        dec0 = -19.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  mjd=43525.0, rotSkyPos=145.0)
+
+        xPixList = numpy.random.random_sample(nStars)*4000.0
+        yPixList = numpy.random.random_sample(nStars)*4000.0
+
+        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
+
+        for includeDistortion in [True, False]:
+
+            raDeg, decDeg = raDecFromPixelCoords(xPixList, yPixList, chipNameList, obs_metadata=obs,
+                                                 epoch=2000.0, camera=self.camera,
+                                                 includeDistortion=includeDistortion)
+
+
+            raRad, decRad = _raDecFromPixelCoords(xPixList, yPixList, chipNameList, obs_metadata=obs,
+                                                  epoch=2000.0, camera=self.camera,
+                                                  includeDistortion=includeDistortion)
+
+
+            # first, make sure that the radians and degrees methods agree with each other
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(len(raRad)), 9)
+            dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(len(decRad)), 9)
+
+            # now make sure that the results from raDecFromPixelCoords are consistent
+            # with the results from pixelCoordsFromRaDec by taking the ra and dec
+            # arrays found above and feeding them back into pixelCoordsFromRaDec
+            # and seeing if we get the same results
+            xPixTest, yPixTest = pixelCoordsFromRaDec(raDeg, decDeg, obs_metadata=obs,
+                                                      epoch=2000.0, camera=self.camera,
+                                                      includeDistortion=includeDistortion)
+
+
+            numpy.testing.assert_array_almost_equal(xPixTest, xPixList, 6)
+            numpy.testing.assert_array_almost_equal(yPixTest, yPixList, 6)
+
+
+    def testResultsOffChip(self):
+        """
+        Test that raDecFromPixelCoords results are consistent with
+        pixelCoordsFromRaDec with chip names are specified
+
+        Note: this is the same test as in testResults, except that
+        we are going to intentionally make the pixel coordinate lists
+        fall outside the boundaries of the chips defined in chipNameList
+        """
+        nStars = 200
+        ra0 = 45.0
+        dec0 = -19.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  mjd=43525.0, rotSkyPos=145.0)
+
+        xPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
+        yPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
+
+        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
+
+        for includeDistortion in [True, False]:
+
+            raDeg, decDeg = raDecFromPixelCoords(xPixList, yPixList, chipNameList, obs_metadata=obs,
+                                                 epoch=2000.0, camera=self.camera,
+                                                 includeDistortion=includeDistortion)
+
+
+            raRad, decRad = _raDecFromPixelCoords(xPixList, yPixList, chipNameList, obs_metadata=obs,
+                                                  epoch=2000.0, camera=self.camera,
+                                                  includeDistortion=includeDistortion)
+
+
+            # first, make sure that the radians and degrees methods agree with each other
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(len(raRad)), 9)
+            dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(len(decRad)), 9)
+
+            # now make sure that the results from raDecFromPixelCoords are consistent
+            # with the results from pixelCoordsFromRaDec by taking the ra and dec
+            # arrays found above and feeding them back into pixelCoordsFromRaDec
+            # and seeing if we get the same results
+            xPixTest, yPixTest = pixelCoordsFromRaDec(raDeg, decDeg, chipNames=chipNameList,
+                                                      obs_metadata=obs,
+                                                      epoch=2000.0,
+                                                      camera=self.camera,
+                                                      includeDistortion=includeDistortion)
+
+
+            numpy.testing.assert_array_almost_equal(xPixTest, xPixList, 6)
+            numpy.testing.assert_array_almost_equal(yPixTest, yPixList, 6)
 
 
 
