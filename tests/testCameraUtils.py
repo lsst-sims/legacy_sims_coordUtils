@@ -5,7 +5,9 @@ import unittest
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 
-from lsst.sims.utils import ObservationMetaData
+from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
+
+from lsst.sims.utils import ObservationMetaData, radiansFromArcsec, arcsecFromRadians
 from lsst.sims.coordUtils.utils import ReturnCamera
 from lsst.sims.coordUtils import pupilCoordsFromRaDec
 from lsst.sims.coordUtils import observedFromICRS
@@ -568,6 +570,50 @@ class PixelCoordTest(unittest.TestCase):
         self.assertEqual(context.exception.message,
                          'You need to pass an ObservationMetaData ' \
                          + 'with a rotSkyPos into pixelCoordsFromRaDec')
+
+
+    def testResults(self):
+        """
+        Test that the results of the pixelCoords methods make sense.  Note that the test
+        camera has a platescale of 0.02 arcsec per pixel (2.0 arcsec per mm encoded in
+        CameraForUnitTests.py and 10 microns per pixel encoded in
+        cameraData/focalplanelayout.txt).  We will use that (combined with the fact that
+        the test camera has no encoded distortions) to set the control values for our unit test.
+
+        Note: This unit test will fail if the test camera ever changes.
+        """
+
+        arcsecPerPixel = 0.02
+        arcsecPerMicron = 0.002
+
+        #list a bunch of detector centers in radians
+        x22 = 0.0
+        y22 = 0.0
+
+        x32 = radiansFromArcsec(40000.0 * arcsecPerMicron)
+        y32 = 0.0
+
+        x40 = radiansFromArcsec(80000.0 * arcsecPerMicron)
+        y40 = radiansFromArcsec(-80000.0 * arcsecPerMicron)
+
+
+        dxList = radiansFromArcsec(numpy.arange(-1500.0, 1500.0, 100.0)*arcsecPerPixel)
+        dyList = radiansFromArcsec(numpy.arange(-1500.0, 1500.0, 100.0)*arcsecPerPixel)
+
+        xpList = x22 + dxList
+        ypList = y22 + dyList
+        xpList = numpy.append(xpList, x32 + dxList)
+        ypList = numpy.append(ypList, y32 + dyList)
+        xpList = numpy.append(xpList, x40 + dxList)
+        ypList = numpy.append(ypList, y40 + dyList)
+
+        chipNameControl = numpy.array(['Det22'] * len(dxList))
+        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxList))
+        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxList))
+
+        chipNameTest = chipNameFromPupilCoords(xpList, ypList, camera=self.camera)
+        numpy.testing.assert_array_equal(chipNameControl, chipNameTest)
+
 
 def suite():
     utilsTests.init()
