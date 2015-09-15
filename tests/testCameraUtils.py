@@ -829,6 +829,31 @@ class PixelCoordTest(unittest.TestCase):
 
 
 
+    def testDistortion(self):
+        """
+        Make sure that the results from pixelCoordsFromPupilCoords are different
+        if includeDistortion is True as compared to if includeDistortion is False
+
+        Note: This test passes because the test camera has a pincushion distortion.
+        If we take that away, the test will no longer pass.
+        """
+        nStars = 100
+        xp = radiansFromArcsec((numpy.random.random_sample(100)-0.5)*100.0)
+        yp = radiansFromArcsec((numpy.random.random_sample(100)-0.5)*100.0)
+
+        xu, yu = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera, includeDistortion=False)
+        xd, yd = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera, includeDistortion=True)
+
+        # just verify that the distorted versus undistorted coordinates vary in the
+        # 4th decimal place
+        with self.assertRaises(AssertionError) as context:
+            numpy.testing.assert_array_almost_equal(xu, xd, 4)
+
+        with self.assertRaises(AssertionError) as context:
+            numpy.testing.assert_array_almost_equal(yu, yd, 4)
+
+
+
 class FocalPlaneCoordTest(unittest.TestCase):
 
     @classmethod
@@ -1487,6 +1512,34 @@ class ConversionFromPixelTest(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(yPixTest, yPixList, 6)
 
 
+
+    def testDistortion(self):
+        """
+        Make sure that the results from pupilCoordsFromPixelCoords are different
+        if includeDistortion is True as compared to if includeDistortion is False
+
+        Note: This test passes because the test camera has a pincushion distortion.
+        If we take that away, the test will no longer pass.
+        """
+        nStars = 200
+        xPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
+        yPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
+
+        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
+
+        xu, yu = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=self.camera,
+                                            includeDistortion=False)
+
+        xd, yd = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=self.camera,
+                                            includeDistortion=True)
+
+        # just verify that the distorted versus undistorted coordinates vary in the 4th decimal
+        with self.assertRaises(AssertionError) as context:
+            numpy.testing.assert_array_almost_equal(arcsecFromRadians(xu), arcsecFromRadians(xd), 4)
+
+        with self.assertRaises(AssertionError) as context:
+            numpy.testing.assert_array_almost_equal(arcsecFromRadians(yu), arcsecFromRadians(yd), 4)
 
 
 def suite():
