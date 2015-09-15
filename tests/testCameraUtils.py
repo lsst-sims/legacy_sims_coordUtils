@@ -580,6 +580,11 @@ class PixelCoordTest(unittest.TestCase):
         We will use that to set the control values for our unit test.
 
         Note: This unit test will fail if the test camera ever changes.
+
+        Note: Because we have already tested the self-consistency of
+        pixelCoordsFromPupilCoords and pixelCoordsFromRaDec, we will
+        only be testing pixelCoordsFromPupilCoords here, because it
+        is easier.
         """
 
         arcsecPerPixel = 0.02
@@ -647,6 +652,7 @@ class PixelCoordTest(unittest.TestCase):
         numpy.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
         numpy.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
 
+
     def testOffChipResults(self):
         """
         Test that the results of the pixelCoords methods make sense in the case
@@ -659,6 +665,11 @@ class PixelCoordTest(unittest.TestCase):
         set the control values for our unit test.
 
         Note: This unit test will fail if the test camera ever changes.
+
+        Note: Because we have already tested the self-consistency of
+        pixelCoordsFromPupilCoords and pixelCoordsFromRaDec, we will
+        only be testing pixelCoordsFromPupilCoords here, because it
+        is easier.
         """
 
         arcsecPerPixel = 0.02
