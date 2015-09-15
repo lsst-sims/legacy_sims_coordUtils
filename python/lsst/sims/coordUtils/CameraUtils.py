@@ -191,7 +191,8 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
-    @param [out] a numpy array of pixel coordinates
+    @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
+    and the second row is the y pixel coordinate
     """
 
     return _pixelCoordsFromRaDec(numpy.radians(ra), numpy.radians(dec),
@@ -229,7 +230,8 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
-    @param [out] a numpy array of pixel coordinates
+    @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
+    and the second row is the y pixel coordinate
     """
 
     if epoch is None:
@@ -286,7 +288,8 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
-    @param [out] a numpy array of pixel coordinates
+    @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
+    and the second row is the y pixel coordinate
     """
 
     if includeDistortion:
@@ -349,9 +352,8 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
-    @param [out] xPupilList is a numpy array of the x pupil coordinate (in radians)
-
-    @param [out] yPupilList is a numpyarray of the y pupil coordinate (in radians)
+    @param [out] a 2-D numpy array in which the first row is the x pupil coordinate
+    and the second row is the y pupil coordinate (both in radians)
     """
 
     if camera is None:
@@ -415,18 +417,17 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
-    @param [out] ra is a numpy array of observed RA in degrees
-
-    @param [out] dec is a numpy array of observed Dec in degrees
+    @param [out] a 2-D numpy array in which the first row is the RA coordinate
+    and the second row is the Dec coordinate (both in degrees)
 
     Note: to see what is mean by 'observed' ra/dec, see the docstring for
     observedFromICRS in AstrometryUtils.py
     """
-    raOut, decOut = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
-                                          camera=camera, obs_metadata=obs_metadata,
-                                          epoch=epoch, includeDistortion=includeDistortion)
+    output = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
+                                   camera=camera, obs_metadata=obs_metadata,
+                                   epoch=epoch, includeDistortion=includeDistortion)
 
-    return numpy.degrees(raOut), numpy.degrees(decOut)
+    return numpy.degrees(output)
 
 
 def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
@@ -453,9 +454,8 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
-    @param [out] ra is a numpy array of observed RA in radians
-
-    @param [out] dec is a numpy array of observed Dec in radians
+    @param [out] a 2-D numpy array in which the first row is the RA coordinate
+    and the second row is the Dec coordinate (both in radians)
 
     Note: to see what is mean by 'observed' ra/dec, see the docstring for
     observedFromICRS in AstrometryUtils.py
@@ -496,7 +496,7 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
                                   obs_metadata=obs_metadata, epoch=epoch)
 
-    return raOut, decOut
+    return numpy.array([raOut, decOut])
 
 
 def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None):
@@ -515,7 +515,9 @@ def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=Non
 
     @param [in] camera is an afw.cameraGeom camera object
 
-    @param [out] the x and y coordinates on the focalplane in millimeters
+    @param [out] a 2-D numpy array in which the first row is the x
+    focal plane coordinate and the second row is the y focal plane
+    coordinate (both in millimeters)
     """
 
     return _focalPlaneCoordsFromRaDec(numpy.radians(ra), numpy.radians(dec),
@@ -539,7 +541,9 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=No
 
     @param [in] camera is an afw.cameraGeom camera object
 
-    @param [out] the x and y coordinates on the focalplane in millimeters
+    @param [out] a 2-D numpy array in which the first row is the x
+    focal plane coordinate and the second row is the y focal plane
+    coordinate (both in millimeters)
     """
 
     if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
@@ -583,7 +587,9 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
 
     @param [in] camera is an afw.cameraGeom camera object
 
-    @param [out] the x and y coordinates on the focalplane in millimeters
+    @param [out] a 2-D numpy array in which the first row is the x
+    focal plane coordinate and the second row is the y focal plane
+    coordinate (both in millimeters)
     """
 
     if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
@@ -604,4 +610,5 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
         fpPoint = camera.transform(cp, FOCAL_PLANE)
         xPix.append(fpPoint.getPoint().getX())
         yPix.append(fpPoint.getPoint().getY())
-    return xPix, yPix
+
+    return numpy.array([xPix, yPix])
