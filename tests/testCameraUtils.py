@@ -23,6 +23,8 @@ from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, \
                                  focalPlaneCoordsFromRaDec, \
                                  _focalPlaneCoordsFromRaDec
 
+from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
+
 class ChipNameTest(unittest.TestCase):
 
     @classmethod
@@ -1151,6 +1153,36 @@ class FocalPlaneCoordTest(unittest.TestCase):
         numpy.testing.assert_array_almost_equal(yFocalTest, yFocalControl, 3)
 
 
+class ConversionFromPixelTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cameraDir = getPackageDir('sims_coordUtils')
+        cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
+        cls.camera = ReturnCamera(cameraDir)
+
+    def setUp(self):
+        numpy.random.seed(543)
+
+
+    def testResults(self):
+        """
+        Test that the results from pupilCoordsFromPixelCoords are consistent
+        with the results from pixelCoordsFromPupilCoords
+        """
+
+        nStars = 100
+        xPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
+        xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
+        xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList, camera=self.camera)
+
+        dx = arcsecFromRadians(xPupTest-xPupList)
+        numpy.testing.assert_array_almost_equal(dx, numpy.zeros(len(dx)), 9)
+        dy = arcsecFromRadians(yPupTest-yPupList)
+        numpy.testing.assert_array_almost_equal(dy, numpy.zeros(len(dy)), 9)
+
 
 def suite():
     utilsTests.init()
@@ -1158,6 +1190,7 @@ def suite():
     suites += unittest.makeSuite(ChipNameTest)
     suites += unittest.makeSuite(PixelCoordTest)
     suites += unittest.makeSuite(FocalPlaneCoordTest)
+    suites += unittest.makeSuite(ConversionFromPixelTest)
     return unittest.TestSuite(suites)
 
 def run(shouldExit=False):

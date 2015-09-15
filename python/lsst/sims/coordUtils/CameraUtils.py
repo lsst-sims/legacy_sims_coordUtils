@@ -7,7 +7,8 @@ from lsst.sims.coordUtils.AstrometryUtils import _pupilCoordsFromRaDec, _raDecFr
 __all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
-           "_raDecFromPixelCoordinates", "pupilCoordinatesFromPixelCoordinates"]
+           "pupilCoordsFromPixelCoords",
+           "_raDecFromPixelCoordinates"]
 
 
 def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
@@ -326,8 +327,8 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     return numpy.array([xPix, yPix])
 
 
-def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camera=None,
-                                         obs_metadata=None, epoch=None, includeDistortion=True):
+def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
+                               includeDistortion=True):
 
     """
     Convert pixel coordinates into pupil coordinates
@@ -341,10 +342,6 @@ def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camer
 
     @param [in] camera is an afw.CameraGeom.camera object defining the camera
 
-    @param [in] obs_metadata is an ObservationMetaData defining the pointing
-
-    @param [in] epoch is the mean epoch in years of the celestial coordinate system
-
     @param [in] includeDistortion is a boolean.  If True (default), then this method will
     expect the true pixel coordinates with optical distortion included.  If False, this
     method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
@@ -355,6 +352,9 @@ def pupilCoordinatesFromPixelCoordinates(xPixList, yPixList, chipNameList, camer
 
     @param [out] yPupilList is a numpyarray of the y pupil coordinate (in radians)
     """
+
+    if camera is None:
+        raise RuntimeError("You cannot call pupilCoordsFromPixelCoords without specifying a camera")
 
     if includeDistortion:
         pixelType = PIXELS
