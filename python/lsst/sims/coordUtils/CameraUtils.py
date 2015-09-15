@@ -365,11 +365,7 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     pupilSystemDict = {}
     detectorDict = {}
     for name in chipNameList:
-        if name not in pixelSystemDict:
-            if name is None:
-                pixelSystemDict[name] = None
-                pupilSystemDict[name] = None
-            else:
+        if name not in pixelSystemDict and name is not None and name!='None':
                 pixelSystemDict[name] = camera[name].makeCameraSys(pixelType)
                 pupilSystemDict[name] = camera[name].makeCameraSys(PUPIL)
 
@@ -379,7 +375,7 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     yPupilList = []
 
     for xPix, yPix, chipName in zip(xPixList, yPixList, chipNameList):
-        if chipName is None:
+        if chipName is None or chipName=='None':
             xPupilList.append(numpy.NaN)
             yPupilList.append(numpy.NaN)
         else:

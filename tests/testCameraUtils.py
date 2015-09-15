@@ -1164,8 +1164,24 @@ class ConversionFromPixelTest(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(543)
 
+    def testPupCoordsException(self):
+        """
+        Test that pupilCoordsFromPixelCoords raises an exception when you
+        call it without a camera
+        """
+        nStars = 100
+        xPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
+        xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
+        with self.assertRaises(RuntimeError) as context:
+            xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList)
+        self.assertEqual(context.exception.message,
+                         "You cannot call pupilCoordsFromPixelCoords without specifying " \
+                         + "a camera")
 
-    def testResults(self):
+
+    def testPupCoordsResults(self):
         """
         Test that the results from pupilCoordsFromPixelCoords are consistent
         with the results from pixelCoordsFromPupilCoords
@@ -1175,19 +1191,36 @@ class ConversionFromPixelTest(unittest.TestCase):
         xPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
         yPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
         chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
+        for includeDistortion in [True, False]:
+            xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera,
+                                                    includeDistortion=includeDistortion)
+            xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList, camera=self.camera,
+                                                            includeDistortion=includeDistortion)
+
+            dx = arcsecFromRadians(xPupTest-xPupList)
+            numpy.testing.assert_array_almost_equal(dx, numpy.zeros(len(dx)), 9)
+            dy = arcsecFromRadians(yPupTest-yPupList)
+            numpy.testing.assert_array_almost_equal(dy, numpy.zeros(len(dy)), 9)
+
+            ctNaN = 0
+            for x, y in zip(xPupTest, yPupTest):
+                if numpy.isnan(x) or numpy.isnan(y):
+                    ctNaN += 1
+            self.assertTrue(ctNaN<len(xPupTest)/10)
+
+    def testPupCoordsNaN(self):
+        """
+        Test that points which do not have a chip return NaN for pupilCoordsFromPixelCoords
+        """
+        nStars = 10
+        xPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
+        chipNameList[5] = None
         xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
         xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList, camera=self.camera)
-
-        dx = arcsecFromRadians(xPupTest-xPupList)
-        numpy.testing.assert_array_almost_equal(dx, numpy.zeros(len(dx)), 9)
-        dy = arcsecFromRadians(yPupTest-yPupList)
-        numpy.testing.assert_array_almost_equal(dy, numpy.zeros(len(dy)), 9)
-
-        ctNaN = 0
-        for x, y in zip(xPupTest, yPupTest):
-            if numpy.isnan(x) or numpy.isnan(y):
-                ctNaN += 1
-        self.assertTrue(ctNaN<len(xPupTest)/10)
+        self.assertTrue(numpy.isnan(xPupTest[5]))
+        self.assertTrue(numpy.isnan(yPupTest[5]))
 
 
 def suite():
