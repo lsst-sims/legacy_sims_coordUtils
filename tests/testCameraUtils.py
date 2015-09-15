@@ -836,6 +836,55 @@ class FocalPlaneCoordTest(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(8374522)
 
+
+    def testConsistency(self):
+        """
+        Test that all of the focalPlaneCoord calculation methods
+        return self-consistent answers.
+        """
+
+        ra0 = 34.1
+        dec0 = -23.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  mjd=43257.0, rotSkyPos = 127.0)
+
+        raCenter, decCenter = observedFromICRS(numpy.array([ra0]),
+                                               numpy.array([dec0]),
+                                               obs_metadata=obs,
+                                               epoch=2000.0)
+
+        nStars = 100
+        raList = numpy.random.random_sample(nStars)*1000.0/3600.0 + raCenter[0]
+        decList = numpy.random.random_sample(nStars)*1000.0/3600.0 + decCenter[0]
+
+        xPupList, yPupList = pupilCoordsFromRaDec(raList, decList,
+                                                  obs_metadata=obs,
+                                                  epoch=2000.0)
+
+        xf1, yf1 = focalPlaneCoordsFromRaDec(raList, decList,
+                                             obs_metadata=obs,
+                                             epoch=2000.0, camera=self.camera)
+
+        xf2, yf2 = _focalPlaneCoordsFromRaDec(numpy.radians(raList),
+                                              numpy.radians(decList),
+                                              obs_metadata=obs,
+                                              epoch=2000.0, camera=self.camera)
+
+        xf3, yf3 = focalPlaneCoordsFromPupilCoords(xPupList, yPupList,
+                                                   camera=self.camera)
+
+        numpy.testing.assert_array_equal(xf1, xf2)
+        numpy.testing.assert_array_equal(xf1, xf3)
+        numpy.testing.assert_array_equal(yf1, yf2)
+        numpy.testing.assert_array_equal(yf1, yf3)
+
+        for x, y in zip(xf1, yf1):
+            self.assertFalse(numpy.isnan(x))
+            self.assertFalse(x is None)
+            self.assertFalse(numpy.isnan(y))
+            self.assertFalse(y is None)
+
+
     def testExceptions(self):
         """
         Test that the focalPlaneCoord methods raise the exceptions
