@@ -19,6 +19,10 @@ from lsst.sims.coordUtils import pixelCoordsFromPupilCoords, \
                                  pixelCoordsFromRaDec, \
                                  _pixelCoordsFromRaDec
 
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, \
+                                 focalPlaneCoordsFromRaDec, \
+                                 _focalPlaneCoordsFromRaDec
+
 class ChipNameTest(unittest.TestCase):
 
     @classmethod
@@ -821,11 +825,215 @@ class PixelCoordTest(unittest.TestCase):
 
 
 
+class FocalPlaneCoordTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cameraDir = getPackageDir('sims_coordUtils')
+        cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
+        cls.camera = ReturnCamera(cameraDir)
+
+    def setUp(self):
+        numpy.random.seed(8374522)
+
+    def testExceptions(self):
+        """
+        Test that the focalPlaneCoord methods raise the exceptions
+        (with the correct messages) when they should.
+        """
+
+        ra0 = 34.0
+        dec0 = -19.0
+        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                  rotSkyPos=61.0, mjd=52349.0)
+
+        nStars = 10
+        raList = (numpy.random.random_sample(nStars)-0.5) + ra0
+        decList = (numpy.random.random_sample(nStars)-0.5) + dec0
+        xPupList, yPupList = pupilCoordsFromRaDec(raList, decList,
+                                                  obs_metadata=obs,
+                                                  epoch=2000.0)
+
+        # verify that an error is raised when you forget to pass
+        # in a camera
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromPupilCoords(xPupList, yPupList)
+        self.assertEqual(context.exception.message,
+                         "You cannot calculate focal plane coordinates " \
+                         + "without specifying a camera")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
+                                               obs_metadata=obs,
+                                               epoch=2000.0)
+        self.assertEqual(context.exception.message,
+                         "You cannot calculate focal plane coordinates " \
+                         + "without specifying a camera")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(raList, decList,
+                                                obs_metadata=obs,
+                                                epoch=2000.0)
+        self.assertEqual(context.exception.message,
+                         "You cannot calculate focal plane coordinates " \
+                         + "without specifying a camera")
+
+
+        # test that an error is raised when you pass in something that
+        # is not a numpy array
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromPupilCoords(list(xPupList), yPupList,
+                                                     camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You must pass numpy arrays of xPupil and yPupil " \
+                         +"to focalPlaneCoordsFromPupilCoords")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromPupilCoords(xPupList, list(yPupList),
+                                                     camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You must pass numpy arrays of xPupil and yPupil " \
+                         +"to focalPlaneCoordsFromPupilCoords")
+
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(list(raList), decList,
+                                                obs_metadata=obs,
+                                                epoch=2000.0,
+                                                camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You must pass numpy arrays of RA and Dec to " \
+                         + "focalPlaneCoordsFromRaDec")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(raList, list(decList),
+                                                obs_metadata=obs,
+                                                epoch=2000.0,
+                                                camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You must pass numpy arrays of RA and Dec to " \
+                         + "focalPlaneCoordsFromRaDec")
+        # we do not have to run the test above on focalPlaneCoordsFromRaDec
+        # because the conversion to radians automatically casts lists into
+        # numpy arrays
+
+        # test that an error is raised if you pass in mismatched numbers
+        # of x and y coordinates
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromPupilCoords(xPupList, yPupList[0:4],
+                                                     camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You specified 10 xPupil and 4 yPupil coordinates " \
+                         + "in focalPlaneCoordsFromPupilCoords")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromRaDec(raList, decList[0:4],
+                                               obs_metadata=obs,
+                                               epoch=2000.0,
+                                               camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You specified 10 RAs and 4 Decs in " \
+                         + "focalPlaneCoordsFromRaDec")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(raList, decList[0:4],
+                                                obs_metadata=obs,
+                                                epoch=2000.0,
+                                                camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You specified 10 RAs and 4 Decs in " \
+                         + "focalPlaneCoordsFromRaDec")
+
+
+        # test that an error is raised if you call
+        # focalPlaneCoordsFromRaDec without an epoch
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
+                                               obs_metadata=obs,
+                                               camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You have to specify an epoch to run " \
+                         + "focalPlaneCoordsFromRaDec")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(raList, decList,
+                                                obs_metadata=obs,
+                                                camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You have to specify an epoch to run " \
+                         + "focalPlaneCoordsFromRaDec")
+
+
+        # test that an error is raised if you call
+        # focalPlaneCoordsFromRaDec without an ObservationMetaData
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
+                                               epoch=2000.0,
+                                               camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You have to specify an ObservationMetaData to run " \
+                         + "focalPlaneCoordsFromRaDec")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(raList, decList,
+                                                epoch=2000.0,
+                                                camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You have to specify an ObservationMetaData to run " \
+                         + "focalPlaneCoordsFromRaDec")
+
+
+        # test that an error is raised if you pass an ObservationMetaData
+        # without an mjd into focalPlaneCoordsFromRaDec
+        obsDummy = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                       rotSkyPos=112.0)
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
+                                               obs_metadata=obsDummy,
+                                               epoch=2000.0,
+                                               camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You need to pass an ObservationMetaData with an " \
+                         + "mjd into focalPlaneCoordsFromRaDec")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(raList, decList,
+                                                obs_metadata=obsDummy,
+                                                epoch=2000.0,
+                                                camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You need to pass an ObservationMetaData with an " \
+                         + "mjd into focalPlaneCoordsFromRaDec")
+
+        # test that an error is raised if you pass an ObservationMetaData
+        # without a rotSkyPos into focalPlaneCoordsFromRaDec
+        obsDummy = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+                                       mjd=42356.0)
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
+                                               obs_metadata=obsDummy,
+                                               epoch=2000.0,
+                                               camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You need to pass an ObservationMetaData with a " \
+                         + "rotSkyPos into focalPlaneCoordsFromRaDec")
+
+        with self.assertRaises(RuntimeError) as context:
+            xf, yf = _focalPlaneCoordsFromRaDec(raList, decList,
+                                                obs_metadata=obsDummy,
+                                                epoch=2000.0,
+                                                camera=self.camera)
+        self.assertEqual(context.exception.message,
+                         "You need to pass an ObservationMetaData with a " \
+                         + "rotSkyPos into focalPlaneCoordsFromRaDec")
+
+
 def suite():
     utilsTests.init()
     suites = []
     suites += unittest.makeSuite(ChipNameTest)
     suites += unittest.makeSuite(PixelCoordTest)
+    suites += unittest.makeSuite(FocalPlaneCoordTest)
     return unittest.TestSuite(suites)
 
 def run(shouldExit=False):

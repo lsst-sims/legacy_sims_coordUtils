@@ -488,11 +488,20 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=No
 
     if epoch is None:
         raise RuntimeError("You have to specify an epoch to run " + \
-                            "focalPlaneCoordsFromRaDec on these inputs")
+                            "focalPlaneCoordsFromRaDec")
 
     if obs_metadata is None:
         raise RuntimeError("You have to specify an ObservationMetaData to run " + \
-                               "focalPlaneCoordsFromRaDec on these inputs")
+                               "focalPlaneCoordsFromRaDec")
+
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with an " \
+                           + "mjd into focalPlaneCoordsFromRaDec")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with a " \
+                           + "rotSkyPos into focalPlaneCoordsFromRaDec")
 
 
     xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata,
