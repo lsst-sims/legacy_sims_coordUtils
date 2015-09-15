@@ -1077,6 +1077,81 @@ class FocalPlaneCoordTest(unittest.TestCase):
                          + "rotSkyPos into focalPlaneCoordsFromRaDec")
 
 
+    def testResults(self):
+        """
+        Test that the focalPlaneCoords methods give sensible results.
+
+        Note: since we have already tested the self-consistency of
+        focalPlaneCoordsFromPupilCoords and focalPlaneCoordsFromRaDec,
+        we will only test focalPlaneCoordsFromPupilCoords here, since it
+        is easier.
+
+        Note that the test camera has a platescale of 0.02 arcsec per pixel
+        (2.0 arcsec per mm encoded in CameraForUnitTests.py and 10 microns
+        per pixel encoded in cameraData/focalplanelayout.txt). We will use
+        that to set the control values for our unit test.
+
+        Note: This unit test will fail if the test camera ever changes.
+        """
+
+        arcsecPerPixel = 0.02
+        arcsecPerMicron = 0.002
+        mmPerArcsec = 0.5
+
+        #list a bunch of detector centers in radians
+        x22 = 0.0
+        y22 = 0.0
+
+        x32 = radiansFromArcsec(40000.0 * arcsecPerMicron)
+        y32 = 0.0
+
+        x40 = radiansFromArcsec(80000.0 * arcsecPerMicron)
+        y40 = radiansFromArcsec(-80000.0 * arcsecPerMicron)
+
+        # assemble a bunch of displacements in pixels
+        dxPixList = []
+        dyPixList = []
+        for xx in numpy.arange(-1999.0, 1999.0, 500.0):
+            for yy in numpy.arange(-1999.0, 1999.0, 500.0):
+                dxPixList.append(xx)
+                dyPixList.append(yy)
+
+        dxPixList = numpy.array(dxPixList)
+        dyPixList = numpy.array(dyPixList)
+
+        # convert to raidans
+        dxPupList = radiansFromArcsec(dxPixList*arcsecPerPixel)
+        dyPupList = radiansFromArcsec(dyPixList*arcsecPerPixel)
+
+        # assemble a bunch of test pupil coordinate pairs
+        xPupList = x22 + dxPupList
+        yPupList = y22 + dyPupList
+        xPupList = numpy.append(xPupList, x32 + dxPupList)
+        yPupList = numpy.append(yPupList, y32 + dyPupList)
+        xPupList = numpy.append(xPupList, x40 + dxPupList)
+        yPupList = numpy.append(yPupList, y40 + dyPupList)
+
+        # this is what the chipNames ought to be for these points
+        chipNameControl = numpy.array(['Det22'] * len(dxPupList))
+        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxPupList))
+        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxPupList))
+
+        chipNameTest = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
+
+        # verify that the test points fall on the expected chips
+        numpy.testing.assert_array_equal(chipNameControl, chipNameTest)
+
+        # convert into millimeters on the focal plane
+        xFocalControl = arcsecFromRadians(xPupList)*mmPerArcsec
+        yFocalControl = arcsecFromRadians(yPupList)*mmPerArcsec
+
+        xFocalTest, yFocalTest = focalPlaneCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
+
+        numpy.testing.assert_array_almost_equal(xFocalTest, xFocalControl, 3)
+        numpy.testing.assert_array_almost_equal(yFocalTest, yFocalControl, 3)
+
+
+
 def suite():
     utilsTests.init()
     suites = []
