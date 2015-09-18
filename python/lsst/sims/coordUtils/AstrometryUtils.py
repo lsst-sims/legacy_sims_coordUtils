@@ -1,11 +1,17 @@
 import numpy
 import palpy
 from lsst.sims.utils import arcsecFromRadians, cartesianFromSpherical, sphericalFromCartesian
+from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.utils import haversine
 
-__all__ = ["applyPrecession", "applyProperMotion", "appGeoFromICRS", "observedFromAppGeo",
-           "observedFromICRS", "calculatePupilCoordinates", "refractionCoefficients",
-           "applyRefraction", "raDecFromPupilCoordinates"]
+__all__ = ["applyRefraction", "refractionCoefficients",
+           "_applyPrecession", "applyPrecession",
+           "_applyProperMotion", "applyProperMotion",
+           "_appGeoFromICRS", "appGeoFromICRS",
+           "_observedFromAppGeo", "observedFromAppGeo",
+           "_observedFromICRS", "observedFromICRS",
+           "_pupilCoordsFromRaDec", "pupilCoordsFromRaDec",
+           "_raDecFromPupilCoords", "raDecFromPupilCoords"]
 
 
 
@@ -74,6 +80,38 @@ def applyRefraction(zenithDistance, tanzCoeff, tan3zCoeff):
 def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     """
     applyPrecession() applies precesion and nutation to coordinates between two epochs.
+    Accepts RA and dec as inputs.  Returns corrected RA and dec (in degrees).
+
+    Assumes FK5 as the coordinate system
+    units:  ra_in (radians), dec_in (radians)
+
+    The precession-nutation matrix is calculated by the palpy.prenut method
+    which uses the IAU 2006/2000A model
+
+    @param [in] ra in degrees
+
+    @param [in] dec in degrees
+
+    @param [in] epoch is the epoch of the mean equinox (in years; default 2000)
+
+    @param [in] mjd is the MJD of the observation
+
+    @param [out] a 2-D numpy array in which the first row is the RA
+    corrected for precession and nutation and the second row is the
+    Dec corrected for precession and nutation (both in degrees)
+
+    """
+
+    output = _applyPrecession(numpy.radians(ra), numpy.radians(dec),
+                              epoch=epoch, mjd=mjd)
+
+    return numpy.degrees(output)
+
+
+
+def _applyPrecession(ra, dec, epoch=2000.0, mjd=None):
+    """
+    _applyPrecession() applies precesion and nutation to coordinates between two epochs.
     Accepts RA and dec as inputs.  Returns corrected RA and dec (in radians).
 
     Assumes FK5 as the coordinate system
@@ -82,18 +120,17 @@ def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     The precession-nutation matrix is calculated by the palpy.prenut method
     which uses the IAU 2006/2000A model
 
-    @param [in] ra
+    @param [in] ra in radians
 
-    @param [in] dec
+    @param [in] dec in radians
 
     @param [in] epoch is the epoch of the mean equinox (in years; default 2000)
 
     @param [in] mjd is the MJD of the observation
 
-    @param [out] raOut is ra corrected for precession and nutation
-
-    @param [out] decOut is dec corrected for precession and nutation
-
+    @param [out] a 2-D numpy array in which the first row is the RA
+    corrected for precession and nutation and the second row is the
+    Dec corrected for precession and nutation (both in radians)
     """
 
     if hasattr(ra, '__len__'):
@@ -117,16 +154,61 @@ def applyPrecession(ra, dec, epoch=2000.0, mjd=None):
     xyz =  numpy.dot(rmat,xyz.transpose()).transpose()
 
     raOut,decOut = sphericalFromCartesian(xyz)
-    return raOut,decOut
-
+    return numpy.array([raOut,decOut])
 
 
 def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
                       epoch=2000.0, mjd=None):
     """Applies proper motion between two epochs.
 
+    units:  ra (degrees), dec (degrees), pm_ra (arcsec/year), pm_dec
+    (arcsec/year), parallax (arcsec), v_rad (km/sec, positive if receding),
+    epoch (Julian years)
+
+    Returns corrected ra and dec (in radians)
+
+    The function palpy.pm does not work properly if the parallax is below
+    0.00045 arcseconds
+
+    @param [in] ra in degrees.  Can be a float or a numpy array (not a list).
+
+    @param [in] dec in degrees.  Can be a float or a numpy array (not a list).
+
+    @param [in] pm_ra is ra proper motion multiplied by cos(Dec) in arcsec/year.
+    Can be a float or a numpy array (not a list).
+
+    @param [in] pm_dec is dec proper motion in arcsec/year.
+    Can be a float or a numpy array (not a list).
+
+    @param [in] parallax in arcsec. Can be a float or a numpy array (not a list).
+
+    @param [in] v_rad is radial velocity in km/sec (positive if the object is receding).
+    Can be a float or a numpy array (not a list).
+
+    @param [in] epoch is epoch in Julian years (default: 2000.0)
+
+    @param [in] mjd is the MJD of the actual observation
+
+    @param [out] a 2-D numpy array in which the first row is the RA corrected
+    for proper motion and the second row is the Dec corrected for proper motion
+    (both in degrees)
+    """
+
+    output = _applyProperMotion(numpy.radians(ra), numpy.radians(dec),
+                                radiansFromArcsec(pm_ra),
+                                radiansFromArcsec(pm_dec),
+                                radiansFromArcsec(parallax),
+                                v_rad, epoch=epoch, mjd=mjd)
+
+    return numpy.degrees(output)
+
+
+def _applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
+                      epoch=2000.0, mjd=None):
+    """Applies proper motion between two epochs.
+
     units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
-    (radians/year), parallax (arcsec), v_rad (km/sec, positive if receding),
+    (radians/year), parallax (radians), v_rad (km/sec, positive if receding),
     epoch (Julian years)
 
     Returns corrected ra and dec (in radians)
@@ -153,9 +235,9 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
 
     @param [in] mjd is the MJD of the actual observation
 
-    @param [out] raOut is corrected ra
-
-    @param [out] decOut is corrected dec
+    @param [out] a 2-D numpy array in which the first row is the RA corrected
+    for proper motion and the second row is the Dec corrected for proper motion
+    (both in radians)
 
     """
 
@@ -204,7 +286,7 @@ def applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, \
     else:
         raOut, decOut = palpy.pm(ra, dec, pm_ra_corrected, pm_dec, parallaxArcsec, v_rad, epoch, julianEpoch)
 
-    return raOut,decOut
+    return numpy.array([raOut,decOut])
 
 
 
@@ -217,8 +299,71 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     Uses PAL mappa routine, which computes precession and nutation
 
+    units:  ra (degrees), dec (degrees), pm_ra (arcsec/year), pm_dec
+    (arcsec/year), parallax (arcsec), v_rad (km/sec; positive if receding),
+    epoch (Julian years)
+
+    Returns corrected RA and Dec
+
+    This calls palpy.mapqk(z) which accounts for proper motion, parallax,
+    radial velocity, aberration, precession-nutation
+
+    @param [in] ra in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] dec in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] pm_ra is ra proper motion multiplied by cos(Dec) in arcsec/year
+
+    @param [in] pm_dec is dec proper motion in arcsec/year
+
+    @param [in] parallax in arcsec
+
+    @param [in] v_rad is radial velocity in km/sec (positive if the object is receding)
+
+    @param [in] epoch is the julian epoch (in years) of the equinox against which to
+    measure RA (default: 2000.0)
+
+    @param[in] MJD is the date of the observation
+
+    @param [out] a 2-D numpy array in which the first row is the apparent
+    geocentric RA and the second row is the apparent geocentric Dec
+    coordinate (both in degrees)
+    """
+
+    if pm_ra is not None:
+        pm_ra_in = radiansFromArcsec(pm_ra)
+    else:
+        pm_ra_in = None
+
+    if pm_dec is not None:
+        pm_dec_in = radiansFromArcsec(pm_dec)
+    else:
+        pm_dec_in = None
+
+    if parallax is not None:
+        px_in = radiansFromArcsec(parallax)
+    else:
+        px_in = None
+
+    output = _appGeoFromICRS(numpy.radians(ra), numpy.radians(dec),
+                             pm_ra=pm_ra_in, pm_dec=pm_dec_in,
+                             parallax=px_in, v_rad=v_rad, epoch=epoch, mjd=mjd)
+
+
+    return numpy.degrees(output)
+
+
+def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
+                   v_rad=None, epoch=2000.0, mjd = None):
+    """
+    Convert the mean position (RA, Dec) in the International Celestial Reference
+    System (ICRS) to the mean apparent geocentric position in
+    (Ra, Dec)-like coordinates
+
+    Uses PAL mappa routine, which computes precession and nutation
+
     units:  ra (radians), dec (radians), pm_ra (radians/year), pm_dec
-    (radians/year), parallax (arcsec), v_rad (km/sec; positive if receding),
+    (radians/year), parallax (radians), v_rad (km/sec; positive if receding),
     epoch (Julian years)
 
     Returns corrected RA and Dec
@@ -243,10 +388,9 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     @param[in] MJD is the date of the observation
 
-    @param [out] raOut is apparent geocentric RA-like coordinate in radians
-
-    @param [out] decOut is apparent geocentric Dec-like coordinate in radians
-
+    @param [out] a 2-D numpy array in which the first row is the apparent
+    geocentric RA-like coordinate and the second row is the apparent
+    geocentric Dec-like coordinate (both in radians)
     """
 
     if mjd is None:
@@ -295,11 +439,63 @@ def appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
 
     raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra_corrected,pm_dec,arcsecFromRadians(parallax),v_rad,prms)
 
-    return raOut,decOut
-
+    return numpy.array([raOut,decOut])
 
 
 def observedFromAppGeo(ra, dec, includeRefraction = True,
+                       altAzHr=False, wavelength=0.5, obs_metadata = None):
+    """
+    Convert apparent geocentric (RA, Dec)-like coordinates to observed
+    (RA, Dec)-like coordinates.  More specifically, apply refraction and
+    diurnal aberration.
+
+    Uses PAL aoppa routines
+
+    This will call palpy.aopqk
+
+    @param [in] ra is geocentric apparent RA (degrees).  Must be a numpy array.
+
+    @param [in] dec is geocentric apparent Dec (degrees).  Must be a numpy array.
+
+    @param [in] includeRefraction is a boolean to turn refraction on and off
+
+    @param [in] altAzHr is a boolean indicating whether or not to return altitude
+    and azimuth
+
+    @param [in] wavelength is effective wavelength in microns (default: 0.5)
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the
+    observation (optional; if not included, the code will try to set it from
+    self assuming it is in an InstanceCatalog daughter class.  If that is not
+    the case, an exception will be raised.)
+
+    @param [out] a 2-D numpy array in which the first row is the observed RA
+    and the second row is the observed Dec (both in degrees)
+
+    @param [out] a 2-D numpy array in which the first row is the altitude
+    and the second row is the azimuth (both in degrees).  Only returned
+    if altAzHr == True.
+    """
+
+    if altAzHr:
+        raDec, \
+        altAz = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
+                                            includeRefraction=includeRefraction,
+                                            altAzHr=altAzHr, wavelength=wavelength,
+                                            obs_metadata=obs_metadata)
+
+        return numpy.degrees(raDec), numpy.degrees(altAz)
+
+    else:
+        output = _observedFromAppGeo(numpy.radians(ra), numpy.radians(dec),
+                                            includeRefraction=includeRefraction,
+                                            altAzHr=altAzHr, wavelength=wavelength,
+                                            obs_metadata=obs_metadata)
+
+        return numpy.degrees(output)
+
+
+def _observedFromAppGeo(ra, dec, includeRefraction = True,
                        altAzHr=False, wavelength=0.5, obs_metadata = None):
     """
     Convert apparent geocentric (RA, Dec)-like coordinates to observed
@@ -326,13 +522,12 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
     self assuming it is in an InstanceCatalog daughter class.  If that is not
     the case, an exception will be raised.)
 
-    @param [out] raOut is oberved RA (radians)
+    @param [out] a 2-D numpy array in which the first row is the observed RA
+    and the second row is the observed Dec (both in radians)
 
-    @param [out] decOut is observed Dec (radians)
-
-    @param [out] alt is altitude angle (only returned if altAzHr == True) (radians)
-
-    @param [out] az is azimuth angle (only returned if altAzHr == True) (radians)
+    @param [out] a 2-D numpy array in which the first row is the altitude
+    and the second row is the azimuth (both in radians).  Only returned
+    if altAzHr == True.
 
     """
 
@@ -423,11 +618,70 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
         #palpy.de2h converts equatorial to horizon coordinates
         #
         az, alt = palpy.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
-        return raOut, decOut, alt, az
-    return raOut, decOut
+        return numpy.array([raOut, decOut]), numpy.array([alt, az])
+    return numpy.array([raOut, decOut])
 
 
 def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+                     obs_metadata=None, epoch=None, includeRefraction=True):
+    """
+    Convert mean position (RA, Dec) in the International Celestial Reference Frame
+    to observed (RA, Dec)-like coordinates
+
+    included are precession-nutation, aberration, proper motion, parallax, refraction,
+    radial velocity, diurnal aberration,
+
+    @param [in] ra is the unrefracted RA in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] dec is the unrefracted Dec in degrees (ICRS).  Must be a numpy array.
+
+    @param [in] pm_ra is proper motion in RA multiplied by cos(Dec) (arcsec/yr)
+
+    @param [in] pm_dec is proper motion in dec (arcsec/yr)
+
+    @param [in] parallax is parallax in arcsec
+
+    @param [in] v_rad is radial velocity (km/s)
+
+    @param [in] obs_metadata is an ObservationMetaData object describing the
+    telescope pointing.  If it is None, the code will try to set it from self
+    assuming that this method is being called from within an InstanceCatalog
+    daughter class.  If that is not the case, an exception will be raised
+
+    @param [in] epoch is the julian epoch (in years) against which the mean
+    equinoxes are measured.
+
+    @param [in] includeRefraction toggles whether or not to correct for refraction
+
+    @param [out] a 2-D numpy array in which the first row is the observed
+    RA and the second row is the observed Dec (both in degrees)
+    """
+
+    if pm_ra is not None:
+        pm_ra_in = radiansFromArcsec(pm_ra)
+    else:
+        pm_ra_in = None
+
+    if pm_dec is not None:
+        pm_dec_in = radiansFromArcsec(pm_dec)
+    else:
+        pm_dec_in = None
+
+    if parallax is not None:
+        parallax_in = radiansFromArcsec(parallax)
+    else:
+        parallax_in = None
+
+    output = _observedFromICRS(numpy.radians(ra), numpy.radians(dec),
+                               pm_ra=pm_ra_in, pm_dec=pm_dec_in, parallax=parallax_in,
+                               v_rad=v_rad, obs_metadata=obs_metadata, epoch=epoch,
+                               includeRefraction=includeRefraction)
+
+    return numpy.degrees(output)
+
+
+
+def _observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
                      obs_metadata=None, epoch=None, includeRefraction=True):
     """
     Convert mean position (RA, Dec) in the International Celestial Reference Frame
@@ -458,9 +712,8 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
 
     @param [in] includeRefraction toggles whether or not to correct for refraction
 
-    @param [out] ra_out RA corrected for all included effects
-
-    @param [out] dec_out Dec corrected for all included effects
+    @param [out] a 2-D numpy array in which the first row is the observed
+    RA and the second row is the observed Dec (both in radians)
 
     """
 
@@ -477,16 +730,17 @@ def observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None
         raise RuntimeError("You passed %d RAs but %d Decs to observedFromICRS" % \
                            (len(ra), len(dec)))
 
-    ra_apparent, dec_apparent = appGeoFromICRS(ra, dec, pm_ra = pm_ra,
+    ra_apparent, dec_apparent = _appGeoFromICRS(ra, dec, pm_ra = pm_ra,
              pm_dec = pm_dec, parallax = parallax, v_rad = v_rad, epoch = epoch, mjd=obs_metadata.mjd)
 
-    ra_out, dec_out = observedFromAppGeo(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
+    ra_out, dec_out = _observedFromAppGeo(ra_apparent, dec_apparent, obs_metadata=obs_metadata,
                                                includeRefraction = includeRefraction)
 
     return numpy.array([ra_out,dec_out])
 
 
-def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
+
+def raDecFromPupilCoords(xPupil, yPupil, obs_metadata=None, epoch=None):
     """
     @param [in] xPupil -- pupil coordinates in radians
 
@@ -498,23 +752,44 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
     @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
     transforations (in years)
 
-    @param [out] raOut -- the right ascension in radians (a numpy array)
+    @param [out] a 2-D numpy array in which the first row is RA and the second
+    row is Dec (both in degrees)
+    """
 
-    @param [out] decOut -- the declination in radians (a numpy array)
+    output = _raDecFromPupilCoords(xPupil, yPupil, obs_metadata=obs_metadata,
+                                               epoch=epoch)
+
+    return numpy.degrees(output)
+
+
+def _raDecFromPupilCoords(xPupil, yPupil, obs_metadata=None, epoch=None):
+    """
+    @param [in] xPupil -- pupil coordinates in radians
+
+    @param [in] yPupil -- pupil coordinates in radians
+
+    @param [in] obs_metadata -- an instantiation of ObservationMetaData characterizing
+    the state of the telescope
+
+    @param [in] epoch -- julian epoch of the mean equinox used for the coordinate
+    transforations (in years)
+
+    @param [out] a 2-D numpy array in which the first row is RA and the second
+    row is Dec (both in radians)
     """
 
     if obs_metadata is None:
-        raise RuntimeError("Cannot call raDecFromPupilCoordinates without obs_metadata")
+        raise RuntimeError("Cannot call raDecFromPupilCoords without obs_metadata")
 
     if epoch is None:
-        raise RuntimeError("Cannot call raDecFromPupilCoordinates; epoch is None")
+        raise RuntimeError("Cannot call raDecFromPupilCoords; epoch is None")
 
     if obs_metadata.rotSkyPos is None:
-        raise RuntimeError("Cannot call raDecFromPupilCoordinates without rotSkyPos " + \
+        raise RuntimeError("Cannot call raDecFromPupilCoords without rotSkyPos " + \
                            "in obs_metadata")
 
     if obs_metadata.unrefractedRA is None or obs_metadata.unrefractedDec is None:
-        raise RuntimeError("Cannot call raDecFromPupilCoordinates "+ \
+        raise RuntimeError("Cannot call raDecFromPupilCoords "+ \
                           "without unrefractedRA, unrefractedDec in obs_metadata")
 
     if obs_metadata.mjd is None:
@@ -522,11 +797,11 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
                            "in obs_metadata")
 
     if len(xPupil)!=len(yPupil):
-        raise RuntimeError("You passed %d RAs but %d Decs into raDecFromPupilCoordinates" % \
+        raise RuntimeError("You passed %d RAs but %d Decs into raDecFromPupilCoords" % \
                            (len(raObj), len(decObj)))
 
 
-    #This is the same as theta in calculatePupilCoordinates, except without the minus sign.
+    #This is the same as theta in pupilCoordsFromRaDec, except without the minus sign.
     #This is because we will be reversing the rotation performed in that other method.
     theta = -1.0*obs_metadata._rotSkyPos
 
@@ -535,7 +810,7 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
     pointingDec=numpy.array([obs_metadata._unrefractedDec])
 
     #transform from mean, ICRS pointing coordinates to observed pointing coordinates
-    boreRA, boreDec = observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
+    boreRA, boreDec = _observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
 
     x_g = xPupil*numpy.cos(theta) - yPupil*numpy.sin(theta)
     y_g = xPupil*numpy.sin(theta) + yPupil*numpy.cos(theta)
@@ -552,10 +827,41 @@ def raDecFromPupilCoordinates(xPupil, yPupil, obs_metadata=None, epoch=None):
         raOut.append(rr)
         decOut.append(dd)
 
-    return numpy.array(raOut), numpy.array(decOut)
+    return numpy.array([raOut, decOut])
 
 
-def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
+
+def pupilCoordsFromRaDec(ra_in, dec_in, obs_metadata=None, epoch=None):
+    """
+    Take an input RA and dec from the sky and convert it to coordinates
+    on the focal plane.
+
+    This uses PAL's gnonomonic projection routine which assumes that the focal
+    plane is perfectly flat.  The output is in Cartesian coordinates, assuming
+    that the Celestial Sphere is a unit sphere.
+
+    @param [in] ra_in is a numpy array of RAs in degrees
+
+    @param [in] dec_in in degrees
+
+    @param [in] obs_metadata is an ObservationMetaData instantiation characterizing the
+    telescope location and pointing (optional; if not provided, the method will try to
+    get it from the InstanceCatalog member variable, assuming this is part of an
+    InstanceCatalog)
+
+    @param [in] epoch is the epoch of mean ra and dec in julian years (optional; if not
+    provided, this method will try to get it from the db_obj member variable, assuming this
+    method is part of an InstanceCatalog)
+
+    @param [out] returns a numpy array whose first row is the x coordinate on the pupil in
+    radians and whose second row is the y coordinate in radians
+    """
+
+    return _pupilCoordsFromRaDec(numpy.radians(ra_in), numpy.radians(dec_in),
+                                      obs_metadata=obs_metadata, epoch=epoch)
+
+
+def _pupilCoordsFromRaDec(ra_in, dec_in, obs_metadata=None, epoch=None):
     """
     Take an input RA and dec from the sky and convert it to coordinates
     on the focal plane.
@@ -582,16 +888,16 @@ def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
     """
 
     if obs_metadata is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates without obs_metadata")
+        raise RuntimeError("Cannot call pupilCoordsFromRaDec without obs_metadata")
 
     if obs_metadata.mjd is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates; obs_metadata.mjd is None")
+        raise RuntimeError("Cannot call pupilCoordsFromRaDec; obs_metadata.mjd is None")
 
     if epoch is None:
-        raise RuntimeError("Cannot call calculatePupilCoordinates; epoch is None")
+        raise RuntimeError("Cannot call pupilCoordsFromRaDec; epoch is None")
 
     if len(ra_in)!=len(dec_in):
-        raise RuntimeError("You passed %d RAs but %d Decs to calculatePupilCoordinates" % (len(ra_in), len(dec_in)))
+        raise RuntimeError("You passed %d RAs but %d Decs to pupilCoordsFromRaDec" % (len(ra_in), len(dec_in)))
 
     if obs_metadata.rotSkyPos is None:
         #there is no observation meta data on which to base astrometry
@@ -605,7 +911,7 @@ def calculatePupilCoordinates(ra_in, dec_in, obs_metadata=None, epoch=None):
     # convert pointing RA, Dec from above-the-atmosphere mean RA, Dec to observed RA, Dec
     pointingRA=numpy.array([obs_metadata._unrefractedRA])
     pointingDec=numpy.array([obs_metadata._unrefractedDec])
-    boreRA, boreDec = observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
+    boreRA, boreDec = _observedFromICRS(pointingRA, pointingDec, epoch=epoch, obs_metadata=obs_metadata)
 
     #palpy.ds2tp performs the gnomonic projection on ra_in and dec_in
     #with a tangent point at (trueRA, trueDec)

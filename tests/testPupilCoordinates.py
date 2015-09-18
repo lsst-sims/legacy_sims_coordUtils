@@ -3,8 +3,8 @@ import unittest
 import lsst.utils.tests as utilsTests
 
 from lsst.sims.utils import ObservationMetaData, _nativeLonLatFromRaDec
-from lsst.sims.coordUtils import calculatePupilCoordinates, observedFromICRS
-from lsst.sims.coordUtils import raDecFromPupilCoordinates
+from lsst.sims.coordUtils import _pupilCoordsFromRaDec, _observedFromICRS
+from lsst.sims.coordUtils import _raDecFromPupilCoords
 
 class PupilCoordinateUnitTest(unittest.TestCase):
 
@@ -24,39 +24,39 @@ class PupilCoordinateUnitTest(unittest.TestCase):
         decShort = numpy.array([1.0])
 
         #test without epoch
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, ra, dec,
                           obs_metadata=obs_metadata)
 
         #test without obs_metadata
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, ra, dec,
                           epoch=2000.0)
 
         #test without unrefractedRA
         dummy = ObservationMetaData(unrefractedDec=obs_metadata.unrefractedDec,
                                     rotSkyPos=obs_metadata.rotSkyPos,
                                     mjd=obs_metadata.mjd)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, ra, dec,
                           epoch=2000.0, obs_metadata=dummy)
 
         #test without unrefractedDec
         dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                     rotSkyPos=obs_metadata.rotSkyPos,
                                     mjd=obs_metadata.mjd)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, ra, dec,
                           epoch=2000.0, obs_metadata=dummy)
 
         #test without rotSkyPos
         dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                     unrefractedDec=obs_metadata.unrefractedDec,
                                     mjd=obs_metadata.mjd)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, ra, dec,
                           epoch=2000.0, obs_metadata=dummy)
 
         #test without mjd
         dummy = ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                     unrefractedDec=obs_metadata.unrefractedDec,
                                     rotSkyPos=obs_metadata.rotSkyPos)
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, dec,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, ra, dec,
                           epoch=2000.0, obs_metadata=dummy)
 
 
@@ -66,14 +66,14 @@ class PupilCoordinateUnitTest(unittest.TestCase):
                                     rotSkyPos=obs_metadata.rotSkyPos,
                                     mjd=obs_metadata.mjd)
 
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, ra, decShort, epoch=2000.0,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, ra, decShort, epoch=2000.0,
                           obs_metadata=dummy)
 
-        self.assertRaises(RuntimeError, calculatePupilCoordinates, raShort, dec, epoch=2000.0,
+        self.assertRaises(RuntimeError, _pupilCoordsFromRaDec, raShort, dec, epoch=2000.0,
                           obs_metadata=dummy)
 
         #test that it actually runs
-        test = calculatePupilCoordinates(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
+        test = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=2000.0)
 
 
     def testCardinalDirections(self):
@@ -121,14 +121,14 @@ class PupilCoordinateUnitTest(unittest.TestCase):
                                           mjd=mjd,
                                           rotSkyPos=rotSkyPos)
 
-                centerRA, centerDec = observedFromICRS(numpy.array([numpy.radians(obs.unrefractedRA)]),
+                centerRA, centerDec = _observedFromICRS(numpy.array([numpy.radians(obs.unrefractedRA)]),
                                                        numpy.array([numpy.radians(obs.unrefractedDec)]),
                                                        obs_metadata=obs, epoch=epoch)
 
                 #test order E, W, N, S
                 raTest = centerRA[0] + numpy.array([0.01, -0.01, 0.0, 0.0])
                 decTest = centerDec[0] + numpy.array([0.0, 0.0, 0.01, -0.01])
-                x, y = calculatePupilCoordinates(raTest, decTest, obs_metadata=obs, epoch=epoch)
+                x, y = _pupilCoordsFromRaDec(raTest, decTest, obs_metadata=obs, epoch=epoch)
 
                 lon, lat = _nativeLonLatFromRaDec(raTest, decTest, centerRA[0], centerDec[0])
                 rr = numpy.abs(numpy.cos(lat)/numpy.sin(lat))
@@ -170,15 +170,15 @@ class PupilCoordinateUnitTest(unittest.TestCase):
         numpy.random.seed(42)
         ra = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(raCenter)
         dec = (numpy.random.random_sample(nSamples)*0.1-0.2) + numpy.radians(decCenter)
-        xp, yp = calculatePupilCoordinates(ra, dec, obs_metadata=obs, epoch=2000.0)
-        raTest, decTest = raDecFromPupilCoordinates(xp, yp, obs_metadata=obs, epoch=2000.0)
+        xp, yp = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs, epoch=2000.0)
+        raTest, decTest = _raDecFromPupilCoords(xp, yp, obs_metadata=obs, epoch=2000.0)
         numpy.testing.assert_array_almost_equal(raTest, ra, decimal=10)
         numpy.testing.assert_array_almost_equal(decTest, dec, decimal=10)
 
 
     def testNaNs(self):
         """
-        Test how calculatePupilCoordinates handles improper values
+        Test how _pupilCoordsFromRaDec handles improper values
         """
         obs = ObservationMetaData(unrefractedRA=42.0, unrefractedDec=-28.0,
                                   rotSkyPos=111.0, mjd=42356.0)
@@ -187,7 +187,7 @@ class PupilCoordinateUnitTest(unittest.TestCase):
         raList = numpy.radians(numpy.random.random_sample(nSamples)*2.0 + 42.0)
         decList = numpy.radians(numpy.random.random_sample(nSamples)*2.0 -28.0)
 
-        xControl, yControl = calculatePupilCoordinates(raList, decList,
+        xControl, yControl = _pupilCoordsFromRaDec(raList, decList,
                                                        obs_metadata=obs,
                                                        epoch=2000.0)
 
@@ -197,7 +197,7 @@ class PupilCoordinateUnitTest(unittest.TestCase):
         decList[20] = numpy.NaN
         raList[30] = numpy.radians(42.0) + numpy.pi
 
-        xTest, yTest = calculatePupilCoordinates(raList, decList,
+        xTest, yTest = _pupilCoordsFromRaDec(raList, decList,
                                                  obs_metadata=obs,
                                                  epoch=2000.0)
 

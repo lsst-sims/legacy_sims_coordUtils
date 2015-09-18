@@ -26,12 +26,12 @@ import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.utils import getRotTelPos, raDecFromAltAz, calcObsDefaults, \
+from lsst.sims.utils import _getRotTelPos, _raDecFromAltAz, calcObsDefaults, \
                             radiansFromArcsec, arcsecFromRadians, Site
 
-from lsst.sims.coordUtils import applyPrecession, applyProperMotion
-from lsst.sims.coordUtils import appGeoFromICRS, observedFromAppGeo
-from lsst.sims.coordUtils import observedFromICRS
+from lsst.sims.coordUtils import _applyPrecession, _applyProperMotion
+from lsst.sims.coordUtils import _appGeoFromICRS, _observedFromAppGeo
+from lsst.sims.coordUtils import _observedFromICRS
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 
 def makeObservationMetaData():
@@ -42,8 +42,8 @@ def makeObservationMetaData():
     band = 'r'
     testSite = Site(latitude=0.5, longitude=1.1, height=3000, meanTemperature=260.0,
                     meanPressure=725.0, lapseRate=0.005)
-    centerRA, centerDec = raDecFromAltAz(alt,az,testSite.longitude,testSite.latitude,mjd)
-    rotTel = getRotTelPos(centerRA, centerDec, testSite.longitude, testSite.latitude, mjd, 0.0)
+    centerRA, centerDec = _raDecFromAltAz(alt,az,testSite.longitude,testSite.latitude,mjd)
+    rotTel = _getRotTelPos(centerRA, centerDec, testSite.longitude, testSite.latitude, mjd, 0.0)
 
     obsDict = calcObsDefaults(centerRA, centerDec, alt, az, rotTel, mjd, band,
                  testSite.longitude, testSite.latitude)
@@ -142,18 +142,18 @@ class astrometryUnitTest(unittest.TestCase):
         zd = numpy.array([0.1, 0.2])
         rzd = applyRefraction(zd, x, y)
 
-        ##########test applyPrecession
+        ##########test _applyPrecession
         #test without mjd
-        self.assertRaises(RuntimeError, applyPrecession, ra, dec)
+        self.assertRaises(RuntimeError, _applyPrecession, ra, dec)
 
         #test mismatches
-        self.assertRaises(RuntimeError, applyPrecession, raShort, dec, mjd=52000.0)
-        self.assertRaises(RuntimeError, applyPrecession, ra, decShort, mjd=52000.0)
+        self.assertRaises(RuntimeError, _applyPrecession, raShort, dec, mjd=52000.0)
+        self.assertRaises(RuntimeError, _applyPrecession, ra, decShort, mjd=52000.0)
 
         #test that it runs
-        applyPrecession(ra, dec, mjd=52000.0)
+        _applyPrecession(ra, dec, mjd=52000.0)
 
-        ##########test applyProperMotion
+        ##########test _applyProperMotion
         raList = list(ra)
         decList = list(dec)
         pm_raList = list(pm_ra)
@@ -167,81 +167,81 @@ class astrometryUnitTest(unittest.TestCase):
         v_radShort = numpy.array([v_rad[0]])
 
         #test without mjd
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_ra, pm_dec, parallax, v_rad)
 
         #test passing lists
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           raList, dec, pm_ra, pm_dec, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, decList, pm_ra, pm_dec, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_raList, pm_dec, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_ra, pm_decList, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_ra, pm_dec, parallaxList, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_ra, pm_dec, parallax, v_radList,
                           mjd=52000.0)
 
         #test mismatches
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           raShort, dec, pm_ra, pm_dec, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, decShort, pm_ra, pm_dec, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_raShort, pm_dec, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_ra, pm_decShort, parallax, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_ra, pm_dec, parallaxShort, v_rad,
                           mjd=52000.0)
-        self.assertRaises(RuntimeError, applyProperMotion,
+        self.assertRaises(RuntimeError, _applyProperMotion,
                           ra, dec, pm_ra, pm_dec, parallax, v_radShort,
                           mjd=52000.0)
 
         #test that it actually runs
-        applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, mjd=52000.0)
-        applyProperMotion(ra[0], dec[0], pm_ra[0], pm_dec[0], parallax[0], v_rad[0],
+        _applyProperMotion(ra, dec, pm_ra, pm_dec, parallax, v_rad, mjd=52000.0)
+        _applyProperMotion(ra[0], dec[0], pm_ra[0], pm_dec[0], parallax[0], v_rad[0],
                           mjd=52000.0)
 
-        ##########test appGeoFromICRS
+        ##########test _appGeoFromICRS
         #test without mjd
-        self.assertRaises(RuntimeError, appGeoFromICRS, ra, dec)
+        self.assertRaises(RuntimeError, _appGeoFromICRS, ra, dec)
 
         #test with mismatched ra, dec
-        self.assertRaises(RuntimeError, appGeoFromICRS, ra, decShort, mjd=52000.0)
-        self.assertRaises(RuntimeError, appGeoFromICRS, raShort, dec, mjd=52000.0)
+        self.assertRaises(RuntimeError, _appGeoFromICRS, ra, decShort, mjd=52000.0)
+        self.assertRaises(RuntimeError, _appGeoFromICRS, raShort, dec, mjd=52000.0)
 
         #test that it actually urns
-        test=appGeoFromICRS(ra, dec, mjd=obs_metadata.mjd)
+        test=_appGeoFromICRS(ra, dec, mjd=obs_metadata.mjd)
 
-        ##########test observedFromAppGeo
+        ##########test _observedFromAppGeo
         #test without obs_metadata
-        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec)
+        self.assertRaises(RuntimeError, _observedFromAppGeo, ra, dec)
 
         #test without site
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                   unrefractedDec=obs_metadata.unrefractedDec,
                                   mjd=obs_metadata.mjd,
                                   site=None)
-        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, _observedFromAppGeo, ra, dec, obs_metadata=dummy)
 
         #test without mjd
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                   unrefractedDec=obs_metadata.unrefractedDec,
                                   site=Site())
-        self.assertRaises(RuntimeError, observedFromAppGeo, ra, dec, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, _observedFromAppGeo, ra, dec, obs_metadata=dummy)
 
         #test mismatches
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
@@ -249,24 +249,24 @@ class astrometryUnitTest(unittest.TestCase):
                                   mjd=obs_metadata.mjd,
                                   site=Site())
 
-        self.assertRaises(RuntimeError, observedFromAppGeo, ra, decShort, obs_metadata=dummy)
-        self.assertRaises(RuntimeError, observedFromAppGeo, raShort, dec, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, _observedFromAppGeo, ra, decShort, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, _observedFromAppGeo, raShort, dec, obs_metadata=dummy)
 
         #test that it actually runs
-        test = observedFromAppGeo(ra, dec, obs_metadata=dummy)
+        test = _observedFromAppGeo(ra, dec, obs_metadata=dummy)
 
-        ##########test observedFromICRS
+        ##########test _observedFromICRS
         #test without epoch
-        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, obs_metadata=obs_metadata)
+        self.assertRaises(RuntimeError, _observedFromICRS, ra, dec, obs_metadata=obs_metadata)
 
         #test without obs_metadata
-        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, epoch=2000.0)
+        self.assertRaises(RuntimeError, _observedFromICRS, ra, dec, epoch=2000.0)
 
         #test without mjd
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
                                   unrefractedDec=obs_metadata.unrefractedDec,
                                   site=obs_metadata.site)
-        self.assertRaises(RuntimeError, observedFromICRS, ra, dec, epoch=2000.0, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, _observedFromICRS, ra, dec, epoch=2000.0, obs_metadata=dummy)
 
         #test that it actually runs
         dummy=ObservationMetaData(unrefractedRA=obs_metadata.unrefractedRA,
@@ -275,15 +275,15 @@ class astrometryUnitTest(unittest.TestCase):
                                   mjd=obs_metadata.mjd)
 
         #test mismatches
-        self.assertRaises(RuntimeError, observedFromICRS, ra, decShort, epoch=2000.0, obs_metadata=dummy)
-        self.assertRaises(RuntimeError, observedFromICRS, raShort, dec, epoch=2000.0, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, _observedFromICRS, ra, decShort, epoch=2000.0, obs_metadata=dummy)
+        self.assertRaises(RuntimeError, _observedFromICRS, raShort, dec, epoch=2000.0, obs_metadata=dummy)
 
         #test that it actually runs
-        test = observedFromICRS(ra, dec, obs_metadata=dummy, epoch=2000.0)
+        test = _observedFromICRS(ra, dec, obs_metadata=dummy, epoch=2000.0)
 
 
 
-    def testApplyPrecession(self):
+    def test_applyPrecession(self):
 
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
@@ -295,13 +295,13 @@ class astrometryUnitTest(unittest.TestCase):
         ra[2]=7.740864769302191473e-01
         dec[2]=2.758053025017753179e-01
 
-        self.assertRaises(RuntimeError, applyPrecession, ra, dec)
+        self.assertRaises(RuntimeError, _applyPrecession, ra, dec)
 
         #just make sure it runs
-        output=applyPrecession(ra,dec, mjd=pal.epj(2000.0))
+        output=_applyPrecession(ra,dec, mjd=pal.epj(2000.0))
 
 
-    def testApplyProperMotion(self):
+    def test_applyProperMotion(self):
 
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
@@ -336,7 +336,7 @@ class astrometryUnitTest(unittest.TestCase):
         #The proper motion arguments in this function are weird
         #because there was a misunderstanding when the baseline
         #SLALIB data was made.
-        output=applyProperMotion(ra,dec,pm_ra*numpy.cos(dec),pm_dec/numpy.cos(dec),
+        output=_applyProperMotion(ra,dec,pm_ra*numpy.cos(dec),pm_dec/numpy.cos(dec),
                                  radiansFromArcsec(parallax),v_rad,epoch=ep,
                                  mjd=self.obs_metadata.mjd)
 
@@ -348,7 +348,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1][2],2.758844356561930278e-01,6)
 
 
-    def testAppGeoFromICRS(self):
+    def test_appGeoFromICRS(self):
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
         pm_ra=numpy.zeros((3),dtype=float)
@@ -384,7 +384,7 @@ class astrometryUnitTest(unittest.TestCase):
         #The proper motion arguments in this function are weird
         #because there was a misunderstanding when the baseline
         #SLALIB data was made.
-        output=appGeoFromICRS(ra,dec,pm_ra=pm_ra*numpy.cos(dec), pm_dec=pm_dec/numpy.cos(dec),
+        output=_appGeoFromICRS(ra,dec,pm_ra=pm_ra*numpy.cos(dec), pm_dec=pm_dec/numpy.cos(dec),
                               parallax=radiansFromArcsec(parallax),v_rad=v_rad, epoch=ep,
                               mjd=mjd)
 
@@ -395,7 +395,7 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.408639821342507537e-01,6)
         self.assertAlmostEqual(output[1][2],2.703229189890907214e-01,6)
 
-    def testObservedFromAppGeo(self):
+    def test_observedFromAppGeo(self):
         """
         Note: this routine depends on Aopqk which fails if zenith distance
         is too great (or, at least, it won't warn you if the zenith distance
@@ -424,7 +424,7 @@ class astrometryUnitTest(unittest.TestCase):
                                      boundLength=0.05,
                                      phoSimMetaData=self.metadata)
 
-        output=observedFromAppGeo(ra,dec, wavelength=wv, obs_metadata=obs_metadata)
+        output=_observedFromAppGeo(ra,dec, wavelength=wv, obs_metadata=obs_metadata)
 
         self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
         self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
@@ -435,24 +435,24 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
         self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
 
-        output=observedFromAppGeo(ra,dec,altAzHr=True, wavelength=wv, obs_metadata=obs_metadata)
+        output=_observedFromAppGeo(ra,dec,altAzHr=True, wavelength=wv, obs_metadata=obs_metadata)
 
-        self.assertAlmostEqual(output[0][0],2.547475965605183745e+00,6)
-        self.assertAlmostEqual(output[1][0],5.187045152602967057e-01,6)
-        self.assertAlmostEqual(output[2][0],1.168920017932007643e-01,6)
-        self.assertAlmostEqual(output[3][0],8.745379535264000692e-01,6)
+        self.assertAlmostEqual(output[0][0][0],2.547475965605183745e+00,6)
+        self.assertAlmostEqual(output[0][1][0],5.187045152602967057e-01,6)
+        self.assertAlmostEqual(output[1][0][0],1.168920017932007643e-01,6)
+        self.assertAlmostEqual(output[1][1][0],8.745379535264000692e-01,6)
 
-        self.assertAlmostEqual(output[0][1],4.349858626308809040e-01,6)
-        self.assertAlmostEqual(output[1][1],-5.191213875880701378e-01,6)
-        self.assertAlmostEqual(output[2][1],6.766119585479937193e-01,6)
-        self.assertAlmostEqual(output[3][1],4.433969998336554141e+00,6)
+        self.assertAlmostEqual(output[0][0][1],4.349858626308809040e-01,6)
+        self.assertAlmostEqual(output[0][1][1],-5.191213875880701378e-01,6)
+        self.assertAlmostEqual(output[1][0][1],6.766119585479937193e-01,6)
+        self.assertAlmostEqual(output[1][1][1],4.433969998336554141e+00,6)
 
-        self.assertAlmostEqual(output[0][2],7.743528611421227614e-01,6)
-        self.assertAlmostEqual(output[1][2],2.755070101670137328e-01,6)
-        self.assertAlmostEqual(output[2][2],5.275840601437552513e-01,6)
-        self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
+        self.assertAlmostEqual(output[0][0][2],7.743528611421227614e-01,6)
+        self.assertAlmostEqual(output[0][1][2],2.755070101670137328e-01,6)
+        self.assertAlmostEqual(output[1][0][2],5.275840601437552513e-01,6)
+        self.assertAlmostEqual(output[1][1][2],5.479759580847959555e+00,6)
 
-        output=observedFromAppGeo(ra,dec,includeRefraction=False,
+        output=_observedFromAppGeo(ra,dec,includeRefraction=False,
                                   wavelength=wv, obs_metadata=obs_metadata)
 
         self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
@@ -464,25 +464,25 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
         self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
 
-        output=observedFromAppGeo(ra,dec,includeRefraction=False,
+        output=_observedFromAppGeo(ra,dec,includeRefraction=False,
                                   altAzHr=True, wavelength=wv, obs_metadata=obs_metadata)
 
-        self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
-        self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
-        self.assertAlmostEqual(output[2][0],1.150652107618796299e-01,6)
-        self.assertAlmostEqual(output[3][0],8.745379535264000692e-01,6)
+        self.assertAlmostEqual(output[0][0][0],2.549091783674975353e+00,6)
+        self.assertAlmostEqual(output[0][1][0],5.198746844679964507e-01,6)
+        self.assertAlmostEqual(output[1][0][0],1.150652107618796299e-01,6)
+        self.assertAlmostEqual(output[1][1][0],8.745379535264000692e-01,6)
 
-        self.assertAlmostEqual(output[0][1],4.346695674418772359e-01,6)
-        self.assertAlmostEqual(output[1][1],-5.190436610150490626e-01,6)
-        self.assertAlmostEqual(output[2][1],6.763265401447272618e-01,6)
-        self.assertAlmostEqual(output[3][1],4.433969998336554141e+00,6)
+        self.assertAlmostEqual(output[0][0][1],4.346695674418772359e-01,6)
+        self.assertAlmostEqual(output[0][1][1],-5.190436610150490626e-01,6)
+        self.assertAlmostEqual(output[1][0][1],6.763265401447272618e-01,6)
+        self.assertAlmostEqual(output[1][1][1],4.433969998336554141e+00,6)
 
-        self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
-        self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
-        self.assertAlmostEqual(output[2][2],5.271912536356709866e-01,6)
-        self.assertAlmostEqual(output[3][2],5.479759580847959555e+00,6)
+        self.assertAlmostEqual(output[0][0][2],7.740875471580924705e-01,6)
+        self.assertAlmostEqual(output[0][1][2],2.758055401087299296e-01,6)
+        self.assertAlmostEqual(output[1][0][2],5.271912536356709866e-01,6)
+        self.assertAlmostEqual(output[1][1][2],5.479759580847959555e+00,6)
 
-    def testObservedFromAppGeo_NoRefraction(self):
+    def test_observedFromAppGeo_NoRefraction(self):
 
         ra=numpy.zeros((3),dtype=float)
         dec=numpy.zeros((3),dtype=float)
@@ -500,17 +500,17 @@ class astrometryUnitTest(unittest.TestCase):
                                      boundLength=0.05,
                                      phoSimMetaData=self.metadata)
 
-        output=observedFromAppGeo(ra,dec,altAzHr=True,
+        output=_observedFromAppGeo(ra,dec,altAzHr=True,
                                   includeRefraction=False, obs_metadata=obs_metadata)
 
-        self.assertAlmostEqual(output[0][0],2.549091783674975353e+00,6)
-        self.assertAlmostEqual(output[1][0],5.198746844679964507e-01,6)
-        self.assertAlmostEqual(output[0][1],4.346695674418772359e-01,6)
-        self.assertAlmostEqual(output[1][1],-5.190436610150490626e-01,6)
-        self.assertAlmostEqual(output[0][2],7.740875471580924705e-01,6)
-        self.assertAlmostEqual(output[1][2],2.758055401087299296e-01,6)
-        self.assertAlmostEqual(output[2][2],5.271914342095551653e-01,6)
-        self.assertAlmostEqual(output[3][2],5.479759402150099490e+00,6)
+        self.assertAlmostEqual(output[0][0][0],2.549091783674975353e+00,6)
+        self.assertAlmostEqual(output[0][1][0],5.198746844679964507e-01,6)
+        self.assertAlmostEqual(output[0][0][1],4.346695674418772359e-01,6)
+        self.assertAlmostEqual(output[0][1][1],-5.190436610150490626e-01,6)
+        self.assertAlmostEqual(output[0][0][2],7.740875471580924705e-01,6)
+        self.assertAlmostEqual(output[0][1][2],2.758055401087299296e-01,6)
+        self.assertAlmostEqual(output[1][0][2],5.271914342095551653e-01,6)
+        self.assertAlmostEqual(output[1][1][2],5.479759402150099490e+00,6)
 
     def testRefractionCoefficients(self):
         output=refractionCoefficients(wavelength=5000.0, site=self.obs_metadata.site)
