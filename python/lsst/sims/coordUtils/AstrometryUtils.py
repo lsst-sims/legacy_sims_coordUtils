@@ -9,6 +9,7 @@ __all__ = ["applyRefraction", "refractionCoefficients",
            "_applyProperMotion", "applyProperMotion",
            "_appGeoFromICRS", "appGeoFromICRS",
            "_observedFromAppGeo", "observedFromAppGeo",
+           "_appGeoFromObserved",
            "_observedFromICRS", "observedFromICRS",
            "_pupilCoordsFromRaDec", "pupilCoordsFromRaDec",
            "_raDecFromPupilCoords", "raDecFromPupilCoords"]
@@ -497,7 +498,7 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
 
 def _calculateObservatoryParameters(obs_metadata, wavelength, includeRefraction):
     """
-    Computer observatory-based parameters using pal.aoppa
+    Computer observatory-based parameters using palpy.aoppa
 
     @param [in] obs_metadata is an ObservationMetaData characterizing
     the specific telescope site and pointing
@@ -508,7 +509,7 @@ def _calculateObservatoryParameters(obs_metadata, wavelength, includeRefraction)
     to include the effects of refraction
 
     @param [out] the numpy array of observatory paramters calculated by
-    pal.aoppa
+    palpy.aoppa
     """
 
     # Correct site longitude for polar motion slaPolmo
@@ -640,6 +641,52 @@ def _observedFromAppGeo(ra, dec, includeRefraction = True,
         #
         az, alt = palpy.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
         return numpy.array([raOut, decOut]), numpy.array([alt, az])
+    return numpy.array([raOut, decOut])
+
+
+def _appGeoFromObserved(ra, dec, includeRefraction = True,
+                        wavelength=0.5, obs_metadata = None):
+    """
+    Convert observed (RA, Dec)-like coordinates to apparent geocentric
+    (RA, Dec)-like coordinates.  More specifically, apply refraction and
+    diurnal aberration.
+
+    Uses PAL aoppa routines
+
+    This will call palpy.oapqk
+
+    @param [in] ra is observed RA (radians).  Must be a numpy array.
+
+    @param [in] dec is observed Dec (radians).  Must be a numpy array.
+
+    @param [in] includeRefraction is a boolean to turn refraction on and off
+
+    @param [in] wavelength is effective wavelength in microns (default: 0.5)
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the
+    observation.
+
+    @param [out] a 2-D numpy array in which the first row is the apparent
+    geocentric RA and the second row is the apparentGeocentric Dec (both
+    in radians)
+    """
+
+    if obs_metadata is None:
+        raise RuntimeError("Cannot call appGeoFromObserved without an obs_metadata")
+
+    if obs_metadata.site is None:
+        raise RuntimeError("Cannot call appGeoFromObserved: obs_metadata has no site info")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("Cannot call appGeoFromObserved: obs_metadata has no mjd")
+
+    if len(ra)!=len(dec):
+        raise RuntimeError("You passed %d RAs but %d Decs to appGeoFromObserved" % \
+                           (len(ra), len(dec)))
+
+    obsPrms = _calculateObservatoryParameters(obs_metadata, wavelength, includeRefraction)
+
+    raOut, decOut = palpy.oapqkVector('r', ra, dec, obsPrms)
     return numpy.array([raOut, decOut])
 
 

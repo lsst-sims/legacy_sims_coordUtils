@@ -27,11 +27,13 @@ from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import _getRotTelPos, _raDecFromAltAz, calcObsDefaults, \
-                            radiansFromArcsec, arcsecFromRadians, Site
+                            radiansFromArcsec, arcsecFromRadians, Site, \
+                            raDecFromAltAz, haversine
 
 from lsst.sims.coordUtils import _applyPrecession, _applyProperMotion
 from lsst.sims.coordUtils import _appGeoFromICRS, _observedFromAppGeo
 from lsst.sims.coordUtils import _observedFromICRS
+from lsst.sims.coordUtils import _appGeoFromObserved
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 
 def makeObservationMetaData():
@@ -511,6 +513,60 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][1][2],2.758055401087299296e-01,6)
         self.assertAlmostEqual(output[1][0][2],5.271914342095551653e-01,6)
         self.assertAlmostEqual(output[1][1][2],5.479759402150099490e+00,6)
+
+
+    def test_appGeoFromObserved(self):
+        """
+        Test that _appGeoFromObserved really does invert _observedFromAppGeo
+        """
+        mjd = 58350.0
+        site = Site(longitude=0.235, latitude=-1.2)
+        raCenter, decCenter = raDecFromAltAz(90.0, 0.0,
+                                             numpy.degrees(site.longitude),
+                                             numpy.degrees(site.latitude),
+                                             mjd)
+
+        obs = ObservationMetaData(unrefractedRA=raCenter, unrefractedDec=decCenter,
+                                  mjd=58350.0,
+                                  site=site)
+
+        numpy.random.seed(125543)
+        nSamples = 200
+
+        # Note: the PALPY routines in question start to become inaccurate at
+        # a zenith distance of about 75 degrees, so we restrict our test points
+        # to be within 50 degrees of the telescope pointing, which is at zenith
+        # in a flat sky approximation
+        rr = numpy.random.random_sample(nSamples)*numpy.radians(50.0)
+        theta = numpy.random.random_sample(nSamples)*2.0*numpy.pi
+        ra_in = numpy.radians(raCenter) + rr*numpy.cos(theta)
+        dec_in = numpy.radians(decCenter) + rr*numpy.sin(theta)
+
+        xx_in = numpy.cos(dec_in)*numpy.cos(ra_in)
+        yy_in = numpy.cos(dec_in)*numpy.sin(ra_in)
+        zz_in = numpy.sin(dec_in)
+
+        for includeRefraction in [True, False]:
+            for wavelength in (0.5, 0.3, 0.7):
+                ra_obs, dec_obs = _observedFromAppGeo(ra_in, dec_in, obs_metadata=obs,
+                                                      wavelength=wavelength,
+                                                      includeRefraction=includeRefraction)
+
+                ra_out, dec_out = _appGeoFromObserved(ra_obs, dec_obs, obs_metadata=obs,
+                                                      wavelength=wavelength,
+                                                      includeRefraction=includeRefraction)
+
+
+                xx_out = numpy.cos(dec_out)*numpy.cos(ra_out)
+                yy_out = numpy.cos(dec_out)*numpy.sin(ra_out)
+                zz_out = numpy.sin(dec_out)
+
+                distance = numpy.sqrt(numpy.power(xx_in-xx_out,2) +
+                                      numpy.power(yy_in-yy_out,2) +
+                                      numpy.power(zz_in-zz_out,2))
+
+                self.assertLess(distance.max(), 1.0e-12)
+
 
     def testRefractionCoefficients(self):
         output=refractionCoefficients(wavelength=5000.0, site=self.obs_metadata.site)
