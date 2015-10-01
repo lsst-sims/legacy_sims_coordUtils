@@ -13,6 +13,8 @@ still agree to within one part in 10^5)
 
 """
 
+from __future__ import with_statement
+
 import numpy
 
 import os
@@ -566,6 +568,40 @@ class astrometryUnitTest(unittest.TestCase):
                                       numpy.power(zz_in-zz_out,2))
 
                 self.assertLess(distance.max(), 1.0e-12)
+
+
+    def test_appGeoFromObservedExceptions(self):
+        """
+        Test that _appGeoFromObserved raises exceptions where expected
+        """
+        numpy.random.seed(12)
+        ra_in = numpy.random.random_sample(10)*2.0*numpy.pi
+        dec_in = (numpy.random.random_sample(10)-0.5)*numpy.pi
+
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in, dec_in)
+        self.assertEqual(context.exception.args[0],
+                         "Cannot call appGeoFromObserved without an obs_metadata")
+
+        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-12.0,
+                                  site=None, mjd=52000.0)
+
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in, dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "Cannot call appGeoFromObserved: obs_metadata has no site info")
+
+        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-12.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in, dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "Cannot call appGeoFromObserved: obs_metadata has no mjd")
+
+        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-12.0, mjd=52000.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in[:2], dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "You passed 2 RAs but 10 Decs to appGeoFromObserved")
 
 
     def testRefractionCoefficients(self):
