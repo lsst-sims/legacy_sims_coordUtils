@@ -495,54 +495,21 @@ def observedFromAppGeo(ra, dec, includeRefraction = True,
         return numpy.degrees(output)
 
 
-def _observedFromAppGeo(ra, dec, includeRefraction = True,
-                       altAzHr=False, wavelength=0.5, obs_metadata = None):
+def _calculateObservatoryParameters(obs_metadata, wavelength, includeRefraction):
     """
-    Convert apparent geocentric (RA, Dec)-like coordinates to observed
-    (RA, Dec)-like coordinates.  More specifically, apply refraction and
-    diurnal aberration.
+    Computer observatory-based parameters using pal.aoppa
 
-    Uses PAL aoppa routines
+    @param [in] obs_metadata is an ObservationMetaData characterizing
+    the specific telescope site and pointing
 
-    This will call palpy.aopqk
+    @param [in] wavelength is the effective wavelength in microns
 
-    @param [in] ra is geocentric apparent RA (radians).  Must be a numpy array.
+    @param [in] includeRefraction is a boolean indicating whether or not
+    to include the effects of refraction
 
-    @param [in] dec is geocentric apparent Dec (radians).  Must be a numpy array.
-
-    @param [in] includeRefraction is a boolean to turn refraction on and off
-
-    @param [in] altAzHr is a boolean indicating whether or not to return altitude
-    and azimuth
-
-    @param [in] wavelength is effective wavelength in microns (default: 0.5)
-
-    @param [in] obs_metadata is an ObservationMetaData characterizing the
-    observation (optional; if not included, the code will try to set it from
-    self assuming it is in an InstanceCatalog daughter class.  If that is not
-    the case, an exception will be raised.)
-
-    @param [out] a 2-D numpy array in which the first row is the observed RA
-    and the second row is the observed Dec (both in radians)
-
-    @param [out] a 2-D numpy array in which the first row is the altitude
-    and the second row is the azimuth (both in radians).  Only returned
-    if altAzHr == True.
-
+    @param [out] the numpy array of observatory paramters calculated by
+    pal.aoppa
     """
-
-    if obs_metadata is None:
-        raise RuntimeError("Cannot call observedFromAppGeo without an obs_metadata")
-
-    if obs_metadata.site is None:
-        raise RuntimeError("Cannot call observedFromAppGeo: obs_metadata has no site info")
-
-    if obs_metadata.mjd is None:
-        raise RuntimeError("Cannot call observedFromAppGeo: obs_metadata has no mjd")
-
-    if len(ra)!=len(dec):
-        raise RuntimeError("You passed %d RAs but %d Decs to observedFromAppGeo" % \
-                           (len(ra), len(dec)))
 
     # Correct site longitude for polar motion slaPolmo
     #
@@ -594,6 +561,60 @@ def _observedFromAppGeo(ra, dec, includeRefraction = True,
                           0.0,
                           wavelength ,
                           obs_metadata.site.lapseRate)
+
+
+    return obsPrms
+
+
+def _observedFromAppGeo(ra, dec, includeRefraction = True,
+                       altAzHr=False, wavelength=0.5, obs_metadata = None):
+    """
+    Convert apparent geocentric (RA, Dec)-like coordinates to observed
+    (RA, Dec)-like coordinates.  More specifically, apply refraction and
+    diurnal aberration.
+
+    Uses PAL aoppa routines
+
+    This will call palpy.aopqk
+
+    @param [in] ra is geocentric apparent RA (radians).  Must be a numpy array.
+
+    @param [in] dec is geocentric apparent Dec (radians).  Must be a numpy array.
+
+    @param [in] includeRefraction is a boolean to turn refraction on and off
+
+    @param [in] altAzHr is a boolean indicating whether or not to return altitude
+    and azimuth
+
+    @param [in] wavelength is effective wavelength in microns (default: 0.5)
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the
+    observation.
+
+    @param [out] a 2-D numpy array in which the first row is the observed RA
+    and the second row is the observed Dec (both in radians)
+
+    @param [out] a 2-D numpy array in which the first row is the altitude
+    and the second row is the azimuth (both in radians).  Only returned
+    if altAzHr == True.
+
+    """
+
+    if obs_metadata is None:
+        raise RuntimeError("Cannot call observedFromAppGeo without an obs_metadata")
+
+    if obs_metadata.site is None:
+        raise RuntimeError("Cannot call observedFromAppGeo: obs_metadata has no site info")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("Cannot call observedFromAppGeo: obs_metadata has no mjd")
+
+    if len(ra)!=len(dec):
+        raise RuntimeError("You passed %d RAs but %d Decs to observedFromAppGeo" % \
+                           (len(ra), len(dec)))
+
+
+    obsPrms = _calculateObservatoryParameters(obs_metadata, wavelength, includeRefraction)
 
     #palpy.aopqk does an apparent to observed place
     #correction
