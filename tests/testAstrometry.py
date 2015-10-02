@@ -34,7 +34,7 @@ from lsst.sims.utils import _getRotTelPos, _raDecFromAltAz, calcObsDefaults, \
 
 from lsst.sims.coordUtils import _applyPrecession, _applyProperMotion
 from lsst.sims.coordUtils import _appGeoFromICRS, _observedFromAppGeo
-from lsst.sims.coordUtils import _observedFromICRS
+from lsst.sims.coordUtils import _observedFromICRS, _icrsFromObserved
 from lsst.sims.coordUtils import _appGeoFromObserved, _icrsFromAppGeo
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 
@@ -446,6 +446,73 @@ class astrometryUnitTest(unittest.TestCase):
                                          ra_icrs[valid_pts], dec_icrs[valid_pts]))
 
             self.assertLess(distance.max(), 0.01)
+
+
+    def test_icrsFromObserved(self):
+        """
+        Test that _icrsFromObserved really inverts _observedFromAppGeo.
+
+        In this case, the method is only reliable at distances of more than
+        45 degrees from the sun and at zenith distances less than 70 degrees.
+        """
+
+        numpy.random.seed(412)
+        nSamples = 100
+
+        mjd2000 = pal.epb(2000.0) # convert epoch to mjd
+
+        site = Site()
+
+        for mjd in (53000.0, 53241.6, 58504.6):
+            for includeRefraction in (True, False):
+                for raPointing in (23.5, 256.9, 100.0):
+                    for decPointing in (-12.0, 45.0, 66.8):
+
+                        raZenith, decZenith = _raDecFromAltAz(0.5*numpy.pi, 0.0,
+                                                             site.longitude,
+                                                             site.latitude,
+                                                             mjd)
+
+                        obs = ObservationMetaData(unrefractedRA=raPointing, unrefractedDec=decPointing,
+                                                  mjd=mjd, site=site)
+
+                        params = pal.mappa(2000.0, mjd)
+                        sunToEarth = params[4:7] # unit vector pointing from Sun to Earth
+
+                        rr = numpy.random.random_sample(nSamples)*numpy.radians(50.0)
+                        theta = numpy.random.random_sample(nSamples)*2.0*numpy.pi
+
+                        ra_in = raZenith + rr*numpy.cos(theta)
+                        dec_in = decZenith + rr*numpy.sin(theta)
+
+                        earthToStar = pal.dcs2cVector(ra_in, dec_in) # each row is a unit vector pointing to the star
+
+                        solarDotProduct = numpy.array([(-1.0*sunToEarth*earthToStar[ii]).sum()
+                                                       for ii in range(earthToStar.shape[0])])
+
+
+                        ra_obs, dec_obs = _observedFromICRS(ra_in, dec_in, obs_metadata=obs,
+                                                            includeRefraction=includeRefraction,
+                                                            epoch=2000.0)
+
+                        ra_icrs, dec_icrs = _icrsFromObserved(ra_obs, dec_obs, obs_metadata=obs,
+                                                              includeRefraction=includeRefraction,
+                                                              epoch=2000.0)
+
+
+
+                        ra_obs, dec_obs = _observedFromAppGeo(ra_in, dec_in, obs_metadata=obs,
+                                                              includeRefraction=includeRefraction)
+                        ra_icrs, dec_icrs = _appGeoFromObserved(ra_obs, dec_obs, obs_metadata=obs,
+                                                                includeRefraction=includeRefraction)
+
+                        valid_pts = numpy.where(solarDotProduct<numpy.cos(0.25*numpy.pi))[0]
+                        self.assertGreater(len(valid_pts), 0)
+
+                        distance = arcsecFromRadians(pal.dsepVector(ra_in[valid_pts], dec_in[valid_pts],
+                                                     ra_icrs[valid_pts], dec_icrs[valid_pts]))
+
+                        self.assertLess(distance.max(), 0.01)
 
 
     def test_observedFromAppGeo(self):

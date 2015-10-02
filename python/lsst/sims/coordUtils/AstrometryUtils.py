@@ -12,6 +12,7 @@ __all__ = ["applyRefraction", "refractionCoefficients",
            "_observedFromAppGeo", "observedFromAppGeo",
            "_appGeoFromObserved", "appGeoFromObserved",
            "_observedFromICRS", "observedFromICRS",
+           "_icrsFromObserved",
            "_pupilCoordsFromRaDec", "pupilCoordsFromRaDec",
            "_raDecFromPupilCoords", "raDecFromPupilCoords"]
 
@@ -925,6 +926,59 @@ def _observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=Non
 
     return numpy.array([ra_out,dec_out])
 
+
+def _icrsFromObserved(ra, dec, obs_metadata=None, epoch=None, includeRefraction=True):
+    """
+    Convert observed RA, Dec into mean International Celestial Reference Frame (ICRS)
+    RA, Dec.  This method undoes the effects of precession, nutation, aberration (annual
+    and diurnal), and refraction.  It is meant so that users can take pointing RA and Decs,
+    which will be in the observed reference system, and transform them into ICRS for
+    purposes of querying database tables (likely to contain mean ICRS RA, Dec) for objects
+    visible from a given pointing.
+
+    Note: This method is only accurate at angular distances from the sun of greater
+    than 45 degrees and zenith distances of less than 70 degrees.
+
+    This method works in radians.
+
+    @param [in] ra is the observed RA in radians.  Must be a numpy array.
+
+    @param [in] dec is the observed Dec in radians.  Must be a numpy array.
+
+    @param [in] obs_metadata is an ObservationMetaData object describing the
+    telescope pointing.
+
+    @param [in] epoch is the julian epoch (in years) against which the mean
+    equinoxes are measured.
+
+    @param [in] includeRefraction toggles whether or not to correct for refraction
+
+    @param [out] a 2-D numpy array in which the first row is the mean ICRS
+    RA and the second row is the mean ICRS Dec (both in radians)
+
+    """
+
+    if obs_metadata is None:
+        raise RuntimeError("cannot call icrsFromObserved; obs_metadata is none")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("cannot call icrsFromObserved; obs_metadata.mjd is none")
+
+    if epoch is None:
+        raise RuntimeError("cannot call icrsFromObserved; you have not specified an epoch")
+
+    if len(ra)!=len(dec):
+        raise RuntimeError("You passed %d RAs but %d Decs to icrsFromObserved" % \
+                           (len(ra), len(dec)))
+
+
+    ra_app, dec_app = _appGeoFromObserved(ra, dec, obs_metadata=obs_metadata,
+                                          includeRefraction=includeRefraction)
+
+    ra_icrs, dec_icrs = _icrsFromAppGeo(ra_app, dec_app, epoch=epoch,
+                                        mjd=obs_metadata.mjd)
+
+    return numpy.array([ra_icrs, dec_icrs])
 
 
 def raDecFromPupilCoords(xPupil, yPupil, obs_metadata=None, epoch=None):
