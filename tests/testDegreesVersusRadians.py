@@ -149,6 +149,32 @@ class AstrometryDegreesTest(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(dAlt, numpy.zeros(self.nStars), 9)
 
 
+    def testAppGeoFromObserved(self):
+        obs = ObservationMetaData(unrefractedRA=35.0, unrefractedDec=-45.0,
+                                  mjd=43572.0)
+
+        for includeRefraction in (True, False):
+            for wavelength in (0.5, 0.2, 0.3):
+
+                raRad, decRad = coordUtils._appGeoFromObserved(self.raList, self.decList,
+                                                               includeRefraction=includeRefraction,
+                                                               wavelength=wavelength,
+                                                               obs_metadata=obs)
+
+
+                raDeg, decDeg = coordUtils.appGeoFromObserved(numpy.degrees(self.raList), numpy.degrees(self.decList),
+                                                              includeRefraction=includeRefraction,
+                                                              wavelength=wavelength,
+                                                              obs_metadata=obs)
+
+                dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+                numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(len(dRa)), 9)
+
+                dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
+                numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(len(dDec)), 9)
+
+
+
     def testObservedFromICRS(self):
         obs = ObservationMetaData(unrefractedRA=35.0, unrefractedDec=-45.0,
                                   mjd=43572.0)

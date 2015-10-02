@@ -9,7 +9,7 @@ __all__ = ["applyRefraction", "refractionCoefficients",
            "_applyProperMotion", "applyProperMotion",
            "_appGeoFromICRS", "appGeoFromICRS",
            "_observedFromAppGeo", "observedFromAppGeo",
-           "_appGeoFromObserved",
+           "_appGeoFromObserved", "appGeoFromObserved",
            "_observedFromICRS", "observedFromICRS",
            "_pupilCoordsFromRaDec", "pupilCoordsFromRaDec",
            "_raDecFromPupilCoords", "raDecFromPupilCoords"]
@@ -642,6 +642,43 @@ def _observedFromAppGeo(ra, dec, includeRefraction = True,
         az, alt = palpy.de2hVector(hourAngle,decOut,obs_metadata.site.latitude)
         return numpy.array([raOut, decOut]), numpy.array([alt, az])
     return numpy.array([raOut, decOut])
+
+
+def appGeoFromObserved(ra, dec, includeRefraction = True,
+                        wavelength=0.5, obs_metadata = None):
+    """
+    Convert observed (RA, Dec)-like coordinates to apparent geocentric
+    (RA, Dec)-like coordinates.  More specifically, undo the effects of
+    refraction and diurnal aberration.
+
+    This method works in degrees.
+
+    Uses PAL aoppa routines
+
+    This will call palpy.oapqk
+
+    @param [in] ra is observed RA (degrees).  Must be a numpy array.
+
+    @param [in] dec is observed Dec (degrees).  Must be a numpy array.
+
+    @param [in] includeRefraction is a boolean to turn refraction on and off
+
+    @param [in] wavelength is effective wavelength in microns (default: 0.5)
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the
+    observation.
+
+    @param [out] a 2-D numpy array in which the first row is the apparent
+    geocentric RA and the second row is the apparentGeocentric Dec (both
+    in degrees)
+    """
+
+    raOut, decOut = _appGeoFromObserved(numpy.radians(ra), numpy.radians(dec),
+                                        includeRefraction=includeRefraction,
+                                        wavelength=wavelength,
+                                        obs_metadata=obs_metadata)
+
+    return numpy.array([numpy.degrees(raOut), numpy.degrees(decOut)])
 
 
 def _appGeoFromObserved(ra, dec, includeRefraction = True,
