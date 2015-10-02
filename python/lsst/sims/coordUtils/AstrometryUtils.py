@@ -648,8 +648,10 @@ def _appGeoFromObserved(ra, dec, includeRefraction = True,
                         wavelength=0.5, obs_metadata = None):
     """
     Convert observed (RA, Dec)-like coordinates to apparent geocentric
-    (RA, Dec)-like coordinates.  More specifically, apply refraction and
-    diurnal aberration.
+    (RA, Dec)-like coordinates.  More specifically, undo the effects of
+    refraction and diurnal aberration.
+
+    This method works in radians.
 
     Uses PAL aoppa routines
 
