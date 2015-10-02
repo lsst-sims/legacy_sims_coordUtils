@@ -8,6 +8,7 @@ __all__ = ["applyRefraction", "refractionCoefficients",
            "_applyPrecession", "applyPrecession",
            "_applyProperMotion", "applyProperMotion",
            "_appGeoFromICRS", "appGeoFromICRS",
+           "_icrsFromAppGeo",
            "_observedFromAppGeo", "observedFromAppGeo",
            "_appGeoFromObserved", "appGeoFromObserved",
            "_observedFromICRS", "observedFromICRS",
@@ -441,6 +442,50 @@ def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
     raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra_corrected,pm_dec,arcsecFromRadians(parallax),v_rad,prms)
 
     return numpy.array([raOut,decOut])
+
+
+def _icrsFromAppGeo(ra, dec, epoch=2000.0, mjd = None):
+    """
+    Convert the apparent geocentric position in (RA, Dec) to
+    the mean position in the International Celestial Reference
+    System (ICRS)
+
+    This method undoes the effects of precession, annual aberration,
+    and nutation.  It is meant for mapping pointing RA and Dec (which
+    presumably include the above effects) back to mean ICRS RA and Dec
+    so that the user knows how to query a database of mean RA and Decs
+    for objects observed at a given telescope pointing.
+
+    @param [in] ra in radians (apparent geocentric).  Must be a numpy array.
+
+    @param [in] dec in radians (apparent geocentric).  Must be a numpy array.
+
+    @param [in] epoch is the julian epoch (in years) of the equinox against which to
+    measure RA (default: 2000.0)
+
+    @param[in] MJD is the date of the observation
+
+    @param [out] a 2-D numpy array in which the first row is the apparent
+    mean ICRS RA and the second row is the mean ICRS Dec (both in radians)
+    """
+
+    # Define star independent mean to apparent place parameters
+    # palpy.mappa calculates the star-independent parameters
+    # needed to correct RA and Dec
+    # e.g the Earth barycentric and heliocentric position and velocity,
+    # the precession-nutation matrix, etc.
+    #
+    # arguments of palpy.mappa are:
+    # epoch of mean equinox to be used (Julian)
+    #
+    # date (MJD)
+    #
+    # TODO This mjd should be the Barycentric Dynamical Time
+    params = palpy.mappa(epoch, mjd)
+
+    raOut, decOut = palpy.ampqkVector(ra, dec, params)
+
+    return numpy.array([raOut, decOut])
 
 
 def observedFromAppGeo(ra, dec, includeRefraction = True,

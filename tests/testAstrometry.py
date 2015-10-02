@@ -35,7 +35,7 @@ from lsst.sims.utils import _getRotTelPos, _raDecFromAltAz, calcObsDefaults, \
 from lsst.sims.coordUtils import _applyPrecession, _applyProperMotion
 from lsst.sims.coordUtils import _appGeoFromICRS, _observedFromAppGeo
 from lsst.sims.coordUtils import _observedFromICRS
-from lsst.sims.coordUtils import _appGeoFromObserved
+from lsst.sims.coordUtils import _appGeoFromObserved, _icrsFromAppGeo
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 
 def makeObservationMetaData():
@@ -398,6 +398,55 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[1][1],1.037400063009288331e+00,6)
         self.assertAlmostEqual(output[0][2],7.408639821342507537e-01,6)
         self.assertAlmostEqual(output[1][2],2.703229189890907214e-01,6)
+
+
+    def test_icrsFromAppGeo(self):
+        """
+        Test that _icrsFromAppGeo really inverts _appGeoFromICRS.
+
+        This test is a tricky because _appGeoFromICRS applies
+        light deflection due to the sun.  _icrsFromAppGeo does not
+        account for that effect, which is fine, because it is only
+        meant to map pointing RA, Decs to RA, Decs on fatboy.
+
+        _icrsFromAppGeo should invert _appGeoFromICRS to within
+        0.01 arcsec at an angular distance greater than 45 degrees
+        from the sun.
+        """
+
+        numpy.random.seed(412)
+        nSamples = 100
+
+        mjd2000 = pal.epb(2000.0) # convert epoch to mjd
+
+        for mjd in (53000.0, 53241.6, 58504.6):
+
+            params = pal.mappa(2000.0, mjd)
+            sunToEarth = params[4:7] # unit vector pointing from Sun to Earth
+
+            ra_in = numpy.random.random_sample(nSamples)*2.0*numpy.pi
+            dec_in = (numpy.random.random_sample(nSamples)-0.5)*numpy.pi
+
+            earthToStar = pal.dcs2cVector(ra_in, dec_in) # each row is a unit vector pointing to the star
+
+            solarDotProduct = numpy.array([(-1.0*sunToEarth*earthToStar[ii]).sum()
+                                           for ii in range(earthToStar.shape[0])])
+
+            ra_app, dec_app = _appGeoFromICRS(ra_in, dec_in, mjd=mjd)
+
+            ra_icrs, dec_icrs = _icrsFromAppGeo(ra_app, dec_app, epoch=2000.0, mjd=mjd)
+
+            self.assertFalse(numpy.isnan(ra_icrs).any())
+            self.assertFalse(numpy.isnan(dec_icrs).any())
+
+            valid_pts = numpy.where(solarDotProduct<numpy.cos(0.25*numpy.pi))[0]
+            self.assertGreater(len(valid_pts), 0)
+
+            distance = arcsecFromRadians(pal.dsepVector(ra_in[valid_pts], dec_in[valid_pts],
+                                         ra_icrs[valid_pts], dec_icrs[valid_pts]))
+
+            self.assertLess(distance.max(), 0.01)
+
 
     def test_observedFromAppGeo(self):
         """
