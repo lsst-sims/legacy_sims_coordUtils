@@ -456,6 +456,8 @@ def _icrsFromAppGeo(ra, dec, epoch=2000.0, mjd = None):
     so that the user knows how to query a database of mean RA and Decs
     for objects observed at a given telescope pointing.
 
+    This method works in radians.
+
     @param [in] ra in radians (apparent geocentric).  Must be a numpy array.
 
     @param [in] dec in radians (apparent geocentric).  Must be a numpy array.
@@ -465,8 +467,8 @@ def _icrsFromAppGeo(ra, dec, epoch=2000.0, mjd = None):
 
     @param[in] MJD is the date of the observation
 
-    @param [out] a 2-D numpy array in which the first row is the apparent
-    mean ICRS RA and the second row is the mean ICRS Dec (both in radians)
+    @param [out] a 2-D numpy array in which the first row is the mean ICRS RA and
+    the second row is the mean ICRS Dec (both in radians)
     """
 
     # Define star independent mean to apparent place parameters
