@@ -174,6 +174,24 @@ class AstrometryDegreesTest(unittest.TestCase):
                 numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(len(dDec)), 9)
 
 
+    def testIcrsFromAppGeo(self):
+
+        for mjd in (53525.0, 54316.3, 58463.7):
+            for epoch in( 2000.0, 1950.0, 2010.0):
+
+                raRad, decRad = coordUtils._icrsFromAppGeo(self.raList, self.decList,
+                                                           epoch=epoch, mjd=mjd)
+
+                raDeg, decDeg = coordUtils.icrsFromAppGeo(numpy.degrees(self.raList),
+                                                          numpy.degrees(self.decList),
+                                                          epoch=epoch, mjd=mjd)
+
+                dRa = arcsecFromRadians(numpy.abs(raRad-numpy.radians(raDeg)))
+                self.assertLess(dRa.max(), 1.0e-9)
+
+                dDec = arcsecFromRadians(numpy.abs(decRad-numpy.radians(decDeg)))
+                self.assertLess(dDec.max(), 1.0e-9)
+
 
     def testObservedFromICRS(self):
         obs = ObservationMetaData(unrefractedRA=35.0, unrefractedDec=-45.0,

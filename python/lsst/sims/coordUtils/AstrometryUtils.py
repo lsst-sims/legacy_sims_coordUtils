@@ -8,7 +8,7 @@ __all__ = ["applyRefraction", "refractionCoefficients",
            "_applyPrecession", "applyPrecession",
            "_applyProperMotion", "applyProperMotion",
            "_appGeoFromICRS", "appGeoFromICRS",
-           "_icrsFromAppGeo",
+           "_icrsFromAppGeo", "icrsFromAppGeo",
            "_observedFromAppGeo", "observedFromAppGeo",
            "_appGeoFromObserved", "appGeoFromObserved",
            "_observedFromICRS", "observedFromICRS",
@@ -488,6 +488,39 @@ def _icrsFromAppGeo(ra, dec, epoch=2000.0, mjd = None):
     raOut, decOut = palpy.ampqkVector(ra, dec, params)
 
     return numpy.array([raOut, decOut])
+
+
+def icrsFromAppGeo(ra, dec, epoch=2000.0, mjd = None):
+    """
+    Convert the apparent geocentric position in (RA, Dec) to
+    the mean position in the International Celestial Reference
+    System (ICRS)
+
+    This method undoes the effects of precession, annual aberration,
+    and nutation.  It is meant for mapping pointing RA and Dec (which
+    presumably include the above effects) back to mean ICRS RA and Dec
+    so that the user knows how to query a database of mean RA and Decs
+    for objects observed at a given telescope pointing.
+
+    This method works in degrees.
+
+    @param [in] ra in degrees (apparent geocentric).  Must be a numpy array.
+
+    @param [in] dec in degrees (apparent geocentric).  Must be a numpy array.
+
+    @param [in] epoch is the julian epoch (in years) of the equinox against which to
+    measure RA (default: 2000.0)
+
+    @param[in] MJD is the date of the observation
+
+    @param [out] a 2-D numpy array in which the first row is the mean ICRS RA and
+    the second row is the mean ICRS Dec (both in degrees)
+    """
+
+    raOut, decOut = _icrsFromAppGeo(numpy.radians(ra), numpy.radians(dec),
+                                    epoch=epoch, mjd=mjd)
+
+    return numpy.array([numpy.degrees(raOut), numpy.degrees(decOut)])
 
 
 def observedFromAppGeo(ra, dec, includeRefraction = True,
