@@ -515,6 +515,36 @@ class astrometryUnitTest(unittest.TestCase):
                         self.assertLess(distance.max(), 0.01)
 
 
+    def test_icrsFromObservedExceptions(self):
+        """
+        Test that _icrsFromObserved raises exceptions when it is supposed to.
+        """
+        numpy.random.seed(33)
+        ra_in = numpy.random.random_sample(10)
+        dec_in = numpy.random.random_sample(10)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in, dec_in, epoch=2000.0)
+        self.assertEqual(context.exception.args[0],
+                         "cannot call icrsFromObserved; obs_metadata is None")
+
+        obs = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=-19.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in, dec_in, epoch=2000.0, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "cannot call icrsFromObserved; obs_metadata.mjd is None")
+
+        obs = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=-19.0, mjd=52344.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in, dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "cannot call icrsFromObserved; you have not specified an epoch")
+
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in[:3], dec_in, obs_metadata=obs, epoch=2000.0)
+        self.assertEqual(context.exception.args[0],
+                         "You passed 3 RAs but 10 Decs to icrsFromObserved")
+
+
     def test_observedFromAppGeo(self):
         """
         Note: this routine depends on Aopqk which fails if zenith distance

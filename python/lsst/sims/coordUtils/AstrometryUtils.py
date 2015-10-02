@@ -958,10 +958,10 @@ def _icrsFromObserved(ra, dec, obs_metadata=None, epoch=None, includeRefraction=
     """
 
     if obs_metadata is None:
-        raise RuntimeError("cannot call icrsFromObserved; obs_metadata is none")
+        raise RuntimeError("cannot call icrsFromObserved; obs_metadata is None")
 
     if obs_metadata.mjd is None:
-        raise RuntimeError("cannot call icrsFromObserved; obs_metadata.mjd is none")
+        raise RuntimeError("cannot call icrsFromObserved; obs_metadata.mjd is None")
 
     if epoch is None:
         raise RuntimeError("cannot call icrsFromObserved; you have not specified an epoch")
