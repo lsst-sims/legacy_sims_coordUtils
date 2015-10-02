@@ -12,7 +12,7 @@ __all__ = ["applyRefraction", "refractionCoefficients",
            "_observedFromAppGeo", "observedFromAppGeo",
            "_appGeoFromObserved", "appGeoFromObserved",
            "_observedFromICRS", "observedFromICRS",
-           "_icrsFromObserved",
+           "_icrsFromObserved", "icrsFromObserved",
            "_pupilCoordsFromRaDec", "pupilCoordsFromRaDec",
            "_raDecFromPupilCoords", "raDecFromPupilCoords"]
 
@@ -925,6 +925,43 @@ def _observedFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=Non
                                                includeRefraction = includeRefraction)
 
     return numpy.array([ra_out,dec_out])
+
+
+def icrsFromObserved(ra, dec, obs_metadata=None, epoch=None, includeRefraction=True):
+    """
+    Convert observed RA, Dec into mean International Celestial Reference Frame (ICRS)
+    RA, Dec.  This method undoes the effects of precession, nutation, aberration (annual
+    and diurnal), and refraction.  It is meant so that users can take pointing RA and Decs,
+    which will be in the observed reference system, and transform them into ICRS for
+    purposes of querying database tables (likely to contain mean ICRS RA, Dec) for objects
+    visible from a given pointing.
+
+    Note: This method is only accurate at angular distances from the sun of greater
+    than 45 degrees and zenith distances of less than 70 degrees.
+
+    This method works in degrees.
+
+    @param [in] ra is the observed RA in degrees.  Must be a numpy array.
+
+    @param [in] dec is the observed Dec in degrees.  Must be a numpy array.
+
+    @param [in] obs_metadata is an ObservationMetaData object describing the
+    telescope pointing.
+
+    @param [in] epoch is the julian epoch (in years) against which the mean
+    equinoxes are measured.
+
+    @param [in] includeRefraction toggles whether or not to correct for refraction
+
+    @param [out] a 2-D numpy array in which the first row is the mean ICRS
+    RA and the second row is the mean ICRS Dec (both in degrees)
+    """
+
+    ra_out, dec_out = _icrsFromObserved(numpy.radians(ra), numpy.radians(dec),
+                                        obs_metadata=obs_metadata,
+                                        epoch=epoch, includeRefraction=includeRefraction)
+
+    return numpy.array([numpy.degrees(ra_out), numpy.degrees(dec_out)])
 
 
 def _icrsFromObserved(ra, dec, obs_metadata=None, epoch=None, includeRefraction=True):

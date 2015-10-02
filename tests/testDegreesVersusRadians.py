@@ -225,6 +225,27 @@ class AstrometryDegreesTest(unittest.TestCase):
                             numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
 
 
+    def testIcrsFromObserved(self):
+        obs = ObservationMetaData(unrefractedRA=35.0, unrefractedDec=-45.0,
+                                  mjd=43572.0)
+
+        for includeRefraction in [True, False]:
+
+            raRad, decRad = coordUtils._icrsFromObserved(self.raList, self.decList,
+                                                         obs_metadata=obs, epoch=2000.0,
+                                                         includeRefraction=includeRefraction)
+
+            raDeg, decDeg = coordUtils.icrsFromObserved(numpy.degrees(self.raList), numpy.degrees(self.decList),
+                                                        obs_metadata=obs, epoch=2000.0,
+                                                        includeRefraction=includeRefraction)
+
+            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
+            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(self.nStars), 9)
+
+            dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
+            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(self.nStars), 9)
+
+
 
     def testraDecFromPupilCoords(self):
         obs = ObservationMetaData(unrefractedRA=23.5, unrefractedDec=-115.0, mjd=42351.0, rotSkyPos=127.0)
