@@ -414,28 +414,28 @@ def _appGeoFromICRS(ra, dec, pm_ra=None, pm_dec=None, parallax=None,
         parallax=numpy.zeros(len(ra))
 
     # Define star independent mean to apparent place parameters
-    #palpy.mappa calculates the star-independent parameters
-    #needed to correct RA and Dec
-    #e.g the Earth barycentric and heliocentric position and velocity,
-    #the precession-nutation matrix, etc.
+    # palpy.mappa calculates the star-independent parameters
+    # needed to correct RA and Dec
+    # e.g the Earth barycentric and heliocentric position and velocity,
+    # the precession-nutation matrix, etc.
     #
-    #arguments of palpy.mappa are:
-    #epoch of mean equinox to be used (Julian)
+    # arguments of palpy.mappa are:
+    # epoch of mean equinox to be used (Julian)
     #
-    #date (MJD)
+    # date (MJD)
     #
-    #TODO This mjd should be the Barycentric Dynamical Time
+    # TODO This mjd should be the Barycentric Dynamical Time
     prms=palpy.mappa(epoch, mjd)
 
-    #palpy.mapqk does a quick mean to apparent place calculation using
-    #the output of palpy.mappa
+    # palpy.mapqk does a quick mean to apparent place calculation using
+    # the output of palpy.mappa
     #
-    #Taken from the palpy source code (palMap.c which calls both palMappa and palMapqk):
-    #The accuracy is sub-milliarcsecond, limited by the
-    #precession-nutation model (see palPrenut for details).
+    # Taken from the palpy source code (palMap.c which calls both palMappa and palMapqk):
+    # The accuracy is sub-milliarcsecond, limited by the
+    # precession-nutation model (see palPrenut for details).
 
-    #because PAL and ERFA expect proper motion in terms of "coordinate
-    #angle; not true angle" (as stated in erfa/starpm.c documentation)
+    # because PAL and ERFA expect proper motion in terms of "coordinate
+    # angle; not true angle" (as stated in erfa/starpm.c documentation)
     pm_ra_corrected = pm_ra/numpy.cos(dec)
 
     raOut,decOut = palpy.mapqkVector(ra,dec,pm_ra_corrected,pm_dec,arcsecFromRadians(parallax),v_rad,prms)
