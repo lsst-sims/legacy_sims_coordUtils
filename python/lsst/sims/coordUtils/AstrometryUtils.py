@@ -955,7 +955,6 @@ def _icrsFromObserved(ra, dec, obs_metadata=None, epoch=None, includeRefraction=
 
     @param [out] a 2-D numpy array in which the first row is the mean ICRS
     RA and the second row is the mean ICRS Dec (both in radians)
-
     """
 
     if obs_metadata is None:
