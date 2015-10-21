@@ -13,6 +13,8 @@ still agree to within one part in 10^5)
 
 """
 
+from __future__ import with_statement
+
 import numpy
 
 import os
@@ -27,11 +29,13 @@ from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import _getRotTelPos, _raDecFromAltAz, calcObsDefaults, \
-                            radiansFromArcsec, arcsecFromRadians, Site
+                            radiansFromArcsec, arcsecFromRadians, Site, \
+                            raDecFromAltAz, haversine
 
 from lsst.sims.coordUtils import _applyPrecession, _applyProperMotion
 from lsst.sims.coordUtils import _appGeoFromICRS, _observedFromAppGeo
-from lsst.sims.coordUtils import _observedFromICRS
+from lsst.sims.coordUtils import _observedFromICRS, _icrsFromObserved
+from lsst.sims.coordUtils import _appGeoFromObserved, _icrsFromAppGeo
 from lsst.sims.coordUtils import refractionCoefficients, applyRefraction
 
 def makeObservationMetaData():
@@ -395,6 +399,152 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][2],7.408639821342507537e-01,6)
         self.assertAlmostEqual(output[1][2],2.703229189890907214e-01,6)
 
+
+    def test_icrsFromAppGeo(self):
+        """
+        Test that _icrsFromAppGeo really inverts _appGeoFromICRS.
+
+        This test is a tricky because _appGeoFromICRS applies
+        light deflection due to the sun.  _icrsFromAppGeo does not
+        account for that effect, which is fine, because it is only
+        meant to map pointing RA, Decs to RA, Decs on fatboy.
+
+        _icrsFromAppGeo should invert _appGeoFromICRS to within
+        0.01 arcsec at an angular distance greater than 45 degrees
+        from the sun.
+        """
+
+        numpy.random.seed(412)
+        nSamples = 100
+
+        mjd2000 = pal.epb(2000.0) # convert epoch to mjd
+
+        for mjd in (53000.0, 53241.6, 58504.6):
+
+            params = pal.mappa(2000.0, mjd)
+            sunToEarth = params[4:7] # unit vector pointing from Sun to Earth
+
+            ra_in = numpy.random.random_sample(nSamples)*2.0*numpy.pi
+            dec_in = (numpy.random.random_sample(nSamples)-0.5)*numpy.pi
+
+            earthToStar = pal.dcs2cVector(ra_in, dec_in) # each row is a unit vector pointing to the star
+
+            solarDotProduct = numpy.array([(-1.0*sunToEarth*earthToStar[ii]).sum()
+                                           for ii in range(earthToStar.shape[0])])
+
+            ra_app, dec_app = _appGeoFromICRS(ra_in, dec_in, mjd=mjd)
+
+            ra_icrs, dec_icrs = _icrsFromAppGeo(ra_app, dec_app, epoch=2000.0, mjd=mjd)
+
+            self.assertFalse(numpy.isnan(ra_icrs).any())
+            self.assertFalse(numpy.isnan(dec_icrs).any())
+
+            valid_pts = numpy.where(solarDotProduct<numpy.cos(0.25*numpy.pi))[0]
+            self.assertGreater(len(valid_pts), 0)
+
+            distance = arcsecFromRadians(pal.dsepVector(ra_in[valid_pts], dec_in[valid_pts],
+                                         ra_icrs[valid_pts], dec_icrs[valid_pts]))
+
+            self.assertLess(distance.max(), 0.01)
+
+
+    def test_icrsFromObserved(self):
+        """
+        Test that _icrsFromObserved really inverts _observedFromAppGeo.
+
+        In this case, the method is only reliable at distances of more than
+        45 degrees from the sun and at zenith distances less than 70 degrees.
+        """
+
+        numpy.random.seed(412)
+        nSamples = 100
+
+        mjd2000 = pal.epb(2000.0) # convert epoch to mjd
+
+        site = Site()
+
+        for mjd in (53000.0, 53241.6, 58504.6):
+            for includeRefraction in (True, False):
+                for raPointing in (23.5, 256.9, 100.0):
+                    for decPointing in (-12.0, 45.0, 66.8):
+
+                        raZenith, decZenith = _raDecFromAltAz(0.5*numpy.pi, 0.0,
+                                                             site.longitude,
+                                                             site.latitude,
+                                                             mjd)
+
+                        obs = ObservationMetaData(unrefractedRA=raPointing, unrefractedDec=decPointing,
+                                                  mjd=mjd, site=site)
+
+                        params = pal.mappa(2000.0, mjd)
+                        sunToEarth = params[4:7] # unit vector pointing from Sun to Earth
+
+                        rr = numpy.random.random_sample(nSamples)*numpy.radians(50.0)
+                        theta = numpy.random.random_sample(nSamples)*2.0*numpy.pi
+
+                        ra_in = raZenith + rr*numpy.cos(theta)
+                        dec_in = decZenith + rr*numpy.sin(theta)
+
+                        earthToStar = pal.dcs2cVector(ra_in, dec_in) # each row is a unit vector pointing to the star
+
+                        solarDotProduct = numpy.array([(-1.0*sunToEarth*earthToStar[ii]).sum()
+                                                       for ii in range(earthToStar.shape[0])])
+
+
+                        ra_obs, dec_obs = _observedFromICRS(ra_in, dec_in, obs_metadata=obs,
+                                                            includeRefraction=includeRefraction,
+                                                            epoch=2000.0)
+
+                        ra_icrs, dec_icrs = _icrsFromObserved(ra_obs, dec_obs, obs_metadata=obs,
+                                                              includeRefraction=includeRefraction,
+                                                              epoch=2000.0)
+
+
+
+                        ra_obs, dec_obs = _observedFromAppGeo(ra_in, dec_in, obs_metadata=obs,
+                                                              includeRefraction=includeRefraction)
+                        ra_icrs, dec_icrs = _appGeoFromObserved(ra_obs, dec_obs, obs_metadata=obs,
+                                                                includeRefraction=includeRefraction)
+
+                        valid_pts = numpy.where(solarDotProduct<numpy.cos(0.25*numpy.pi))[0]
+                        self.assertGreater(len(valid_pts), 0)
+
+                        distance = arcsecFromRadians(pal.dsepVector(ra_in[valid_pts], dec_in[valid_pts],
+                                                     ra_icrs[valid_pts], dec_icrs[valid_pts]))
+
+                        self.assertLess(distance.max(), 0.01)
+
+
+    def test_icrsFromObservedExceptions(self):
+        """
+        Test that _icrsFromObserved raises exceptions when it is supposed to.
+        """
+        numpy.random.seed(33)
+        ra_in = numpy.random.random_sample(10)
+        dec_in = numpy.random.random_sample(10)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in, dec_in, epoch=2000.0)
+        self.assertEqual(context.exception.args[0],
+                         "cannot call icrsFromObserved; obs_metadata is None")
+
+        obs = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=-19.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in, dec_in, epoch=2000.0, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "cannot call icrsFromObserved; obs_metadata.mjd is None")
+
+        obs = ObservationMetaData(unrefractedRA=23.0, unrefractedDec=-19.0, mjd=52344.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in, dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "cannot call icrsFromObserved; you have not specified an epoch")
+
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _icrsFromObserved(ra_in[:3], dec_in, obs_metadata=obs, epoch=2000.0)
+        self.assertEqual(context.exception.args[0],
+                         "You passed 3 RAs but 10 Decs to icrsFromObserved")
+
+
     def test_observedFromAppGeo(self):
         """
         Note: this routine depends on Aopqk which fails if zenith distance
@@ -511,6 +661,94 @@ class astrometryUnitTest(unittest.TestCase):
         self.assertAlmostEqual(output[0][1][2],2.758055401087299296e-01,6)
         self.assertAlmostEqual(output[1][0][2],5.271914342095551653e-01,6)
         self.assertAlmostEqual(output[1][1][2],5.479759402150099490e+00,6)
+
+
+    def test_appGeoFromObserved(self):
+        """
+        Test that _appGeoFromObserved really does invert _observedFromAppGeo
+        """
+        mjd = 58350.0
+        site = Site(longitude=0.235, latitude=-1.2)
+        raCenter, decCenter = raDecFromAltAz(90.0, 0.0,
+                                             numpy.degrees(site.longitude),
+                                             numpy.degrees(site.latitude),
+                                             mjd)
+
+        obs = ObservationMetaData(unrefractedRA=raCenter, unrefractedDec=decCenter,
+                                  mjd=58350.0,
+                                  site=site)
+
+        numpy.random.seed(125543)
+        nSamples = 200
+
+        # Note: the PALPY routines in question start to become inaccurate at
+        # a zenith distance of about 75 degrees, so we restrict our test points
+        # to be within 50 degrees of the telescope pointing, which is at zenith
+        # in a flat sky approximation
+        rr = numpy.random.random_sample(nSamples)*numpy.radians(50.0)
+        theta = numpy.random.random_sample(nSamples)*2.0*numpy.pi
+        ra_in = numpy.radians(raCenter) + rr*numpy.cos(theta)
+        dec_in = numpy.radians(decCenter) + rr*numpy.sin(theta)
+
+        xx_in = numpy.cos(dec_in)*numpy.cos(ra_in)
+        yy_in = numpy.cos(dec_in)*numpy.sin(ra_in)
+        zz_in = numpy.sin(dec_in)
+
+        for includeRefraction in [True, False]:
+            for wavelength in (0.5, 0.3, 0.7):
+                ra_obs, dec_obs = _observedFromAppGeo(ra_in, dec_in, obs_metadata=obs,
+                                                      wavelength=wavelength,
+                                                      includeRefraction=includeRefraction)
+
+                ra_out, dec_out = _appGeoFromObserved(ra_obs, dec_obs, obs_metadata=obs,
+                                                      wavelength=wavelength,
+                                                      includeRefraction=includeRefraction)
+
+
+                xx_out = numpy.cos(dec_out)*numpy.cos(ra_out)
+                yy_out = numpy.cos(dec_out)*numpy.sin(ra_out)
+                zz_out = numpy.sin(dec_out)
+
+                distance = numpy.sqrt(numpy.power(xx_in-xx_out,2) +
+                                      numpy.power(yy_in-yy_out,2) +
+                                      numpy.power(zz_in-zz_out,2))
+
+                self.assertLess(distance.max(), 1.0e-12)
+
+
+    def test_appGeoFromObservedExceptions(self):
+        """
+        Test that _appGeoFromObserved raises exceptions where expected
+        """
+        numpy.random.seed(12)
+        ra_in = numpy.random.random_sample(10)*2.0*numpy.pi
+        dec_in = (numpy.random.random_sample(10)-0.5)*numpy.pi
+
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in, dec_in)
+        self.assertEqual(context.exception.args[0],
+                         "Cannot call appGeoFromObserved without an obs_metadata")
+
+        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-12.0,
+                                  site=None, mjd=52000.0)
+
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in, dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "Cannot call appGeoFromObserved: obs_metadata has no site info")
+
+        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-12.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in, dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "Cannot call appGeoFromObserved: obs_metadata has no mjd")
+
+        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-12.0, mjd=52000.0)
+        with self.assertRaises(RuntimeError) as context:
+            ra_out, dec_out = _appGeoFromObserved(ra_in[:2], dec_in, obs_metadata=obs)
+        self.assertEqual(context.exception.args[0],
+                         "You passed 2 RAs but 10 Decs to appGeoFromObserved")
+
 
     def testRefractionCoefficients(self):
         output=refractionCoefficients(wavelength=5000.0, site=self.obs_metadata.site)
