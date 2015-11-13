@@ -2,7 +2,7 @@ import numpy
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import SCIENCE
-from lsst.sims.coordUtils.AstrometryUtils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
+from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
 __all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
