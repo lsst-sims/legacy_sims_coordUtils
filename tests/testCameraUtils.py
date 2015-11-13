@@ -264,9 +264,9 @@ class ChipNameTest(unittest.TestCase):
                     self.assertTrue(names2[ix] == 'Det22')
                     self.assertTrue(names3[ix] == 'Det22')
                 else:
-                    self.assertTrue(names1[ix] is None)
-                    self.assertTrue(names2[ix] is None)
-                    self.assertTrue(names3[ix] is None)
+                    self.assertIsNone(names1[ix], None)
+                    self.assertIsNone(names2[ix], None)
+                    self.assertIsNone(names3[ix], None)
 
 
 class PixelCoordTest(unittest.TestCase):
@@ -756,7 +756,7 @@ class PixelCoordTest(unittest.TestCase):
 
         # make sure that all of the test points actually fall on chips
         for name in chipNameList:
-            self.assertTrue(name is not None)
+            self.assertIsNotNone(name)
 
         xPupList, yPupList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
 
@@ -786,8 +786,8 @@ class PixelCoordTest(unittest.TestCase):
                 else:
                     self.assertFalse(numpy.isnan(xx))
                     self.assertFalse(numpy.isnan(yy))
-                    self.assertFalse(xx is None)
-                    self.assertFalse(yy is None)
+                    self.assertIsNotNone(xx, None)
+                    self.assertIsNotNone(yy, None)
 
             xPixList, yPixList = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
                                                        obs_metadata=obs, epoch=2000.0, camera=self.camera)
@@ -799,8 +799,8 @@ class PixelCoordTest(unittest.TestCase):
                 else:
                     self.assertFalse(numpy.isnan(xx))
                     self.assertFalse(numpy.isnan(yy))
-                    self.assertFalse(xx is None)
-                    self.assertFalse(yy is None)
+                    self.assertIsNotNone(xx, None)
+                    self.assertIsNotNone(yy, None)
 
             xPupList[5] = badVal
             yPupList[7] = badVal
@@ -814,8 +814,8 @@ class PixelCoordTest(unittest.TestCase):
                 else:
                     self.assertFalse(numpy.isnan(xx))
                     self.assertFalse(numpy.isnan(yy))
-                    self.assertFalse(xx is None)
-                    self.assertFalse(yy is None)
+                    self.assertIsNotNone(xx, None)
+                    self.assertIsNotNone(yy, None)
 
 
 
