@@ -24,7 +24,7 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
 
     WARNING: make sure RA and DEc are in the observed reference system, as opposed to the mean,
     International Celestial Reference System (ICRS).  You can transform from the ICRS to the
-    observed reference system using the method observedFromICRS in AstrometryUtils.py.  The bore
+    observed reference system using the method observedFromICRS in lsst.sims.utils.  The bore
     site will be in the observed reference system when calculating where on the focal plane your
     RA and Dec fall.  Thus, the result will be wrong if you do not transform your RA and Dec
     before passing them in.
@@ -63,7 +63,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
 
     WARNING: make sure RA and DEc are in the observed reference system, as opposed to the mean,
     International Celestial Reference System (ICRS).  You can transform from the ICRS to the
-    observed reference system using the method observedFromICRS in AstrometryUtils.py.  The bore
+    observed reference system using the method observedFromICRS in lsst.sims.utils.  The bore
     site will be in the observed reference system when calculating where on the focal plane your
     RA and Dec fall.  Thus, the result will be wrong if you do not transform your RA and Dec
     before passing them in.
@@ -421,7 +421,7 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     and the second row is the Dec coordinate (both in degrees)
 
     Note: to see what is mean by 'observed' ra/dec, see the docstring for
-    observedFromICRS in AstrometryUtils.py
+    observedFromICRS in lsst.sims.utils
     """
     output = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                    camera=camera, obs_metadata=obs_metadata,
@@ -458,7 +458,7 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     and the second row is the Dec coordinate (both in radians)
 
     Note: to see what is mean by 'observed' ra/dec, see the docstring for
-    observedFromICRS in AstrometryUtils.py
+    observedFromICRS in lsst.sims.utils
     """
 
     if camera is None:
