@@ -9,8 +9,7 @@ from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 
 from lsst.sims.utils import ObservationMetaData, radiansFromArcsec, arcsecFromRadians
 from lsst.sims.coordUtils.utils import ReturnCamera
-from lsst.sims.coordUtils import pupilCoordsFromRaDec
-from lsst.sims.coordUtils import observedFromICRS
+from lsst.sims.utils import pupilCoordsFromRaDec, observedFromICRS
 from lsst.sims.coordUtils import chipNameFromRaDec, \
                                  chipNameFromPupilCoords, \
                                  _chipNameFromRaDec
@@ -49,14 +48,11 @@ class ChipNameTest(unittest.TestCase):
         dec0 = -112.0
         rotSkyPos=135.0
         mjd = 42350.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=mjd, rotSkyPos=rotSkyPos)
 
-        raListRaw = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + ra0
-        decListRaw = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + dec0
-
-        raList, decList = observedFromICRS(raListRaw, decListRaw, obs_metadata=obs,
-                                           epoch=2000.0)
+        raList = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + ra0
+        decList = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList,
                                                    obs_metadata=obs,
@@ -85,7 +81,7 @@ class ChipNameTest(unittest.TestCase):
             else:
                 isNotNone += 1
 
-        self.assertTrue(isNotNone>0)
+        self.assertGreater(isNotNone, 0)
 
 
     def testExceptions(self):
@@ -97,7 +93,7 @@ class ChipNameTest(unittest.TestCase):
         xpList = numpy.random.random_sample(nStars)*0.1
         ypList = numpy.random.random_sample(nStars)*0.1
 
-        obs = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=112.0, mjd=42351.0,
+        obs = ObservationMetaData(pointingRA=25.0, pointingDec=112.0, mjd=42351.0,
                                   rotSkyPos=35.0)
 
         # verify that an exception is raised if you do not pass in a camera
@@ -193,7 +189,7 @@ class ChipNameTest(unittest.TestCase):
 
         # verify that an exception is raised if you call chipNameFromRaDec
         # with an ObservationMetaData that has no mjd
-        obsDummy = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-112.0,
+        obsDummy = ObservationMetaData(pointingRA=25.0, pointingDec=-112.0,
                                        rotSkyPos=112.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
@@ -209,7 +205,7 @@ class ChipNameTest(unittest.TestCase):
 
         # verify that an exception is raised if you all chipNameFromRaDec
         # using an ObservationMetaData without a rotSkyPos
-        obsDummy = ObservationMetaData(unrefractedRA=25.0, unrefractedDec=-112.0,
+        obsDummy = ObservationMetaData(pointingRA=25.0, pointingDec=-112.0,
                                        mjd=52350.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
@@ -234,25 +230,22 @@ class ChipNameTest(unittest.TestCase):
         dec0 = -112.0
         rotSkyPos=135.0
         mjd = 42350.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=mjd, rotSkyPos=rotSkyPos)
 
         for badVal in [numpy.NaN, None]:
 
-            raListRaw = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + ra0
-            decListRaw = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + dec0
+            raList = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + ra0
+            decList = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + dec0
 
-            raListRaw[5] = badVal
-            raListRaw[10] = badVal
-            decListRaw[10] = badVal
-            decListRaw[25] = badVal
-
-            raList, decList = observedFromICRS(raListRaw, decListRaw, obs_metadata=obs,
-                                               epoch=2000.0)
+            raList[5] = badVal
+            raList[10] = badVal
+            decList[10] = badVal
+            decList[25] = badVal
 
             xpList, ypList = pupilCoordsFromRaDec(raList, decList,
-                                                       obs_metadata=obs,
-                                                       epoch=2000.0)
+                                                  obs_metadata=obs,
+                                                  epoch=2000.0)
 
             names1 = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                             camera=self.camera)
@@ -271,9 +264,9 @@ class ChipNameTest(unittest.TestCase):
                     self.assertTrue(names2[ix] == 'Det22')
                     self.assertTrue(names3[ix] == 'Det22')
                 else:
-                    self.assertTrue(names1[ix] is None)
-                    self.assertTrue(names2[ix] is None)
-                    self.assertTrue(names3[ix] is None)
+                    self.assertIsNone(names1[ix], None)
+                    self.assertIsNone(names2[ix], None)
+                    self.assertIsNone(names3[ix], None)
 
 
 class PixelCoordTest(unittest.TestCase):
@@ -295,7 +288,7 @@ class PixelCoordTest(unittest.TestCase):
         """
         ra0 = 95.0
         dec0 = -33.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=52350.0, rotSkyPos=27.0)
 
         nStars = 100
@@ -359,8 +352,8 @@ class PixelCoordTest(unittest.TestCase):
                     self.assertFalse(numpy.isnan(y))
                     ctNotNaN += 1
 
-            self.assertTrue(ctNaN>0)
-            self.assertTrue(ctNotNaN>0)
+            self.assertGreater(ctNaN, 0)
+            self.assertGreater(ctNotNaN, 0)
 
 
     def testExceptions(self):
@@ -371,8 +364,8 @@ class PixelCoordTest(unittest.TestCase):
         nPoints = 100
         xpList = numpy.random.random_sample(nPoints)*numpy.radians(1.0)
         ypList = numpy.random.random_sample(nPoints)*numpy.radians(1.0)
-        obs = ObservationMetaData(unrefractedRA=25.0,
-                                  unrefractedDec=-36.0,
+        obs = ObservationMetaData(pointingRA=25.0,
+                                  pointingDec=-36.0,
                                   rotSkyPos=122.0,
                                   mjd=41325.0)
 
@@ -532,8 +525,8 @@ class PixelCoordTest(unittest.TestCase):
 
         # test that an exception is raised if you try to use an
         # ObservationMetaData without an mjd
-        obsDummy = ObservationMetaData(unrefractedRA=25.0,
-                                       unrefractedDec=-36.0,
+        obsDummy = ObservationMetaData(pointingRA=25.0,
+                                       pointingDec=-36.0,
                                        rotSkyPos=112.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList,
@@ -555,8 +548,8 @@ class PixelCoordTest(unittest.TestCase):
 
         # test that an exception is raised if you try to use an
         # ObservationMetaData without a rotSkyPos
-        obsDummy = ObservationMetaData(unrefractedRA=25.0,
-                                       unrefractedDec=-36.0,
+        obsDummy = ObservationMetaData(pointingRA=25.0,
+                                       pointingDec=-36.0,
                                        mjd=53000.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList,
@@ -567,8 +560,8 @@ class PixelCoordTest(unittest.TestCase):
                          'You need to pass an ObservationMetaData ' \
                          + 'with a rotSkyPos into pixelCoordsFromRaDec')
 
-        obsDummy = ObservationMetaData(unrefractedRA=25.0,
-                                       unrefractedDec=-36.0,
+        obsDummy = ObservationMetaData(pointingRA=25.0,
+                                       pointingDec=-36.0,
                                        mjd=53000.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(raList, decList,
@@ -752,21 +745,18 @@ class PixelCoordTest(unittest.TestCase):
         """
         ra0 = 25.0
         dec0 = -35.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   rotSkyPos=42.0, mjd=42356.0)
 
-        raCenter, decCenter = observedFromICRS(numpy.array([ra0]), numpy.array([dec0]),
-                                               obs_metadata=obs, epoch=2000.0)
-
         nStars = 10
-        raList = numpy.random.random_sample(100)*100.0/3600.0 + raCenter[0]
-        decList = numpy.random.random_sample(100)*100.0/3600.0 + decCenter[0]
+        raList = numpy.random.random_sample(100)*100.0/3600.0 + ra0
+        decList = numpy.random.random_sample(100)*100.0/3600.0 + dec0
         chipNameList = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                          camera=self.camera)
 
         # make sure that all of the test points actually fall on chips
         for name in chipNameList:
-            self.assertTrue(name is not None)
+            self.assertIsNotNone(name)
 
         xPupList, yPupList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
 
@@ -796,8 +786,8 @@ class PixelCoordTest(unittest.TestCase):
                 else:
                     self.assertFalse(numpy.isnan(xx))
                     self.assertFalse(numpy.isnan(yy))
-                    self.assertFalse(xx is None)
-                    self.assertFalse(yy is None)
+                    self.assertIsNotNone(xx, None)
+                    self.assertIsNotNone(yy, None)
 
             xPixList, yPixList = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
                                                        obs_metadata=obs, epoch=2000.0, camera=self.camera)
@@ -809,8 +799,8 @@ class PixelCoordTest(unittest.TestCase):
                 else:
                     self.assertFalse(numpy.isnan(xx))
                     self.assertFalse(numpy.isnan(yy))
-                    self.assertFalse(xx is None)
-                    self.assertFalse(yy is None)
+                    self.assertIsNotNone(xx, None)
+                    self.assertIsNotNone(yy, None)
 
             xPupList[5] = badVal
             yPupList[7] = badVal
@@ -824,8 +814,8 @@ class PixelCoordTest(unittest.TestCase):
                 else:
                     self.assertFalse(numpy.isnan(xx))
                     self.assertFalse(numpy.isnan(yy))
-                    self.assertFalse(xx is None)
-                    self.assertFalse(yy is None)
+                    self.assertIsNotNone(xx, None)
+                    self.assertIsNotNone(yy, None)
 
 
 
@@ -874,7 +864,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
         ra0 = 34.1
         dec0 = -23.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43257.0, rotSkyPos = 127.0)
 
         raCenter, decCenter = observedFromICRS(numpy.array([ra0]),
@@ -922,7 +912,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
         ra0 = 34.0
         dec0 = -19.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   rotSkyPos=61.0, mjd=52349.0)
 
         nStars = 10
@@ -1063,7 +1053,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
         # test that an error is raised if you pass an ObservationMetaData
         # without an mjd into focalPlaneCoordsFromRaDec
-        obsDummy = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obsDummy = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                        rotSkyPos=112.0)
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
@@ -1085,7 +1075,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
         # test that an error is raised if you pass an ObservationMetaData
         # without a rotSkyPos into focalPlaneCoordsFromRaDec
-        obsDummy = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obsDummy = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                        mjd=42356.0)
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
@@ -1233,7 +1223,7 @@ class ConversionFromPixelTest(unittest.TestCase):
             for x, y in zip(xPupTest, yPupTest):
                 if numpy.isnan(x) or numpy.isnan(y):
                     ctNaN += 1
-            self.assertTrue(ctNaN<len(xPupTest)/10)
+            self.assertLess(ctNaN, len(xPupTest)/10)
 
     def testPupCoordsNaN(self):
         """
@@ -1257,7 +1247,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         nStars = 20
         ra0 = 45.0
         dec0 = -19.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
         xPixList = numpy.random.random_sample(nStars)*4000.0
@@ -1308,7 +1298,7 @@ class ConversionFromPixelTest(unittest.TestCase):
 
         # test that an error is raised if you pass in an ObservationMetaData
         # without an mjd
-        obsDummy = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0, rotSkyPos=95.0)
+        obsDummy = ObservationMetaData(pointingRA=ra0, pointingDec=dec0, rotSkyPos=95.0)
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                            obs_metadata=obsDummy,
@@ -1326,7 +1316,7 @@ class ConversionFromPixelTest(unittest.TestCase):
 
         # test that an error is raised if you pass in an ObservationMetaData
         # without a rotSkyPos
-        obsDummy = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0, mjd=43243.0)
+        obsDummy = ObservationMetaData(pointingRA=ra0, pointingDec=dec0, mjd=43243.0)
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                            obs_metadata=obsDummy,
@@ -1418,7 +1408,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         nStars = 200
         ra0 = 45.0
         dec0 = -19.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
         xPixList = numpy.random.random_sample(nStars)*4000.0
@@ -1470,7 +1460,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         nStars = 200
         ra0 = 45.0
         dec0 = -19.0
-        obs = ObservationMetaData(unrefractedRA=ra0, unrefractedDec=dec0,
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
         xPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
