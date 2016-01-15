@@ -18,16 +18,11 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     either (xPupil, yPupil).  Note: this method does not return
     the name of guide, focus, or wavefront detectors.
 
-    @param [in] ra in degrees (a numpy array)
+    @param [in] ra in degrees (a numpy array).
+    In the International Celestial Reference System.
 
-    @param [in] dec in degrees (a numpy array)
-
-    WARNING: make sure RA and DEc are in the observed reference system, as opposed to the mean,
-    International Celestial Reference System (ICRS).  You can transform from the ICRS to the
-    observed reference system using the method observedFromICRS in lsst.sims.utils.  The bore
-    site will be in the observed reference system when calculating where on the focal plane your
-    RA and Dec fall.  Thus, the result will be wrong if you do not transform your RA and Dec
-    before passing them in.
+    @param [in] dec in degrees (a numpy array).
+    In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
 
@@ -57,16 +52,11 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     either (xPupil, yPupil).  Note: this method does not return
     the name of guide, focus, or wavefront detectors.
 
-    @param [in] ra in radians (a numpy array)
+    @param [in] ra in radians (a numpy array).
+    In the International Celestial Reference System.
 
-    @param [in] dec in radians (a numpy array)
-
-    WARNING: make sure RA and DEc are in the observed reference system, as opposed to the mean,
-    International Celestial Reference System (ICRS).  You can transform from the ICRS to the
-    observed reference system using the method observedFromICRS in lsst.sims.utils.  The bore
-    site will be in the observed reference system when calculating where on the focal plane your
-    RA and Dec fall.  Thus, the result will be wrong if you do not transform your RA and Dec
-    before passing them in.
+    @param [in] dec in radians (a numpy array).
+    In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
 
@@ -169,8 +159,10 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
     on their RA, and Dec (in degrees)
 
     @param [in] ra is a numpy array containing the RA of the objects in degrees.
+    In the International Celestial Reference System.
 
     @param [in] dec is a numpy array containing the Dec of the objects in degrees.
+    In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
     pointing.
@@ -208,8 +200,10 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
     on their RA, and Dec (in radians)
 
     @param [in] ra is a numpy array containing the RA of the objects in radians.
+    In the International Celestial Reference System.
 
     @param [in] dec is a numpy array containing the Dec of the objects in radians.
+    In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
     pointing.
@@ -396,7 +390,7 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
                          obs_metadata=None, epoch=None, includeDistortion=True):
     """
-    Convert pixel coordinates into observed RA, Dec
+    Convert pixel coordinates into RA, Dec
 
     @param [in] xPixList is a numpy array of x pixel coordinates
 
@@ -418,10 +412,8 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     details.
 
     @param [out] a 2-D numpy array in which the first row is the RA coordinate
-    and the second row is the Dec coordinate (both in degrees)
-
-    Note: to see what is mean by 'observed' ra/dec, see the docstring for
-    observedFromICRS in lsst.sims.utils
+    and the second row is the Dec coordinate (both in degrees; in the
+    International Celestial Reference System)
     """
     output = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                    camera=camera, obs_metadata=obs_metadata,
@@ -433,7 +425,7 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
                           obs_metadata=None, epoch=None, includeDistortion=True):
     """
-    Convert pixel coordinates into observed RA, Dec
+    Convert pixel coordinates into RA, Dec
 
     @param [in] xPixList is a numpy array of x pixel coordinates
 
@@ -455,10 +447,8 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     details.
 
     @param [out] a 2-D numpy array in which the first row is the RA coordinate
-    and the second row is the Dec coordinate (both in radians)
-
-    Note: to see what is mean by 'observed' ra/dec, see the docstring for
-    observedFromICRS in lsst.sims.utils
+    and the second row is the Dec coordinate (both in radians; in the International
+    Celestial Reference System)
     """
 
     if camera is None:
@@ -503,9 +493,11 @@ def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=Non
     """
     Get the focal plane coordinates for all objects in the catalog.
 
-    @param [in] ra is a numpy array in degrees
+    @param [in] ra is a numpy array in degrees.
+    In the International Celestial Reference System.
 
-    @param [in] dec is a numpy array in degrees
+    @param [in] dec is a numpy array in degrees.
+    In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData object describing the telescope
     pointing (only if specifying RA and Dec rather than pupil coordinates)
@@ -529,9 +521,11 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=No
     """
     Get the focal plane coordinates for all objects in the catalog.
 
-    @param [in] ra is a numpy array in radians
+    @param [in] ra is a numpy array in radians.
+    In the International Celestial Reference System.
 
-    @param [in] dec is a numpy array in radians
+    @param [in] dec is a numpy array in radians.
+    In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData object describing the telescope
     pointing (only if specifying RA and Dec rather than pupil coordinates)

@@ -1444,8 +1444,11 @@ class ConversionFromPixelTest(unittest.TestCase):
                                                       includeDistortion=includeDistortion)
 
 
-            numpy.testing.assert_array_almost_equal(xPixTest, xPixList, 6)
-            numpy.testing.assert_array_almost_equal(yPixTest, yPixList, 6)
+            distance = numpy.sqrt(numpy.power(xPixTest-xPixList,2)+numpy.power(yPixTest-yPixList,2))
+            self.assertLess(distance.max(),0.2) # because of the imprecision in _icrsFromObserved, this is the best
+                                                # we can get; note that, in our test camera, each pixel is 10 microns
+                                                # in size and the plate scale is 2 arcsec per mm, so 0.2 pixels is
+                                                # 0.004 arcsec
 
 
     def testResultsOffChip(self):
@@ -1498,8 +1501,11 @@ class ConversionFromPixelTest(unittest.TestCase):
                                                       includeDistortion=includeDistortion)
 
 
-            numpy.testing.assert_array_almost_equal(xPixTest, xPixList, 6)
-            numpy.testing.assert_array_almost_equal(yPixTest, yPixList, 6)
+            distance = numpy.sqrt(numpy.power(xPixTest-xPixList,2)+numpy.power(yPixTest-yPixList,2))
+            self.assertLess(distance.max(),0.2) # because of the imprecision in _icrsFromObserved, this is the best
+                                                # we can get; note that, in our test camera, each pixel is 10 microns
+                                                # in size and the plate scale is 2 arcsec per mm, so 0.2 pixels is
+                                                # 0.004 arcsec
 
 
 
