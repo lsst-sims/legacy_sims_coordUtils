@@ -1446,7 +1446,7 @@ class ConversionFromPixelTest(unittest.TestCase):
 
             distance = numpy.sqrt(numpy.power(xPixTest-xPixList,2)+numpy.power(yPixTest-yPixList,2))
             self.assertLess(distance.max(),0.2) # because of the imprecision in _icrsFromObserved, this is the best
-                                                # we can get; note that, in or test camera, each pixel is 10 microns
+                                                # we can get; note that, in our test camera, each pixel is 10 microns
                                                 # in size and the plate scale is 2 arcsec per mm, so 0.2 pixels is
                                                 # 0.004 arcsec
 
@@ -1503,7 +1503,7 @@ class ConversionFromPixelTest(unittest.TestCase):
 
             distance = numpy.sqrt(numpy.power(xPixTest-xPixList,2)+numpy.power(yPixTest-yPixList,2))
             self.assertLess(distance.max(),0.2) # because of the imprecision in _icrsFromObserved, this is the best
-                                                # we can get; note that, in or test camera, each pixel is 10 microns
+                                                # we can get; note that, in our test camera, each pixel is 10 microns
                                                 # in size and the plate scale is 2 arcsec per mm, so 0.2 pixels is
                                                 # 0.004 arcsec
 
