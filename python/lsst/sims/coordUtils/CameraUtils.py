@@ -139,7 +139,10 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
             if len(names)>1 and not allow_multiple_chips:
                 raise RuntimeError("This method does not know how to deal with cameras " +
                                    "where points can be on multiple detectors.  " +
-                                   "Override CameraCoords.get_chipName to add this.")
+                                   "Override CameraCoords.get_chipName to add this.\n" +
+                                   "If you were only asking for the chip name (as opposed " +
+                                   "to pixel coordinates) you can try re-running with " +
+                                   "the kwarg allow_multiple_chips=True.")
             elif len(names)==0:
                 chipNames.append(None)
             else:
