@@ -1,7 +1,6 @@
 import numpy
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
-from lsst.afw.cameraGeom import SCIENCE
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
 __all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
@@ -14,9 +13,8 @@ __all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
 def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
                            allow_multiple_chips=False):
     """
-    Return the names of science detectors that see the object specified by
-    either (xPupil, yPupil).  Note: this method does not return
-    the name of guide, focus, or wavefront detectors.
+    Return the names of detectors that see the object specified by
+    either (xPupil, yPupil).
 
     @param [in] ra in degrees (a numpy array).
     In the International Celestial Reference System.
@@ -37,7 +35,7 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     and an object falls on more than one chip, it will still only return the first chip in the
     list of chips returned. THIS BEHAVIOR SHOULD BE FIXED IN A FUTURE TICKET.
 
-    @param [out] a numpy array of chip names (science detectors only)
+    @param [out] a numpy array of chip names
     """
 
     return _chipNameFromRaDec(numpy.radians(ra), numpy.radians(dec),
@@ -48,9 +46,8 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
 def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
                            allow_multiple_chips=False):
     """
-    Return the names of science detectors that see the object specified by
-    either (xPupil, yPupil).  Note: this method does not return
-    the name of guide, focus, or wavefront detectors.
+    Return the names of detectors that see the object specified by
+    either (xPupil, yPupil).
 
     @param [in] ra in radians (a numpy array).
     In the International Celestial Reference System.
@@ -71,7 +68,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     and an object falls on more than one chip, it will still only return the first chip in the
     list of chips returned. THIS BEHAVIOR SHOULD BE FIXED IN A FUTURE TICKET.
 
-    @param [out] a numpy array of chip names (science detectors only)
+    @param [out] a numpy array of chip names
     """
 
     if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
@@ -99,9 +96,8 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
 
 def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):
     """
-    Return the names of science detectors that see the object specified by
-    either (xPupil, yPupil).  Note: this method does not return
-    the name of guide, focus, or wavefront detectors.
+    Return the names of detectors that see the object specified by
+    either (xPupil, yPupil).
 
     @param [in] xPupil a numpy array of x pupil coordinates in radians
 
@@ -115,7 +111,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
 
     @param [in] camera is an afwCameraGeom object that specifies the attributes of the camera.
 
-    @param [out] a numpy array of chip names (science detectors only)
+    @param [out] a numpy array of chip names
 
     """
 
@@ -139,7 +135,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
         if len(det)==0 or numpy.isnan(pt.getX()) or numpy.isnan(pt.getY()):
             chipNames.append(None)
         else:
-            names = [dd.getName() for dd in det if dd.getType()==SCIENCE]
+            names = [dd.getName() for dd in det]
             if len(names)>1 and not allow_multiple_chips:
                 raise RuntimeError("This method does not know how to deal with cameras " +
                                    "where points can be on multiple detectors.  " +
