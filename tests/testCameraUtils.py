@@ -26,6 +26,8 @@ from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 
 from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
 
+from lsst.sims.coordUtils import getCornerPixels
+
 class ChipNameTest(unittest.TestCase):
 
     @classmethod
@@ -279,6 +281,23 @@ class PixelCoordTest(unittest.TestCase):
 
     def setUp(self):
         numpy.random.seed(11324)
+
+    def testCornerPixels(self):
+        """
+        Test the method to get the pixel coordinates of the corner
+        of a detector
+        """
+        det_name = self.camera[0].getName()
+        corners = getCornerPixels(det_name, self.camera)
+        self.assertEqual(corners[0][0], 0)
+        self.assertEqual(corners[0][1], 0)
+        self.assertEqual(corners[1][0], 0)
+        self.assertEqual(corners[1][1], 3999)
+        self.assertEqual(corners[2][0], 3999)
+        self.assertEqual(corners[2][1], 0)
+        self.assertEqual(corners[3][0], 3999)
+        self.assertEqual(corners[3][1], 3999)
+        self.assertEqual(len(corners), 4)
 
 
     def testConsistency(self):

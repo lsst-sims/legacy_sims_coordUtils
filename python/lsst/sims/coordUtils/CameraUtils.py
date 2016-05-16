@@ -3,11 +3,36 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
-__all__ = ["chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
+__all__ = ["getCornerPixels",
+           "chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
            "pupilCoordsFromPixelCoords",
            "raDecFromPixelCoords", "_raDecFromPixelCoords"]
+
+
+def getCornerPixels(detector_name, camera):
+    """
+    Return the pixel coordinates of the corners of a detector.
+
+    @param [in] detector_name is the name of the detector in question
+
+    @param [in] camera is the afwCameraGeom camera object containing
+    that detector
+
+    @para [out] a list of tuples representing the (x,y) pixel coordinates
+    of the corners of the detector.  Order will be
+
+    [(xmin, ymin), (xmin, ymax), (xmax, ymin), (xmax, ymax)]
+    """
+
+    det = camera[detector_name]
+    bbox = det.getBBox()
+    xmin = bbox.getMinX()
+    xmax = bbox.getMaxX()
+    ymin = bbox.getMinY()
+    ymax = bbox.getMaxY()
+    return [(xmin, ymin), (xmin, ymax), (xmax, ymin), (xmax, ymax)]
 
 
 def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
