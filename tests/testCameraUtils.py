@@ -283,70 +283,6 @@ class PixelCoordTest(unittest.TestCase):
     def setUp(self):
         numpy.random.seed(11324)
 
-    def testCornerPixels(self):
-        """
-        Test the method to get the pixel coordinates of the corner
-        of a detector
-        """
-        det_name = self.camera[0].getName()
-        corners = getCornerPixels(det_name, self.camera)
-        self.assertEqual(corners[0][0], 0)
-        self.assertEqual(corners[0][1], 0)
-        self.assertEqual(corners[1][0], 0)
-        self.assertEqual(corners[1][1], 3999)
-        self.assertEqual(corners[2][0], 3999)
-        self.assertEqual(corners[2][1], 0)
-        self.assertEqual(corners[3][0], 3999)
-        self.assertEqual(corners[3][1], 3999)
-        self.assertEqual(len(corners), 4)
-
-
-    def testCornerRaDec_radians(self):
-        """
-        Test that the method to return the Ra, Dec values of the corner
-        of a chip (in radians) works by validating its results against
-        known pixel corner values and the _raDecFromPixelCoords method,
-        which is tested separately.
-        """
-        obs = ObservationMetaData(pointingRA=23.0, pointingDec=-65.0,
-                                  rotSkyPos=52.1, mjd=59582.3)
-
-        det_name = self.camera[4].getName()
-        cornerTest = _getCornerRaDec(det_name, self.camera, obs)
-
-        ra_control, dec_control = _raDecFromPixelCoords(numpy.array([0, 0, 3999, 3999]),
-                                                        numpy.array([0, 3999, 0, 3999]),
-                                                        [det_name]*4,
-                                                        camera=self.camera,
-                                                        obs_metadata=obs,
-                                                        epoch=2000.0, includeDistortion=True)
-
-        # Loop over the control values and the corner values, using
-        # haversine() method to find the angular distance between the
-        # test and control values.  Assert that they are within
-        # 0.01 milli-arcsecond of each other
-        for rr1, dd1, cc in zip(ra_control, dec_control, cornerTest):
-            dd = haversine(rr1, dd1, cc[0], cc[1])
-            self.assertLess(arcsecFromRadians(dd), 0.00001)
-
-
-    def testCornerRaDec_degrees(self):
-        """
-        Test that method to get corner RA, Dec in degrees is consistent
-        with method to get corner RA, Dec in radians
-        """
-
-        obs = ObservationMetaData(pointingRA=31.0, pointingDec=-45.0,
-                                  rotSkyPos=46.2, mjd=59583.4)
-
-        det_name = self.camera[1].getName()
-
-        cornerRad = _getCornerRaDec(det_name, self.camera, obs)
-        cornerDeg = getCornerRaDec(det_name, self.camera, obs)
-        for cc1, cc2 in zip(cornerRad, cornerDeg):
-            dd = haversine(cc1[0], cc1[1], numpy.radians(cc2[0]), numpy.radians(cc2[1]))
-            self.assertLess(arcsecFromRadians(dd), 0.000001)
-
 
     def testConsistency(self):
         """
@@ -1605,6 +1541,78 @@ class ConversionFromPixelTest(unittest.TestCase):
             numpy.testing.assert_array_almost_equal(arcsecFromRadians(yu), arcsecFromRadians(yd), 4)
 
 
+class CornerTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cameraDir = getPackageDir('sims_coordUtils')
+        cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
+        cls.camera = ReturnCamera(cameraDir)
+
+
+    def testCornerPixels(self):
+        """
+        Test the method to get the pixel coordinates of the corner
+        of a detector
+        """
+        det_name = self.camera[0].getName()
+        corners = getCornerPixels(det_name, self.camera)
+        self.assertEqual(corners[0][0], 0)
+        self.assertEqual(corners[0][1], 0)
+        self.assertEqual(corners[1][0], 0)
+        self.assertEqual(corners[1][1], 3999)
+        self.assertEqual(corners[2][0], 3999)
+        self.assertEqual(corners[2][1], 0)
+        self.assertEqual(corners[3][0], 3999)
+        self.assertEqual(corners[3][1], 3999)
+        self.assertEqual(len(corners), 4)
+
+
+    def testCornerRaDec_radians(self):
+        """
+        Test that the method to return the Ra, Dec values of the corner
+        of a chip (in radians) works by validating its results against
+        known pixel corner values and the _raDecFromPixelCoords method,
+        which is tested separately.
+        """
+        obs = ObservationMetaData(pointingRA=23.0, pointingDec=-65.0,
+                                  rotSkyPos=52.1, mjd=59582.3)
+
+        det_name = self.camera[4].getName()
+        cornerTest = _getCornerRaDec(det_name, self.camera, obs)
+
+        ra_control, dec_control = _raDecFromPixelCoords(numpy.array([0, 0, 3999, 3999]),
+                                                        numpy.array([0, 3999, 0, 3999]),
+                                                        [det_name]*4,
+                                                        camera=self.camera,
+                                                        obs_metadata=obs,
+                                                        epoch=2000.0, includeDistortion=True)
+
+        # Loop over the control values and the corner values, using
+        # haversine() method to find the angular distance between the
+        # test and control values.  Assert that they are within
+        # 0.01 milli-arcsecond of each other
+        for rr1, dd1, cc in zip(ra_control, dec_control, cornerTest):
+            dd = haversine(rr1, dd1, cc[0], cc[1])
+            self.assertLess(arcsecFromRadians(dd), 0.00001)
+
+
+    def testCornerRaDec_degrees(self):
+        """
+        Test that method to get corner RA, Dec in degrees is consistent
+        with method to get corner RA, Dec in radians
+        """
+
+        obs = ObservationMetaData(pointingRA=31.0, pointingDec=-45.0,
+                                  rotSkyPos=46.2, mjd=59583.4)
+
+        det_name = self.camera[1].getName()
+
+        cornerRad = _getCornerRaDec(det_name, self.camera, obs)
+        cornerDeg = getCornerRaDec(det_name, self.camera, obs)
+        for cc1, cc2 in zip(cornerRad, cornerDeg):
+            dd = haversine(cc1[0], cc1[1], numpy.radians(cc2[0]), numpy.radians(cc2[1]))
+            self.assertLess(arcsecFromRadians(dd), 0.000001)
 
 
 def suite():
@@ -1614,6 +1622,7 @@ def suite():
     suites += unittest.makeSuite(PixelCoordTest)
     suites += unittest.makeSuite(FocalPlaneCoordTest)
     suites += unittest.makeSuite(ConversionFromPixelTest)
+    suites += unittest.makeSuite(CornerTest)
     return unittest.TestSuite(suites)
 
 def run(shouldExit=False):
