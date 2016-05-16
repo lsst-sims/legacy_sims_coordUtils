@@ -141,7 +141,6 @@ class ChipNameTest(unittest.TestCase):
         # the conversion from degrees to radians that happens inside that
         # method automatically casts lists as numpy arrays
 
-
         # verify that an exception is raised if the two coordinate arrays contain
         # different numbers of elements
         xpDummy = np.random.random_sample(nStars/2)
@@ -164,19 +163,6 @@ class ChipNameTest(unittest.TestCase):
         self.assertEqual(context.exception.message,
                          'You passed %d RAs and ' % (nStars/2) \
                          + '%d Decs to chipName.' % nStars)
-
-
-        # verify that an exception is raised if you call chipNameFromRaDec
-        # without an epoch
-        with self.assertRaises(RuntimeError) as context:
-            chipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You need to pass an epoch into chipName')
-
-        with self.assertRaises(RuntimeError) as context:
-            _chipNameFromRaDec(xpList, ypList, obs_metadata=obs, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You need to pass an epoch into chipName')
 
         # verify that an exception is raised if you call chipNameFromRaDec
         # without an ObservationMetaData
@@ -436,7 +422,6 @@ class PixelCoordTest(unittest.TestCase):
         # because the conversion from degrees to radians  that happens
         # inside that method automatically casts lists as numpy arrays
 
-
         # test that an exception is raised if you pass in mis-matched
         # input arrays
         with self.assertRaises(RuntimeError) as context:
@@ -492,23 +477,6 @@ class PixelCoordTest(unittest.TestCase):
         self.assertEqual(context.exception.message,
                          'You passed 100 points but 10 chipNames to pixelCoordsFromRaDec')
 
-        # test that an exception is raised if you call one of the
-        # pixelCoordsFromRaDec methods without an epoch
-        with self.assertRaises(RuntimeError) as context:
-            pixelCoordsFromRaDec(raList, decList,
-                                 camera=self.camera,
-                                 obs_metadata=obs)
-        self.assertEqual(context.exception.message,
-                         'You need to pass an epoch into ' \
-                         + 'pixelCoordsFromRaDec')
-
-        with self.assertRaises(RuntimeError) as context:
-            _pixelCoordsFromRaDec(raList, decList,
-                                  camera=self.camera,
-                                  obs_metadata=obs)
-        self.assertEqual(context.exception.message,
-                         'You need to pass an epoch into ' \
-                         + 'pixelCoordsFromRaDec')
 
         # test that an exception is raised if you call one of the
         # pixelCoordsFromRaDec methods without an ObservationMetaData
@@ -1017,25 +985,6 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
 
         # test that an error is raised if you call
-        # focalPlaneCoordsFromRaDec without an epoch
-        with self.assertRaises(RuntimeError) as context:
-            xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
-                                               obs_metadata=obs,
-                                               camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You have to specify an epoch to run " \
-                         + "focalPlaneCoordsFromRaDec")
-
-        with self.assertRaises(RuntimeError) as context:
-            xf, yf = _focalPlaneCoordsFromRaDec(raList, decList,
-                                                obs_metadata=obs,
-                                                camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You have to specify an epoch to run " \
-                         + "focalPlaneCoordsFromRaDec")
-
-
-        # test that an error is raised if you call
         # focalPlaneCoordsFromRaDec without an ObservationMetaData
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromRaDec(raList, decList,
@@ -1272,18 +1221,6 @@ class ConversionFromPixelTest(unittest.TestCase):
         self.assertEqual(context.exception.message,
                          "You cannot call raDecFromPixelCoords without specifying a camera")
 
-        # test that an error is raised if you do not pass in an epoch
-        with self.assertRaises(RuntimeError) as context:
-            ra, dec = raDecFromPixelCoords(xPixList, yPixList, chipNameList,
-                                           obs_metadata=obs, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You cannot call raDecFromPixelCoords without specifying an epoch")
-
-        with self.assertRaises(RuntimeError) as context:
-            ra, dec = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
-                                            obs_metadata=obs, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You cannot call raDecFromPixelCoords without specifying an epoch")
 
         # test that an error is raised if you do not pass in an ObservationMetaData
         with self.assertRaises(RuntimeError) as context:

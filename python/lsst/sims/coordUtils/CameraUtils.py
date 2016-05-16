@@ -123,8 +123,8 @@ def _getCornerRaDec(detector_name, camera, obs_metadata,
 
 
 
-def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
-                           allow_multiple_chips=False):
+def chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
+                      epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
     either (xPupil, yPupil).
@@ -138,7 +138,7 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
 
     @param [in] epoch is the epoch in Julian years of the equinox against which RA and Dec are
-    measured
+    measured.  Default is 2000.
 
     @param [in] camera is an afw.cameraGeom camera instance characterizing the camera
 
@@ -156,8 +156,8 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
                                   camera=camera, allow_multiple_chips=allow_multiple_chips)
 
 
-def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
-                           allow_multiple_chips=False):
+def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
+                       epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
     either (xPupil, yPupil).
@@ -171,7 +171,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
 
     @param [in] epoch is the epoch in Julian years of the equinox against which RA and Dec are
-    measured
+    measured.  Default is 2000.
 
     @param [in] camera is an afw.cameraGeom camera instance characterizing the camera
 
@@ -264,8 +264,9 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     return np.array(chipNames)
 
 
-def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
-                          chipNames=None, camera=None, includeDistortion=True):
+def pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
+                         chipNames=None, camera=None,
+                         epoch=2000.0, includeDistortion=True):
     """
     Get the pixel positions (or nan if not on a chip) for objects based
     on their RA, and Dec (in degrees)
@@ -280,7 +281,7 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
     pointing.
 
     @param [in] epoch is the epoch in Julian years of the equinox against which
-    RA is measured.
+    RA is measured.  Default is 2000.
 
     @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
     to find the array.  The option exists for the user to specify chipNames, just in case the user
@@ -305,8 +306,9 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
                                  obs_metadata=obs_metadata, epoch=epoch)
 
 
-def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
-                          chipNames=None, camera=None, includeDistortion=True):
+def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
+                          chipNames=None, camera=None,
+                          epoch=2000.0, includeDistortion=True):
     """
     Get the pixel positions (or nan if not on a chip) for objects based
     on their RA, and Dec (in radians)
@@ -321,7 +323,7 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
     pointing.
 
     @param [in] epoch is the epoch in Julian years of the equinox against which
-    RA is measured.
+    RA is measured.  Default is 2000.
 
     @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
     to find the array.  The option exists for the user to specify chipNames, just in case the user
@@ -500,7 +502,7 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 
 
 def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
-                         obs_metadata=None, epoch=None, includeDistortion=True):
+                         obs_metadata=None, epoch=2000.0, includeDistortion=True):
     """
     Convert pixel coordinates into RA, Dec
 
@@ -515,7 +517,8 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 
     @param [in] obs_metadata is an ObservationMetaData defining the pointing
 
-    @param [in] epoch is the mean epoch in years of the celestial coordinate system
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system.
+    Default is 2000.
 
     @param [in] includeDistortion is a boolean.  If True (default), then this method will
     expect the true pixel coordinates with optical distortion included.  If False, this
@@ -535,7 +538,7 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 
 
 def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
-                          obs_metadata=None, epoch=None, includeDistortion=True):
+                          obs_metadata=None, epoch=2000.0, includeDistortion=True):
     """
     Convert pixel coordinates into RA, Dec
 
@@ -550,7 +553,8 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 
     @param [in] obs_metadata is an ObservationMetaData defining the pointing
 
-    @param [in] epoch is the mean epoch in years of the celestial coordinate system
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system.
+    Default is 2000.
 
     @param [in] includeDistortion is a boolean.  If True (default), then this method will
     expect the true pixel coordinates with optical distortion included.  If False, this
@@ -601,7 +605,7 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     return np.array([raOut, decOut])
 
 
-def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None):
+def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=2000.0, camera=None):
     """
     Get the focal plane coordinates for all objects in the catalog.
 
@@ -615,7 +619,7 @@ def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=Non
     pointing (only if specifying RA and Dec rather than pupil coordinates)
 
     @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
-    (in years; only if specifying RA and Dec rather than pupil coordinates)
+    (in years; only if specifying RA and Dec rather than pupil coordinates; default is 2000)
 
     @param [in] camera is an afw.cameraGeom camera object
 
@@ -629,7 +633,7 @@ def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=Non
                                       camera=camera)
 
 
-def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None):
+def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=2000.0, camera=None):
     """
     Get the focal plane coordinates for all objects in the catalog.
 
@@ -643,7 +647,7 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=No
     pointing (only if specifying RA and Dec rather than pupil coordinates)
 
     @param [in] epoch is the julian epoch of the mean equinox used for coordinate transformations
-    (in years; only if specifying RA and Dec rather than pupil coordinates)
+    (in years; only if specifying RA and Dec rather than pupil coordinates; default is 2000)
 
     @param [in] camera is an afw.cameraGeom camera object
 
