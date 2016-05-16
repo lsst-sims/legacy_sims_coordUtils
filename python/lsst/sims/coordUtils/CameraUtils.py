@@ -3,7 +3,7 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
-__all__ = ["getCornerPixels",
+__all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
            "chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
@@ -20,7 +20,7 @@ def getCornerPixels(detector_name, camera):
     @param [in] camera is the afwCameraGeom camera object containing
     that detector
 
-    @para [out] a list of tuples representing the (x,y) pixel coordinates
+    @param [out] a list of tuples representing the (x,y) pixel coordinates
     of the corners of the detector.  Order will be
 
     [(xmin, ymin), (xmin, ymax), (xmax, ymin), (xmax, ymax)]
@@ -33,6 +33,94 @@ def getCornerPixels(detector_name, camera):
     ymin = bbox.getMinY()
     ymax = bbox.getMaxY()
     return [(xmin, ymin), (xmin, ymax), (xmax, ymin), (xmax, ymax)]
+
+
+def getCornerRaDec(detector_name, camera, obs_metadata, epoch=2000.0,
+                   includeDistortion=True):
+    """
+    Return the ICRS RA, Dec values of the corners of the specified
+    detector in degrees.
+
+    @param [in] detector_name is the name of the detector in question
+
+    @param [in] camera is the afwCameraGeom camera object containing
+    that detector
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing
+    the pointing (and orientation) of the telescope.
+
+    @param [in] epoch is the mean Julian epoch of the coordinate system
+    (default is 2000)
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    convert from pixel coordinates to RA, Dec with optical distortion included.  If False, this
+    method will use TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a list of tuples representing the (RA, Dec) coordinates
+    of the corners of the detector in degrees.  The corners will be
+    returned in the order
+
+    [(xmin, ymin), (xmin, ymax), (xmax, ymin), (xmax, ymax)]
+
+    where (x, y) are pixel coordinates.  This will not necessarily
+    correspond to any order in RAmin, RAmax, DecMin, DecMax, because
+    of the ambiguity imposed by the rotator angle.
+    """
+
+    cc = _getCornerRaDec(detector_name, camera, obs_metadata,
+                         epoch=epoch, includeDistortion=includeDistortion)
+    return [(numpy.degrees(cc[0][0]), numpy.degrees(cc[0][1])),
+            (numpy.degrees(cc[1][0]), numpy.degrees(cc[1][1])),
+            (numpy.degrees(cc[2][0]), numpy.degrees(cc[2][1])),
+            (numpy.degrees(cc[3][0]), numpy.degrees(cc[3][1]))]
+
+
+def _getCornerRaDec(detector_name, camera, obs_metadata,
+                    epoch=2000.0, includeDistortion=True):
+    """
+    Return the ICRS RA, Dec values of the corners of the specified
+    detector in radians.
+
+    @param [in] detector_name is the name of the detector in question
+
+    @param [in] camera is the afwCameraGeom camera object containing
+    that detector
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing
+    the pointing (and orientation) of the telescope.
+
+    @param [in] epoch is the mean Julian epoch of the coordinate system
+    (default is 2000)
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    convert from pixel coordinates to RA, Dec with optical distortion included.  If False, this
+    method will use TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a list of tuples representing the (RA, Dec) coordinates
+    of the corners of the detector in radians.  The corners will be
+    returned in the order
+
+    [(xmin, ymin), (xmin, ymax), (xmax, ymin), (xmax, ymax)]
+
+    where (x, y) are pixel coordinates.  This will not necessarily
+    correspond to any order in RAmin, RAmax, DecMin, DecMax, because
+    of the ambiguity imposed by the rotator angle.
+    """
+
+    cc_pix = getCornerPixels(detector_name, camera)
+
+    ra, dec = _raDecFromPixelCoords(numpy.array([cc[0] for cc in cc_pix]),
+                                    numpy.array([cc[1] for cc in cc_pix]),
+                                    [detector_name]*len(cc_pix),
+                                    camera=camera, obs_metadata=obs_metadata,
+                                    epoch=epoch, includeDistortion=True)
+
+    return [(ra[0], dec[0]), (ra[1], dec[1]), (ra[2], dec[2]), (ra[3], dec[3])]
+
 
 
 def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
