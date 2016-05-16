@@ -1,6 +1,6 @@
 from __future__ import with_statement
 import os
-import numpy
+import numpy as np
 import unittest
 import lsst.utils.tests as utilsTests
 from lsst.utils import getPackageDir
@@ -38,7 +38,7 @@ class ChipNameTest(unittest.TestCase):
         cls.camera = ReturnCamera(cameraDir)
 
     def setUp(self):
-        numpy.random.seed(45532)
+        np.random.seed(45532)
 
 
     def testRuns(self):
@@ -54,8 +54,8 @@ class ChipNameTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=mjd, rotSkyPos=rotSkyPos)
 
-        raList = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + ra0
-        decList = (numpy.random.random_sample(nStars)-0.5)*1000.0/3600.0 + dec0
+        raList = (np.random.random_sample(nStars)-0.5)*1000.0/3600.0 + ra0
+        decList = (np.random.random_sample(nStars)-0.5)*1000.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList,
                                                    obs_metadata=obs,
@@ -66,15 +66,15 @@ class ChipNameTest(unittest.TestCase):
                                    epoch=2000.0,
                                    camera=self.camera)
 
-        names2 = _chipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
+        names2 = _chipNameFromRaDec(np.radians(raList), np.radians(decList),
                                     obs_metadata=obs,
                                     epoch=2000.0,
                                     camera=self.camera)
 
         names3 = chipNameFromPupilCoords(xpList, ypList, camera=self.camera)
 
-        numpy.testing.assert_array_equal(names1, names2)
-        numpy.testing.assert_array_equal(names1, names3)
+        np.testing.assert_array_equal(names1, names2)
+        np.testing.assert_array_equal(names1, names3)
 
         isNone = 0
         isNotNone = 0
@@ -93,8 +93,8 @@ class ChipNameTest(unittest.TestCase):
         """
 
         nStars = 10
-        xpList = numpy.random.random_sample(nStars)*0.1
-        ypList = numpy.random.random_sample(nStars)*0.1
+        xpList = np.random.random_sample(nStars)*0.1
+        ypList = np.random.random_sample(nStars)*0.1
 
         obs = ObservationMetaData(pointingRA=25.0, pointingDec=112.0, mjd=42351.0,
                                   rotSkyPos=35.0)
@@ -144,7 +144,7 @@ class ChipNameTest(unittest.TestCase):
 
         # verify that an exception is raised if the two coordinate arrays contain
         # different numbers of elements
-        xpDummy = numpy.random.random_sample(nStars/2)
+        xpDummy = np.random.random_sample(nStars/2)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
         self.assertEqual(context.exception.message,
@@ -236,10 +236,10 @@ class ChipNameTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=mjd, rotSkyPos=rotSkyPos)
 
-        for badVal in [numpy.NaN, None]:
+        for badVal in [np.NaN, None]:
 
-            raList = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + ra0
-            decList = (numpy.random.random_sample(nStars)-0.5)*5.0/3600.0 + dec0
+            raList = (np.random.random_sample(nStars)-0.5)*5.0/3600.0 + ra0
+            decList = (np.random.random_sample(nStars)-0.5)*5.0/3600.0 + dec0
 
             raList[5] = badVal
             raList[10] = badVal
@@ -253,13 +253,13 @@ class ChipNameTest(unittest.TestCase):
             names1 = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                             camera=self.camera)
 
-            names2 = _chipNameFromRaDec(numpy.radians(raList), numpy.radians(decList),
+            names2 = _chipNameFromRaDec(np.radians(raList), np.radians(decList),
                                             obs_metadata=obs, epoch=2000.0, camera=self.camera)
 
             names3 = chipNameFromPupilCoords(xpList, ypList, camera=self.camera)
 
-            numpy.testing.assert_array_equal(names1, names2)
-            numpy.testing.assert_array_equal(names1, names3)
+            np.testing.assert_array_equal(names1, names2)
+            np.testing.assert_array_equal(names1, names3)
 
             for ix in range(len(names1)):
                 if ix != 5 and ix != 10 and ix != 25:
@@ -281,7 +281,7 @@ class PixelCoordTest(unittest.TestCase):
         cls.camera = ReturnCamera(cameraDir)
 
     def setUp(self):
-        numpy.random.seed(11324)
+        np.random.seed(11324)
 
 
     def testConsistency(self):
@@ -295,8 +295,8 @@ class PixelCoordTest(unittest.TestCase):
                                   mjd=52350.0, rotSkyPos=27.0)
 
         nStars = 100
-        raList = (numpy.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
-        decList = (numpy.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
+        raList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        decList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
 
@@ -308,7 +308,7 @@ class PixelCoordTest(unittest.TestCase):
             xx1, yy1 = pixelCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                             camera=self.camera, includeDistortion=includeDistortion)
 
-            xx2, yy2 = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
+            xx2, yy2 = _pixelCoordsFromRaDec(np.radians(raList), np.radians(decList),
                                              obs_metadata=obs, epoch=2000.0,
                                              camera=self.camera, includeDistortion=includeDistortion)
 
@@ -323,23 +323,23 @@ class PixelCoordTest(unittest.TestCase):
                                             camera=self.camera, includeDistortion=includeDistortion,
                                             chipNames=chipNameList)
 
-            xx6, yy6 = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
+            xx6, yy6 = _pixelCoordsFromRaDec(np.radians(raList), np.radians(decList),
                                              obs_metadata=obs, epoch=2000.0,
                                              camera=self.camera, includeDistortion=includeDistortion,
                                              chipNames=chipNameList)
 
 
-            numpy.testing.assert_array_equal(xx1, xx2)
-            numpy.testing.assert_array_equal(xx1, xx3)
-            numpy.testing.assert_array_equal(xx1, xx4)
-            numpy.testing.assert_array_equal(xx1, xx5)
-            numpy.testing.assert_array_equal(xx1, xx6)
+            np.testing.assert_array_equal(xx1, xx2)
+            np.testing.assert_array_equal(xx1, xx3)
+            np.testing.assert_array_equal(xx1, xx4)
+            np.testing.assert_array_equal(xx1, xx5)
+            np.testing.assert_array_equal(xx1, xx6)
 
-            numpy.testing.assert_array_equal(yy1, yy2)
-            numpy.testing.assert_array_equal(yy1, yy3)
-            numpy.testing.assert_array_equal(yy1, yy4)
-            numpy.testing.assert_array_equal(yy1, yy5)
-            numpy.testing.assert_array_equal(yy1, yy6)
+            np.testing.assert_array_equal(yy1, yy2)
+            np.testing.assert_array_equal(yy1, yy3)
+            np.testing.assert_array_equal(yy1, yy4)
+            np.testing.assert_array_equal(yy1, yy5)
+            np.testing.assert_array_equal(yy1, yy6)
 
             # make sure that objects which do not fall on a chip
             # get NaN pixel coords
@@ -347,12 +347,12 @@ class PixelCoordTest(unittest.TestCase):
             ctNotNaN = 0
             for x, y, name in zip(xx1, yy1, chipNameList):
                 if name is None:
-                    self.assertTrue(numpy.isnan(x))
-                    self.assertTrue(numpy.isnan(y))
+                    self.assertTrue(np.isnan(x))
+                    self.assertTrue(np.isnan(y))
                     ctNaN += 1
                 else:
-                    self.assertFalse(numpy.isnan(x))
-                    self.assertFalse(numpy.isnan(y))
+                    self.assertFalse(np.isnan(x))
+                    self.assertFalse(np.isnan(y))
                     ctNotNaN += 1
 
             self.assertGreater(ctNaN, 0)
@@ -365,15 +365,15 @@ class PixelCoordTest(unittest.TestCase):
         they should
         """
         nPoints = 100
-        xpList = numpy.random.random_sample(nPoints)*numpy.radians(1.0)
-        ypList = numpy.random.random_sample(nPoints)*numpy.radians(1.0)
+        xpList = np.random.random_sample(nPoints)*np.radians(1.0)
+        ypList = np.random.random_sample(nPoints)*np.radians(1.0)
         obs = ObservationMetaData(pointingRA=25.0,
                                   pointingDec=-36.0,
                                   rotSkyPos=122.0,
                                   mjd=41325.0)
 
-        raList = numpy.random.random_sample(nPoints)*1.0+25.0
-        decList = numpy.random.random_sample(nPoints)*1.0-36.0
+        raList = np.random.random_sample(nPoints)*1.0+25.0
+        decList = np.random.random_sample(nPoints)*1.0-36.0
 
         # check that an error is raised when you forget to
         # pass in a camera
@@ -389,8 +389,8 @@ class PixelCoordTest(unittest.TestCase):
                          'Camera not specified.  Cannot calculate pixel coordinates.')
 
         with self.assertRaises(RuntimeError) as context:
-            _pixelCoordsFromRaDec(numpy.radians(raList),
-                                  numpy.radians(decList),
+            _pixelCoordsFromRaDec(np.radians(raList),
+                                  np.radians(decList),
                                   obs_metadata=obs,
                                   epoch=2000.0)
         self.assertEqual(context.exception.message,
@@ -414,8 +414,8 @@ class PixelCoordTest(unittest.TestCase):
                          + 'to pixelCoordsFromPupilCoords')
 
         with self.assertRaises(RuntimeError) as context:
-            _pixelCoordsFromRaDec(list(numpy.radians(raList)),
-                                  numpy.radians(decList),
+            _pixelCoordsFromRaDec(list(np.radians(raList)),
+                                  np.radians(decList),
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
@@ -424,8 +424,8 @@ class PixelCoordTest(unittest.TestCase):
                          + 'to pixelCoordsFromRaDec')
 
         with self.assertRaises(RuntimeError) as context:
-            _pixelCoordsFromRaDec(numpy.radians(raList),
-                                  list(numpy.radians(decList)),
+            _pixelCoordsFromRaDec(np.radians(raList),
+                                  list(np.radians(decList)),
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
@@ -456,8 +456,8 @@ class PixelCoordTest(unittest.TestCase):
                          'to pixelCoordsFromRaDec')
 
         with self.assertRaises(RuntimeError) as context:
-            _pixelCoordsFromRaDec(numpy.radians(raList),
-                                  numpy.radians(decList[0:10]),
+            _pixelCoordsFromRaDec(np.radians(raList),
+                                  np.radians(decList[0:10]),
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
@@ -483,8 +483,8 @@ class PixelCoordTest(unittest.TestCase):
                          'You passed 100 points but 10 chipNames to pixelCoordsFromRaDec')
 
         with self.assertRaises(RuntimeError) as context:
-            _pixelCoordsFromRaDec(numpy.radians(raList),
-                                  numpy.radians(decList),
+            _pixelCoordsFromRaDec(np.radians(raList),
+                                  np.radians(decList),
                                   chipNames=['Det22']*10,
                                   camera=self.camera,
                                   obs_metadata=obs,
@@ -607,13 +607,13 @@ class PixelCoordTest(unittest.TestCase):
         # assemble a bunch of displacements in pixels
         dxPixList = []
         dyPixList = []
-        for xx in numpy.arange(-1999.0, 1999.0, 500.0):
-            for yy in numpy.arange(-1999.0, 1999.0, 500.0):
+        for xx in np.arange(-1999.0, 1999.0, 500.0):
+            for yy in np.arange(-1999.0, 1999.0, 500.0):
                 dxPixList.append(xx)
                 dyPixList.append(yy)
 
-        dxPixList = numpy.array(dxPixList)
-        dyPixList = numpy.array(dyPixList)
+        dxPixList = np.array(dxPixList)
+        dyPixList = np.array(dyPixList)
 
         # convert to raidans
         dxPupList = radiansFromArcsec(dxPixList*arcsecPerPixel)
@@ -622,20 +622,20 @@ class PixelCoordTest(unittest.TestCase):
         # assemble a bunch of test pupil coordinate pairs
         xPupList = x22 + dxPupList
         yPupList = y22 + dyPupList
-        xPupList = numpy.append(xPupList, x32 + dxPupList)
-        yPupList = numpy.append(yPupList, y32 + dyPupList)
-        xPupList = numpy.append(xPupList, x40 + dxPupList)
-        yPupList = numpy.append(yPupList, y40 + dyPupList)
+        xPupList = np.append(xPupList, x32 + dxPupList)
+        yPupList = np.append(yPupList, y32 + dyPupList)
+        xPupList = np.append(xPupList, x40 + dxPupList)
+        yPupList = np.append(yPupList, y40 + dyPupList)
 
         # this is what the chipNames ought to be for these points
-        chipNameControl = numpy.array(['Det22'] * len(dxPupList))
-        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxPupList))
-        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxPupList))
+        chipNameControl = np.array(['Det22'] * len(dxPupList))
+        chipNameControl = np.append(chipNameControl, ['Det32'] * len(dxPupList))
+        chipNameControl = np.append(chipNameControl, ['Det40'] * len(dxPupList))
 
         chipNameTest = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
 
         # verify that the test points fall on the expected chips
-        numpy.testing.assert_array_equal(chipNameControl, chipNameTest)
+        np.testing.assert_array_equal(chipNameControl, chipNameTest)
 
         # Note, the somewhat backwards way in which we go from dxPixList to
         # xPixControl is due to the fact that pixel coordinates are actually
@@ -644,17 +644,17 @@ class PixelCoordTest(unittest.TestCase):
         # in pupil coordinates
         xPixControl = 1999.5 + dyPixList
         yPixControl = 1999.5 - dxPixList
-        xPixControl = numpy.append(xPixControl, 1999.5 + dyPixList)
-        yPixControl = numpy.append(yPixControl, 1999.5 - dxPixList)
-        xPixControl = numpy.append(xPixControl, 1999.5 + dyPixList)
-        yPixControl = numpy.append(yPixControl, 1999.5 - dxPixList)
+        xPixControl = np.append(xPixControl, 1999.5 + dyPixList)
+        yPixControl = np.append(yPixControl, 1999.5 - dxPixList)
+        xPixControl = np.append(xPixControl, 1999.5 + dyPixList)
+        yPixControl = np.append(yPixControl, 1999.5 - dxPixList)
 
         # verify that the pixel coordinates are as expected to within 0.01 pixel
         xPixTest, yPixTest = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera,
                                                         includeDistortion=False)
 
-        numpy.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
-        numpy.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
+        np.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
+        np.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
 
 
     def testOffChipResults(self):
@@ -692,13 +692,13 @@ class PixelCoordTest(unittest.TestCase):
         # assemble a bunch of displacements in pixels
         dxPixList = []
         dyPixList = []
-        for xx in numpy.arange(-1999.0, 1999.0, 500.0):
-            for yy in numpy.arange(-1999.0, 1999.0, 500.0):
+        for xx in np.arange(-1999.0, 1999.0, 500.0):
+            for yy in np.arange(-1999.0, 1999.0, 500.0):
                 dxPixList.append(xx)
                 dyPixList.append(yy)
 
-        dxPixList = numpy.array(dxPixList)
-        dyPixList = numpy.array(dyPixList)
+        dxPixList = np.array(dxPixList)
+        dyPixList = np.array(dyPixList)
 
         # convert to raidans
         dxPupList = radiansFromArcsec(dxPixList*arcsecPerPixel)
@@ -707,20 +707,20 @@ class PixelCoordTest(unittest.TestCase):
         # assemble a bunch of test pupil coordinate pairs
         xPupList = x22 + dxPupList
         yPupList = y22 + dyPupList
-        xPupList = numpy.append(xPupList, x32 + dxPupList)
-        yPupList = numpy.append(yPupList, y32 + dyPupList)
-        xPupList = numpy.append(xPupList, x40 + dxPupList)
-        yPupList = numpy.append(yPupList, y40 + dyPupList)
+        xPupList = np.append(xPupList, x32 + dxPupList)
+        yPupList = np.append(yPupList, y32 + dyPupList)
+        xPupList = np.append(xPupList, x40 + dxPupList)
+        yPupList = np.append(yPupList, y40 + dyPupList)
 
         # this is what the chipNames ought to be for these points
-        chipNameControl = numpy.array(['Det22'] * len(dxPupList))
-        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxPupList))
-        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxPupList))
+        chipNameControl = np.array(['Det22'] * len(dxPupList))
+        chipNameControl = np.append(chipNameControl, ['Det32'] * len(dxPupList))
+        chipNameControl = np.append(chipNameControl, ['Det40'] * len(dxPupList))
 
         chipNameTest = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
 
         # verify that the test points fall on the expected chips
-        numpy.testing.assert_array_equal(chipNameControl, chipNameTest)
+        np.testing.assert_array_equal(chipNameControl, chipNameTest)
 
         # Note, the somewhat backwards way in which we go from dxPupList to
         # xPixControl is due to the fact that pixel coordinates are actually
@@ -736,8 +736,8 @@ class PixelCoordTest(unittest.TestCase):
                                                         includeDistortion=False,
                                                         chipNames=inputChipNames)
 
-        numpy.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
-        numpy.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
+        np.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
+        np.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
 
 
 
@@ -752,8 +752,8 @@ class PixelCoordTest(unittest.TestCase):
                                   rotSkyPos=42.0, mjd=42356.0)
 
         nStars = 10
-        raList = numpy.random.random_sample(100)*100.0/3600.0 + ra0
-        decList = numpy.random.random_sample(100)*100.0/3600.0 + dec0
+        raList = np.random.random_sample(100)*100.0/3600.0 + ra0
+        decList = np.random.random_sample(100)*100.0/3600.0 + dec0
         chipNameList = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                          camera=self.camera)
 
@@ -768,12 +768,12 @@ class PixelCoordTest(unittest.TestCase):
                                                   epoch=2000.0, camera=self.camera)
 
         for xx, yy in zip(xPixList, yPixList):
-            self.assertFalse(numpy.isnan(xx))
-            self.assertFalse(numpy.isnan(yy))
+            self.assertFalse(np.isnan(xx))
+            self.assertFalse(np.isnan(yy))
             self.assertFalse(xx is None)
             self.assertFalse(yy is None)
 
-        for badVal in [numpy.NaN, None]:
+        for badVal in [np.NaN, None]:
             raList[5] = badVal
             decList[7] = badVal
             raList[9] = badVal
@@ -784,24 +784,24 @@ class PixelCoordTest(unittest.TestCase):
 
             for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
                 if ix in [5, 7, 9]:
-                    self.assertTrue(numpy.isnan(xx))
-                    self.assertTrue(numpy.isnan(yy))
+                    self.assertTrue(np.isnan(xx))
+                    self.assertTrue(np.isnan(yy))
                 else:
-                    self.assertFalse(numpy.isnan(xx))
-                    self.assertFalse(numpy.isnan(yy))
+                    self.assertFalse(np.isnan(xx))
+                    self.assertFalse(np.isnan(yy))
                     self.assertIsNotNone(xx, None)
                     self.assertIsNotNone(yy, None)
 
-            xPixList, yPixList = _pixelCoordsFromRaDec(numpy.radians(raList), numpy.radians(decList),
+            xPixList, yPixList = _pixelCoordsFromRaDec(np.radians(raList), np.radians(decList),
                                                        obs_metadata=obs, epoch=2000.0, camera=self.camera)
 
             for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
                 if ix in [5, 7, 9]:
-                    self.assertTrue(numpy.isnan(xx))
-                    self.assertTrue(numpy.isnan(yy))
+                    self.assertTrue(np.isnan(xx))
+                    self.assertTrue(np.isnan(yy))
                 else:
-                    self.assertFalse(numpy.isnan(xx))
-                    self.assertFalse(numpy.isnan(yy))
+                    self.assertFalse(np.isnan(xx))
+                    self.assertFalse(np.isnan(yy))
                     self.assertIsNotNone(xx, None)
                     self.assertIsNotNone(yy, None)
 
@@ -812,11 +812,11 @@ class PixelCoordTest(unittest.TestCase):
             xPixList, yPixList = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
             for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
                 if ix in [5, 7, 9]:
-                    self.assertTrue(numpy.isnan(xx))
-                    self.assertTrue(numpy.isnan(yy))
+                    self.assertTrue(np.isnan(xx))
+                    self.assertTrue(np.isnan(yy))
                 else:
-                    self.assertFalse(numpy.isnan(xx))
-                    self.assertFalse(numpy.isnan(yy))
+                    self.assertFalse(np.isnan(xx))
+                    self.assertFalse(np.isnan(yy))
                     self.assertIsNotNone(xx, None)
                     self.assertIsNotNone(yy, None)
 
@@ -831,8 +831,8 @@ class PixelCoordTest(unittest.TestCase):
         If we take that away, the test will no longer pass.
         """
         nStars = 100
-        xp = radiansFromArcsec((numpy.random.random_sample(100)-0.5)*100.0)
-        yp = radiansFromArcsec((numpy.random.random_sample(100)-0.5)*100.0)
+        xp = radiansFromArcsec((np.random.random_sample(100)-0.5)*100.0)
+        yp = radiansFromArcsec((np.random.random_sample(100)-0.5)*100.0)
 
         xu, yu = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera, includeDistortion=False)
         xd, yd = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera, includeDistortion=True)
@@ -840,10 +840,10 @@ class PixelCoordTest(unittest.TestCase):
         # just verify that the distorted versus undistorted coordinates vary in the
         # 4th decimal place
         with self.assertRaises(AssertionError) as context:
-            numpy.testing.assert_array_almost_equal(xu, xd, 4)
+            np.testing.assert_array_almost_equal(xu, xd, 4)
 
         with self.assertRaises(AssertionError) as context:
-            numpy.testing.assert_array_almost_equal(yu, yd, 4)
+            np.testing.assert_array_almost_equal(yu, yd, 4)
 
 
 
@@ -856,7 +856,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
         cls.camera = ReturnCamera(cameraDir)
 
     def setUp(self):
-        numpy.random.seed(8374522)
+        np.random.seed(8374522)
 
 
     def testConsistency(self):
@@ -870,14 +870,14 @@ class FocalPlaneCoordTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43257.0, rotSkyPos = 127.0)
 
-        raCenter, decCenter = observedFromICRS(numpy.array([ra0]),
-                                               numpy.array([dec0]),
+        raCenter, decCenter = observedFromICRS(np.array([ra0]),
+                                               np.array([dec0]),
                                                obs_metadata=obs,
                                                epoch=2000.0)
 
         nStars = 100
-        raList = numpy.random.random_sample(nStars)*1000.0/3600.0 + raCenter[0]
-        decList = numpy.random.random_sample(nStars)*1000.0/3600.0 + decCenter[0]
+        raList = np.random.random_sample(nStars)*1000.0/3600.0 + raCenter[0]
+        decList = np.random.random_sample(nStars)*1000.0/3600.0 + decCenter[0]
 
         xPupList, yPupList = pupilCoordsFromRaDec(raList, decList,
                                                   obs_metadata=obs,
@@ -887,23 +887,23 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                              obs_metadata=obs,
                                              epoch=2000.0, camera=self.camera)
 
-        xf2, yf2 = _focalPlaneCoordsFromRaDec(numpy.radians(raList),
-                                              numpy.radians(decList),
+        xf2, yf2 = _focalPlaneCoordsFromRaDec(np.radians(raList),
+                                              np.radians(decList),
                                               obs_metadata=obs,
                                               epoch=2000.0, camera=self.camera)
 
         xf3, yf3 = focalPlaneCoordsFromPupilCoords(xPupList, yPupList,
                                                    camera=self.camera)
 
-        numpy.testing.assert_array_equal(xf1, xf2)
-        numpy.testing.assert_array_equal(xf1, xf3)
-        numpy.testing.assert_array_equal(yf1, yf2)
-        numpy.testing.assert_array_equal(yf1, yf3)
+        np.testing.assert_array_equal(xf1, xf2)
+        np.testing.assert_array_equal(xf1, xf3)
+        np.testing.assert_array_equal(yf1, yf2)
+        np.testing.assert_array_equal(yf1, yf3)
 
         for x, y in zip(xf1, yf1):
-            self.assertFalse(numpy.isnan(x))
+            self.assertFalse(np.isnan(x))
             self.assertFalse(x is None)
-            self.assertFalse(numpy.isnan(y))
+            self.assertFalse(np.isnan(y))
             self.assertFalse(y is None)
 
 
@@ -919,8 +919,8 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                   rotSkyPos=61.0, mjd=52349.0)
 
         nStars = 10
-        raList = (numpy.random.random_sample(nStars)-0.5) + ra0
-        decList = (numpy.random.random_sample(nStars)-0.5) + dec0
+        raList = (np.random.random_sample(nStars)-0.5) + ra0
+        decList = (np.random.random_sample(nStars)-0.5) + dec0
         xPupList, yPupList = pupilCoordsFromRaDec(raList, decList,
                                                   obs_metadata=obs,
                                                   epoch=2000.0)
@@ -1133,13 +1133,13 @@ class FocalPlaneCoordTest(unittest.TestCase):
         # assemble a bunch of displacements in pixels
         dxPixList = []
         dyPixList = []
-        for xx in numpy.arange(-1999.0, 1999.0, 500.0):
-            for yy in numpy.arange(-1999.0, 1999.0, 500.0):
+        for xx in np.arange(-1999.0, 1999.0, 500.0):
+            for yy in np.arange(-1999.0, 1999.0, 500.0):
                 dxPixList.append(xx)
                 dyPixList.append(yy)
 
-        dxPixList = numpy.array(dxPixList)
-        dyPixList = numpy.array(dyPixList)
+        dxPixList = np.array(dxPixList)
+        dyPixList = np.array(dyPixList)
 
         # convert to raidans
         dxPupList = radiansFromArcsec(dxPixList*arcsecPerPixel)
@@ -1148,20 +1148,20 @@ class FocalPlaneCoordTest(unittest.TestCase):
         # assemble a bunch of test pupil coordinate pairs
         xPupList = x22 + dxPupList
         yPupList = y22 + dyPupList
-        xPupList = numpy.append(xPupList, x32 + dxPupList)
-        yPupList = numpy.append(yPupList, y32 + dyPupList)
-        xPupList = numpy.append(xPupList, x40 + dxPupList)
-        yPupList = numpy.append(yPupList, y40 + dyPupList)
+        xPupList = np.append(xPupList, x32 + dxPupList)
+        yPupList = np.append(yPupList, y32 + dyPupList)
+        xPupList = np.append(xPupList, x40 + dxPupList)
+        yPupList = np.append(yPupList, y40 + dyPupList)
 
         # this is what the chipNames ought to be for these points
-        chipNameControl = numpy.array(['Det22'] * len(dxPupList))
-        chipNameControl = numpy.append(chipNameControl, ['Det32'] * len(dxPupList))
-        chipNameControl = numpy.append(chipNameControl, ['Det40'] * len(dxPupList))
+        chipNameControl = np.array(['Det22'] * len(dxPupList))
+        chipNameControl = np.append(chipNameControl, ['Det32'] * len(dxPupList))
+        chipNameControl = np.append(chipNameControl, ['Det40'] * len(dxPupList))
 
         chipNameTest = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
 
         # verify that the test points fall on the expected chips
-        numpy.testing.assert_array_equal(chipNameControl, chipNameTest)
+        np.testing.assert_array_equal(chipNameControl, chipNameTest)
 
         # convert into millimeters on the focal plane
         xFocalControl = arcsecFromRadians(xPupList)*mmPerArcsec
@@ -1169,8 +1169,8 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
         xFocalTest, yFocalTest = focalPlaneCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
 
-        numpy.testing.assert_array_almost_equal(xFocalTest, xFocalControl, 3)
-        numpy.testing.assert_array_almost_equal(yFocalTest, yFocalControl, 3)
+        np.testing.assert_array_almost_equal(xFocalTest, xFocalControl, 3)
+        np.testing.assert_array_almost_equal(yFocalTest, yFocalControl, 3)
 
 
 class ConversionFromPixelTest(unittest.TestCase):
@@ -1182,7 +1182,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         cls.camera = ReturnCamera(cameraDir)
 
     def setUp(self):
-        numpy.random.seed(543)
+        np.random.seed(543)
 
     def testPupCoordsException(self):
         """
@@ -1190,8 +1190,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         call it without a camera
         """
         nStars = 100
-        xPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
-        yPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        xPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
         chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
         xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
         with self.assertRaises(RuntimeError) as context:
@@ -1208,8 +1208,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         """
 
         nStars = 100
-        xPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
-        yPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        xPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
         chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
         for includeDistortion in [True, False]:
             xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera,
@@ -1218,13 +1218,13 @@ class ConversionFromPixelTest(unittest.TestCase):
                                                             includeDistortion=includeDistortion)
 
             dx = arcsecFromRadians(xPupTest-xPupList)
-            numpy.testing.assert_array_almost_equal(dx, numpy.zeros(len(dx)), 9)
+            np.testing.assert_array_almost_equal(dx, np.zeros(len(dx)), 9)
             dy = arcsecFromRadians(yPupTest-yPupList)
-            numpy.testing.assert_array_almost_equal(dy, numpy.zeros(len(dy)), 9)
+            np.testing.assert_array_almost_equal(dy, np.zeros(len(dy)), 9)
 
             ctNaN = 0
             for x, y in zip(xPupTest, yPupTest):
-                if numpy.isnan(x) or numpy.isnan(y):
+                if np.isnan(x) or np.isnan(y):
                     ctNaN += 1
             self.assertLess(ctNaN, len(xPupTest)/10)
 
@@ -1233,14 +1233,14 @@ class ConversionFromPixelTest(unittest.TestCase):
         Test that points which do not have a chip return NaN for pupilCoordsFromPixelCoords
         """
         nStars = 10
-        xPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
-        yPupList = radiansFromArcsec((numpy.random.random_sample(nStars)-0.5)*320.0)
+        xPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
         chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
         chipNameList[5] = None
         xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
         xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList, camera=self.camera)
-        self.assertTrue(numpy.isnan(xPupTest[5]))
-        self.assertTrue(numpy.isnan(yPupTest[5]))
+        self.assertTrue(np.isnan(xPupTest[5]))
+        self.assertTrue(np.isnan(yPupTest[5]))
 
 
     def testRaDecExceptions(self):
@@ -1253,10 +1253,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
-        xPixList = numpy.random.random_sample(nStars)*4000.0
-        yPixList = numpy.random.random_sample(nStars)*4000.0
+        xPixList = np.random.random_sample(nStars)*4000.0
+        yPixList = np.random.random_sample(nStars)*4000.0
 
-        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         # test that an error is raised if you do not pass in a camera
@@ -1414,10 +1414,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
-        xPixList = numpy.random.random_sample(nStars)*4000.0
-        yPixList = numpy.random.random_sample(nStars)*4000.0
+        xPixList = np.random.random_sample(nStars)*4000.0
+        yPixList = np.random.random_sample(nStars)*4000.0
 
-        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
@@ -1433,10 +1433,10 @@ class ConversionFromPixelTest(unittest.TestCase):
 
 
             # first, make sure that the radians and degrees methods agree with each other
-            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
-            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(len(raRad)), 9)
-            dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
-            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(len(decRad)), 9)
+            dRa = arcsecFromRadians(raRad-np.radians(raDeg))
+            np.testing.assert_array_almost_equal(dRa, np.zeros(len(raRad)), 9)
+            dDec = arcsecFromRadians(decRad-np.radians(decDeg))
+            np.testing.assert_array_almost_equal(dDec, np.zeros(len(decRad)), 9)
 
             # now make sure that the results from raDecFromPixelCoords are consistent
             # with the results from pixelCoordsFromRaDec by taking the ra and dec
@@ -1447,7 +1447,7 @@ class ConversionFromPixelTest(unittest.TestCase):
                                                       includeDistortion=includeDistortion)
 
 
-            distance = numpy.sqrt(numpy.power(xPixTest-xPixList,2)+numpy.power(yPixTest-yPixList,2))
+            distance = np.sqrt(np.power(xPixTest-xPixList,2)+np.power(yPixTest-yPixList,2))
             self.assertLess(distance.max(),0.2) # because of the imprecision in _icrsFromObserved, this is the best
                                                 # we can get; note that, in our test camera, each pixel is 10 microns
                                                 # in size and the plate scale is 2 arcsec per mm, so 0.2 pixels is
@@ -1469,10 +1469,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
-        xPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
-        yPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
+        xPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
+        yPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
 
-        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
@@ -1488,10 +1488,10 @@ class ConversionFromPixelTest(unittest.TestCase):
 
 
             # first, make sure that the radians and degrees methods agree with each other
-            dRa = arcsecFromRadians(raRad-numpy.radians(raDeg))
-            numpy.testing.assert_array_almost_equal(dRa, numpy.zeros(len(raRad)), 9)
-            dDec = arcsecFromRadians(decRad-numpy.radians(decDeg))
-            numpy.testing.assert_array_almost_equal(dDec, numpy.zeros(len(decRad)), 9)
+            dRa = arcsecFromRadians(raRad-np.radians(raDeg))
+            np.testing.assert_array_almost_equal(dRa, np.zeros(len(raRad)), 9)
+            dDec = arcsecFromRadians(decRad-np.radians(decDeg))
+            np.testing.assert_array_almost_equal(dDec, np.zeros(len(decRad)), 9)
 
             # now make sure that the results from raDecFromPixelCoords are consistent
             # with the results from pixelCoordsFromRaDec by taking the ra and dec
@@ -1504,7 +1504,7 @@ class ConversionFromPixelTest(unittest.TestCase):
                                                       includeDistortion=includeDistortion)
 
 
-            distance = numpy.sqrt(numpy.power(xPixTest-xPixList,2)+numpy.power(yPixTest-yPixList,2))
+            distance = np.sqrt(np.power(xPixTest-xPixList,2)+np.power(yPixTest-yPixList,2))
             self.assertLess(distance.max(),0.2) # because of the imprecision in _icrsFromObserved, this is the best
                                                 # we can get; note that, in our test camera, each pixel is 10 microns
                                                 # in size and the plate scale is 2 arcsec per mm, so 0.2 pixels is
@@ -1521,10 +1521,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         If we take that away, the test will no longer pass.
         """
         nStars = 200
-        xPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
-        yPixList = numpy.random.random_sample(nStars)*4000.0 + 4000.0
+        xPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
+        yPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
 
-        chipDexList = numpy.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         xu, yu = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=self.camera,
@@ -1535,10 +1535,10 @@ class ConversionFromPixelTest(unittest.TestCase):
 
         # just verify that the distorted versus undistorted coordinates vary in the 4th decimal
         with self.assertRaises(AssertionError) as context:
-            numpy.testing.assert_array_almost_equal(arcsecFromRadians(xu), arcsecFromRadians(xd), 4)
+            np.testing.assert_array_almost_equal(arcsecFromRadians(xu), arcsecFromRadians(xd), 4)
 
         with self.assertRaises(AssertionError) as context:
-            numpy.testing.assert_array_almost_equal(arcsecFromRadians(yu), arcsecFromRadians(yd), 4)
+            np.testing.assert_array_almost_equal(arcsecFromRadians(yu), arcsecFromRadians(yd), 4)
 
 
 class CornerTest(unittest.TestCase):
@@ -1581,8 +1581,8 @@ class CornerTest(unittest.TestCase):
         det_name = self.camera[4].getName()
         cornerTest = _getCornerRaDec(det_name, self.camera, obs)
 
-        ra_control, dec_control = _raDecFromPixelCoords(numpy.array([0, 0, 3999, 3999]),
-                                                        numpy.array([0, 3999, 0, 3999]),
+        ra_control, dec_control = _raDecFromPixelCoords(np.array([0, 0, 3999, 3999]),
+                                                        np.array([0, 3999, 0, 3999]),
                                                         [det_name]*4,
                                                         camera=self.camera,
                                                         obs_metadata=obs,
@@ -1611,7 +1611,7 @@ class CornerTest(unittest.TestCase):
         cornerRad = _getCornerRaDec(det_name, self.camera, obs)
         cornerDeg = getCornerRaDec(det_name, self.camera, obs)
         for cc1, cc2 in zip(cornerRad, cornerDeg):
-            dd = haversine(cc1[0], cc1[1], numpy.radians(cc2[0]), numpy.radians(cc2[1]))
+            dd = haversine(cc1[0], cc1[1], np.radians(cc2[0]), np.radians(cc2[1]))
             self.assertLess(arcsecFromRadians(dd), 0.000001)
 
 

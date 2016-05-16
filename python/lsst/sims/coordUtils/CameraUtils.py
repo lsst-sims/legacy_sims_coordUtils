@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
@@ -71,10 +71,10 @@ def getCornerRaDec(detector_name, camera, obs_metadata, epoch=2000.0,
 
     cc = _getCornerRaDec(detector_name, camera, obs_metadata,
                          epoch=epoch, includeDistortion=includeDistortion)
-    return [(numpy.degrees(cc[0][0]), numpy.degrees(cc[0][1])),
-            (numpy.degrees(cc[1][0]), numpy.degrees(cc[1][1])),
-            (numpy.degrees(cc[2][0]), numpy.degrees(cc[2][1])),
-            (numpy.degrees(cc[3][0]), numpy.degrees(cc[3][1]))]
+    return [(np.degrees(cc[0][0]), np.degrees(cc[0][1])),
+            (np.degrees(cc[1][0]), np.degrees(cc[1][1])),
+            (np.degrees(cc[2][0]), np.degrees(cc[2][1])),
+            (np.degrees(cc[3][0]), np.degrees(cc[3][1]))]
 
 
 def _getCornerRaDec(detector_name, camera, obs_metadata,
@@ -113,8 +113,8 @@ def _getCornerRaDec(detector_name, camera, obs_metadata,
 
     cc_pix = getCornerPixels(detector_name, camera)
 
-    ra, dec = _raDecFromPixelCoords(numpy.array([cc[0] for cc in cc_pix]),
-                                    numpy.array([cc[1] for cc in cc_pix]),
+    ra, dec = _raDecFromPixelCoords(np.array([cc[0] for cc in cc_pix]),
+                                    np.array([cc[1] for cc in cc_pix]),
                                     [detector_name]*len(cc_pix),
                                     camera=camera, obs_metadata=obs_metadata,
                                     epoch=epoch, includeDistortion=True)
@@ -151,7 +151,7 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     @param [out] a numpy array of chip names
     """
 
-    return _chipNameFromRaDec(numpy.radians(ra), numpy.radians(dec),
+    return _chipNameFromRaDec(np.radians(ra), np.radians(dec),
                                   obs_metadata=obs_metadata, epoch=epoch,
                                   camera=camera, allow_multiple_chips=allow_multiple_chips)
 
@@ -184,7 +184,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None,
     @param [out] a numpy array of chip names
     """
 
-    if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+    if not isinstance(ra, np.ndarray) or not isinstance(dec, np.ndarray):
         raise RuntimeError("You need to pass numpy arrays of RA and Dec to chipName")
 
     if len(ra) != len(dec):
@@ -228,7 +228,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
 
     """
 
-    if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+    if not isinstance(xPupil, np.ndarray) or not isinstance(yPupil, np.ndarray):
         raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to chipNameFromPupilCoords")
 
     if len(xPupil) != len(yPupil):
@@ -245,7 +245,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     detList = camera.findDetectorsList(cameraPointList, PUPIL)
 
     for pt, det in zip(cameraPointList, detList):
-        if len(det)==0 or numpy.isnan(pt.getX()) or numpy.isnan(pt.getY()):
+        if len(det)==0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
             chipNames.append(None)
         else:
             names = [dd.getName() for dd in det]
@@ -261,7 +261,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
             else:
                 chipNames.append(names[0])
 
-    return numpy.array(chipNames)
+    return np.array(chipNames)
 
 
 def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
@@ -299,7 +299,7 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
     and the second row is the y pixel coordinate
     """
 
-    return _pixelCoordsFromRaDec(numpy.radians(ra), numpy.radians(dec),
+    return _pixelCoordsFromRaDec(np.radians(ra), np.radians(dec),
                                  chipNames=chipNames, camera=camera,
                                  includeDistortion=includeDistortion,
                                  obs_metadata=obs_metadata, epoch=epoch)
@@ -354,7 +354,7 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None,
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into " \
                            + "pixelCoordsFromRaDec")
 
-    if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+    if not isinstance(ra, np.ndarray) or not isinstance(dec, np.ndarray):
         raise RuntimeError("You need to pass numpy arrays of RA and Dec to pixelCoordsFromRaDec")
 
     if len(ra) != len(dec):
@@ -406,7 +406,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     if not camera:
         raise RuntimeError("Camera not specified.  Cannot calculate pixel coordinates.")
 
-    if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+    if not isinstance(xPupil, np.ndarray) or not isinstance(yPupil, np.ndarray):
         raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to pixelCoordsFromPupilCoords")
 
     if len(xPupil) != len(yPupil):
@@ -425,8 +425,8 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     yPix = []
     for name, x, y in zip(chipNames, xPupil, yPupil):
         if not name:
-            xPix.append(numpy.nan)
-            yPix.append(numpy.nan)
+            xPix.append(np.nan)
+            yPix.append(np.nan)
             continue
         cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
         det = camera[name]
@@ -434,7 +434,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
         detPoint = camera.transform(cp, cs)
         xPix.append(detPoint.getPoint().getX())
         yPix.append(detPoint.getPoint().getY())
-    return numpy.array([xPix, yPix])
+    return np.array([xPix, yPix])
 
 
 def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
@@ -485,18 +485,18 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 
     for xPix, yPix, chipName in zip(xPixList, yPixList, chipNameList):
         if chipName is None or chipName=='None':
-            xPupilList.append(numpy.NaN)
-            yPupilList.append(numpy.NaN)
+            xPupilList.append(np.NaN)
+            yPupilList.append(np.NaN)
         else:
             pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xPix, yPix), pixelSystemDict[chipName])
             pupilPoint =  camera.transform(pixPoint, pupilSystemDict[chipName]).getPoint()
             xPupilList.append(pupilPoint.getX())
             yPupilList.append(pupilPoint.getY())
 
-    xPupilList = numpy.array(xPupilList)
-    yPupilList = numpy.array(yPupilList)
+    xPupilList = np.array(xPupilList)
+    yPupilList = np.array(yPupilList)
 
-    return numpy.array([xPupilList, yPupilList])
+    return np.array([xPupilList, yPupilList])
 
 
 def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
@@ -531,7 +531,7 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
                                    camera=camera, obs_metadata=obs_metadata,
                                    epoch=epoch, includeDistortion=includeDistortion)
 
-    return numpy.degrees(output)
+    return np.degrees(output)
 
 
 def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
@@ -578,7 +578,7 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
 
-    if not isinstance(xPixList, numpy.ndarray) or not isinstance(yPixList, numpy.ndarray):
+    if not isinstance(xPixList, np.ndarray) or not isinstance(yPixList, np.ndarray):
         raise RuntimeError("You must pass numpy arrays of xPix and yPix to raDecFromPixelCoords")
 
     if len(xPixList)!=len(yPixList):
@@ -598,7 +598,7 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
                                   obs_metadata=obs_metadata, epoch=epoch)
 
-    return numpy.array([raOut, decOut])
+    return np.array([raOut, decOut])
 
 
 def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=None):
@@ -624,7 +624,7 @@ def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=Non
     coordinate (both in millimeters)
     """
 
-    return _focalPlaneCoordsFromRaDec(numpy.radians(ra), numpy.radians(dec),
+    return _focalPlaneCoordsFromRaDec(np.radians(ra), np.radians(dec),
                                       obs_metadata=obs_metadata, epoch=epoch,
                                       camera=camera)
 
@@ -652,7 +652,7 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=None, camera=No
     coordinate (both in millimeters)
     """
 
-    if not isinstance(ra, numpy.ndarray) or not isinstance(dec, numpy.ndarray):
+    if not isinstance(ra, np.ndarray) or not isinstance(dec, np.ndarray):
         raise RuntimeError("You must pass numpy arrays of RA and Dec to focalPlaneCoordsFromRaDec")
 
     if len(ra) != len(dec):
@@ -698,7 +698,7 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     coordinate (both in millimeters)
     """
 
-    if not isinstance(xPupil, numpy.ndarray) or not isinstance(yPupil, numpy.ndarray):
+    if not isinstance(xPupil, np.ndarray) or not isinstance(yPupil, np.ndarray):
         raise RuntimeError("You must pass numpy arrays of xPupil and yPupil to " +
                                "focalPlaneCoordsFromPupilCoords")
 
@@ -717,4 +717,4 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
         xPix.append(fpPoint.getPoint().getX())
         yPix.append(fpPoint.getPoint().getY())
 
-    return numpy.array([xPix, yPix])
+    return np.array([xPix, yPix])
