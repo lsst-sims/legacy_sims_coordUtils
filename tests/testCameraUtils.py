@@ -118,25 +118,22 @@ class ChipNameTest(unittest.TestCase):
         # verify that an exception is raised if you do not pass in a numpy array
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(list(xpList), ypList)
-        self.assertEqual(context.exception.message,
-                         'You need to pass numpy arrays of ' \
-                         + 'xPupil and yPupil to chipNameFromPupilCoords')
+        self.assertIn("The arg xPupil", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(list(xpList), ypList, obs_metadata=obs, epoch=2000.0)
-        self.assertEqual(context.exception.message,
-                        'You need to pass numpy arrays of RA and Dec to chipName')
+        self.assertIn("The arg ra", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpList, list(ypList))
-        self.assertEqual(context.exception.message,
-                         'You need to pass numpy arrays of ' \
-                         + 'xPupil and yPupil to chipNameFromPupilCoords')
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("yPupil", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, list(ypList), obs_metadata=obs, epoch=2000.0)
-        self.assertEqual(context.exception.message,
-                         'You need to pass numpy arrays of RA and Dec to chipName')
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("Dec", context.exception.args[0])
+
         # do not need to run the above test on chipNameFromRaDec because
         # the conversion from degrees to radians that happens inside that
         # method automatically casts lists as numpy arrays
@@ -147,22 +144,20 @@ class ChipNameTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
         self.assertEqual(context.exception.message,
-                         'You passed %d xPupils and ' % (nStars/2) \
-                         + '%d yPupils to chipName.' % nStars)
+                         "The arrays input to chipNameFromPupilCoords all need "
+                         "to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                                   camera=self.camera)
         self.assertEqual(context.exception.message,
-                         'You passed %d RAs and ' % (nStars/2) \
-                         + '%d Decs to chipName.' % nStars)
+                         "The arrays input to chipNameFromRaDec all need to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                                    camera=self.camera)
         self.assertEqual(context.exception.message,
-                         'You passed %d RAs and ' % (nStars/2) \
-                         + '%d Decs to chipName.' % nStars)
+                         "The arrays input to chipNameFromRaDec all need to have the same length")
 
         # verify that an exception is raised if you call chipNameFromRaDec
         # without an ObservationMetaData
@@ -256,6 +251,55 @@ class ChipNameTest(unittest.TestCase):
                     self.assertIsNone(names1[ix], None)
                     self.assertIsNone(names2[ix], None)
                     self.assertIsNone(names3[ix], None)
+
+
+    def testPassingFloats(self):
+        """
+        Test that you can pass floats of RA, Dec into chipNameFromRaDec.
+
+        Ditto for chipNameFromPupilCoords
+        """
+
+        ra0 = 45.0
+        dec0 = -112.0
+        rotSkyPos=135.0
+        mjd = 42350.0
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
+                                  mjd=mjd, rotSkyPos=rotSkyPos)
+
+        nStars = 100
+        raList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        decList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
+
+        chipNameList = chipNameFromRaDec(raList, decList, camera=self.camera, obs_metadata=obs)
+
+        n_not_none = 0
+        # now iterate over the list of RA, Dec to make sure that the same name comes back
+        for ix, (rr, dd) in enumerate(zip(raList, decList)):
+            test_name = chipNameFromRaDec(rr, dd, camera=self.camera, obs_metadata=obs)
+            self.assertIsInstance(rr, np.float)
+            self.assertIsInstance(dd, np.float)
+            self.assertEqual(chipNameList[ix], test_name)
+            if test_name is not None:
+                self.assertIsInstance(test_name, str)
+                n_not_none += 1
+
+        self.assertGreater(n_not_none, 50)
+
+        # try it with pupil coordinates
+        n_not_none = 0
+        xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs)
+        chipNameList = chipNameFromPupilCoords(xpList, ypList, camera=self.camera)
+        for ix, (xp, yp) in enumerate(zip(xpList, ypList)):
+            test_name = chipNameFromPupilCoords(xp, yp, camera=self.camera)
+            self.assertIsInstance(xp, np.float)
+            self.assertIsInstance(yp, np.float)
+            self.assertEqual(chipNameList[ix], test_name)
+            if test_name is not None:
+                self.assertIsInstance(test_name, str)
+                n_not_none += 1
+
+        self.assertGreater(n_not_none, 50)
 
 
 class PixelCoordTest(unittest.TestCase):

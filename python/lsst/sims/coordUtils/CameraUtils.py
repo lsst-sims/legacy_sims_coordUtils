@@ -1,6 +1,7 @@
 import numpy as np
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
+from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
 __all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
@@ -129,10 +130,10 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
     Return the names of detectors that see the object specified by
     either (xPupil, yPupil).
 
-    @param [in] ra in degrees (a numpy array).
+    @param [in] ra in degrees (a numpy array or a float).
     In the International Celestial Reference System.
 
-    @param [in] dec in degrees (a numpy array).
+    @param [in] dec in degrees (a numpy array or a float).
     In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
@@ -162,10 +163,10 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
     Return the names of detectors that see the object specified by
     either (xPupil, yPupil).
 
-    @param [in] ra in radians (a numpy array).
+    @param [in] ra in radians (a numpy array or a float).
     In the International Celestial Reference System.
 
-    @param [in] dec in radians (a numpy array).
+    @param [in] dec in radians (a numpy array or a float).
     In the International Celestial Reference System.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
@@ -184,12 +185,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
     @param [out] a numpy array of chip names
     """
 
-    if not isinstance(ra, np.ndarray) or not isinstance(dec, np.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of RA and Dec to chipName")
-
-    if len(ra) != len(dec):
-        raise RuntimeError("You passed %d RAs and %d Decs " % (len(ra), len(dec)) +
-                           "to chipName.")
+    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDec")
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into chipName")
@@ -228,19 +224,17 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
 
     """
 
-    if not isinstance(xPupil, np.ndarray) or not isinstance(yPupil, np.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to chipNameFromPupilCoords")
-
-    if len(xPupil) != len(yPupil):
-        raise RuntimeError("You passed %d xPupils and %d yPupils " % (len(xPupil), len(yPupil)) +
-                           "to chipName.")
+    are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoords")
 
     if camera is None:
         raise RuntimeError("No camera defined.  Cannot run chipName.")
 
     chipNames = []
 
-    cameraPointList = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
+    if are_arrays:
+        cameraPointList = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
+    else:
+        cameraPointList = [afwGeom.Point2D(xPupil, yPupil)]
 
     detList = camera.findDetectorsList(cameraPointList, PUPIL)
 
@@ -260,6 +254,9 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                 chipNames.append(None)
             else:
                 chipNames.append(names[0])
+
+    if not are_arrays:
+        return chipNames[0]
 
     return np.array(chipNames)
 
