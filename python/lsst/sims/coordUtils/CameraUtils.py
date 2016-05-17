@@ -397,6 +397,9 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     and the second row is the y pixel coordinate
     """
 
+    are_arrays = _validate_inputs([xPupil, yPupil], ["xPupil", "yPupil"],
+                                  "pixelCoordsFromPupilCoords")
+
     if includeDistortion:
         pixelType = PIXELS
     else:
@@ -405,35 +408,38 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     if not camera:
         raise RuntimeError("Camera not specified.  Cannot calculate pixel coordinates.")
 
-    if not isinstance(xPupil, np.ndarray) or not isinstance(yPupil, np.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of xPupil and yPupil to pixelCoordsFromPupilCoords")
-
-    if len(xPupil) != len(yPupil):
-        raise RuntimeError("You passed %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
-                           "to pixelCoordsFromPupilCoords")
-
-    if chipNames is not None:
-        if len(xPupil) != len(chipNames):
-            raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromPupilCoords" %
-                               (len(xPupil), len(chipNames)))
-
     if chipNames is None:
         chipNames = chipNameFromPupilCoords(xPupil, yPupil, camera=camera)
+    else:
+        if are_arrays:
+            if len(xPupil) != len(chipNames):
+                raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromPupilCoords" %
+                                   (len(xPupil), len(chipNames)))
 
-    xPix = []
-    yPix = []
-    for name, x, y in zip(chipNames, xPupil, yPupil):
-        if not name:
-            xPix.append(np.nan)
-            yPix.append(np.nan)
-            continue
-        cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-        det = camera[name]
+    if are_arrays:
+        xPix = []
+        yPix = []
+        for name, x, y in zip(chipNames, xPupil, yPupil):
+            if not name:
+                xPix.append(np.nan)
+                yPix.append(np.nan)
+                continue
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            det = camera[name]
+            cs = det.makeCameraSys(pixelType)
+            detPoint = camera.transform(cp, cs)
+            xPix.append(detPoint.getPoint().getX())
+            yPix.append(detPoint.getPoint().getY())
+        return np.array([xPix, yPix])
+    else:
+        if not chipNames:
+            return np.array([np.NaN, np.NaN])
+
+        cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)
+        det = camera[chipNames]
         cs = det.makeCameraSys(pixelType)
         detPoint = camera.transform(cp, cs)
-        xPix.append(detPoint.getPoint().getX())
-        yPix.append(detPoint.getPoint().getY())
-    return np.array([xPix, yPix])
+        return np.array([detPoint.getPoint().getX(), detPoint.getPoint().getY()])
 
 
 def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,

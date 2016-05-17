@@ -432,16 +432,13 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(list(xpList), ypList,
                                        camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You need to pass numpy arrays of xPupil and yPupil ' \
-                         + 'to pixelCoordsFromPupilCoords')
+        self.assertIn("The arg xPupil", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, list(ypList),
                                        camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You need to pass numpy arrays of xPupil and yPupil ' \
-                         + 'to pixelCoordsFromPupilCoords')
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("yPupil", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(list(np.radians(raList)),
@@ -471,9 +468,9 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, ypList[0:10],
                                        camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You passed 100 xPupil and 10 yPupil coordinates ' \
-                         + 'to pixelCoordsFromPupilCoords')
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to pixelCoordsFromPupilCoords "
+                         "all need to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList[0:10],
@@ -668,6 +665,17 @@ class PixelCoordTest(unittest.TestCase):
         np.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
         np.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
 
+        # now test that we get the same results when we pass the pupil coords in
+        # one at a time
+        for ix in range(len(xPupList)):
+            xpx_f, ypx_f = pixelCoordsFromPupilCoords(xPupList[ix], yPupList[ix],
+                                                      camera=self.camera,
+                                                      includeDistortion=False)
+            self.assertIsInstance(xpx_f, np.float)
+            self.assertIsInstance(ypx_f, np.float)
+            self.assertAlmostEqual(xpx_f, xPixTest[ix], 12)
+            self.assertAlmostEqual(ypx_f, yPixTest[ix], 12)
+
 
     def testOffChipResults(self):
         """
@@ -751,6 +759,17 @@ class PixelCoordTest(unittest.TestCase):
         np.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
         np.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
 
+        # now test that we get the same results when we pass the pupil coords in
+        # one at a time
+        for ix in range(len(xPupList)):
+            xpx_f, ypx_f = pixelCoordsFromPupilCoords(xPupList[ix], yPupList[ix],
+                                                      camera=self.camera,
+                                                      includeDistortion=False,
+                                                      chipNames=inputChipNames[ix])
+            self.assertIsInstance(xpx_f, np.float)
+            self.assertIsInstance(ypx_f, np.float)
+            self.assertAlmostEqual(xpx_f, xPixTest[ix], 12)
+            self.assertAlmostEqual(ypx_f, yPixTest[ix], 12)
 
 
     def testNaN(self):
@@ -823,15 +842,24 @@ class PixelCoordTest(unittest.TestCase):
             yPupList[9] = badVal
             xPixList, yPixList = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
             for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
+
+                # verify the same result if we had passed in pupil coords one-at-a-time
+                xpx_f, ypx_f = pixelCoordsFromPupilCoords(xPupList[ix], yPupList[ix], camera=self.camera)
+                self.assertIsInstance(xpx_f, np.float)
+                self.assertIsInstance(ypx_f, np.float)
+
                 if ix in [5, 7, 9]:
                     self.assertTrue(np.isnan(xx))
                     self.assertTrue(np.isnan(yy))
+                    self.assertTrue(np.isnan(xpx_f))
+                    self.assertTrue(np.isnan(ypx_f))
                 else:
                     self.assertFalse(np.isnan(xx))
                     self.assertFalse(np.isnan(yy))
-                    self.assertIsNotNone(xx, None)
-                    self.assertIsNotNone(yy, None)
-
+                    self.assertIsNotNone(xx)
+                    self.assertIsNotNone(yy)
+                    self.assertAlmostEqual(xx, xpx_f, 12)
+                    self.assertAlmostEqual(yy, ypx_f, 12)
 
 
     def testDistortion(self):
@@ -857,6 +885,16 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(AssertionError) as context:
             np.testing.assert_array_almost_equal(yu, yd, 4)
 
+        # make sure that distortions are also present when we pass pupil coordinates in
+        # one-at-a-time
+        for ix in range(len(xp)):
+            x_f, y_f = pixelCoordsFromPupilCoords(xp[ix], yp[ix], camera=self.camera,
+                                                  includeDistortion=True)
+
+            self.assertAlmostEqual(xd[ix], x_f, 12)
+            self.assertAlmostEqual(yd[ix], y_f, 12)
+            self.assertIsInstance(x_f, np.float)
+            self.assertIsInstance(y_f, np.float)
 
 
 class FocalPlaneCoordTest(unittest.TestCase):
