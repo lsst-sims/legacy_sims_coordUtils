@@ -268,11 +268,11 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     Get the pixel positions (or nan if not on a chip) for objects based
     on their RA, and Dec (in degrees)
 
-    @param [in] ra is a numpy array containing the RA of the objects in degrees.
-    In the International Celestial Reference System.
+    @param [in] ra is in degrees in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
-    @param [in] dec is a numpy array containing the Dec of the objects in degrees.
-    In the International Celestial Reference System.
+    @param [in] dec is in degrees in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
     pointing.
@@ -280,9 +280,13 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     @param [in] epoch is the epoch in Julian years of the equinox against which
     RA is measured.  Default is 2000.
 
-    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
-    to find the array.  The option exists for the user to specify chipNames, just in case the user
-    has already called chipName for some reason.
+    @param [in] chipNames designates the names of the chips on which the pixel
+    coordinates will be reckoned.  Can be either single value, an array, or None.
+    If an array, there must be as many chipNames as there are (RA, Dec) pairs.
+    If a single value, all of the pixel coordinates will be reckoned on the same
+    chip.  If None, this method will calculate which chip each(RA, Dec) pair actually
+    falls on, and return pixel coordinates for each (RA, Dec) pair on the appropriate
+    chip.  Default is None.
 
     @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
     This is an optional argument to be passed to chipName.
@@ -310,11 +314,11 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     Get the pixel positions (or nan if not on a chip) for objects based
     on their RA, and Dec (in radians)
 
-    @param [in] ra is a numpy array containing the RA of the objects in radians.
-    In the International Celestial Reference System.
+    @param [in] ra is in radians in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
-    @param [in] dec is a numpy array containing the Dec of the objects in radians.
-    In the International Celestial Reference System.
+    @param [in] dec is in radians in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
     pointing.
@@ -322,9 +326,13 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     @param [in] epoch is the epoch in Julian years of the equinox against which
     RA is measured.  Default is 2000.
 
-    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
-    to find the array.  The option exists for the user to specify chipNames, just in case the user
-    has already called chipName for some reason.
+    @param [in] chipNames designates the names of the chips on which the pixel
+    coordinates will be reckoned.  Can be either single value, an array, or None.
+    If an array, there must be as many chipNames as there are (RA, Dec) pairs.
+    If a single value, all of the pixel coordinates will be reckoned on the same
+    chip.  If None, this method will calculate which chip each(RA, Dec) pair actually
+    falls on, and return pixel coordinates for each (RA, Dec) pair on the appropriate
+    chip.  Default is None.
 
     @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
     This is an optional argument to be passed to chipName.
@@ -338,6 +346,8 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
     and the second row is the y pixel coordinate
     """
+
+    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], 'pixelCoordsFromRaDec')
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
@@ -353,15 +363,8 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into " \
                            + "pixelCoordsFromRaDec")
 
-    if not isinstance(ra, np.ndarray) or not isinstance(dec, np.ndarray):
-        raise RuntimeError("You need to pass numpy arrays of RA and Dec to pixelCoordsFromRaDec")
-
-    if len(ra) != len(dec):
-        raise RuntimeError("You passed %d RA and %d Dec coordinates " % (len(ra), len(dec)) +
-                           "to pixelCoordsFromRaDec")
-
-    if chipNames is not None:
-        if len(ra) != len(chipNames):
+    if are_arrays and (isinstance(chipNames, list) or isinstance(chipNames, np.ndarray)):
+        if len(ra) != len(chipNames) and len(chipNames)>1:
             raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromRaDec" %
                                (len(ra), len(chipNames)))
 
@@ -447,6 +450,13 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
             yPix.append(detPoint.getPoint().getY())
         return np.array([xPix, yPix])
     else:
+        if isinstance(chipNames, list) or isinstance(chipNames, np.ndarray):
+            if len(chipNames)>1:
+                raise RuntimeError("You passed 1 (RA, Dec) pair but %d chipNames " % len(chipNames)
+                                   + "to pixelCoordsFromPupilCoords")
+
+            chipNames = chipNames[0]
+
         if not chipNames:
             return np.array([np.NaN, np.NaN])
 

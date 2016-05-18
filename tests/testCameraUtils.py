@@ -388,6 +388,92 @@ class PixelCoordTest(unittest.TestCase):
             self.assertGreater(ctNaN, 0)
             self.assertGreater(ctNotNaN, 0)
 
+            # now test that passing in the points one at a time gives consistent results
+            for ix in range(len(raList)):
+                x_f, y_f = pixelCoordsFromRaDec(raList[ix], decList[ix], obs_metadata=obs,
+                                                epoch=2000.0, camera=self.camera,
+                                                includeDistortion=includeDistortion)
+                self.assertIsInstance(x_f, np.float)
+                self.assertIsInstance(y_f, np.float)
+                if not np.isnan(x_f):
+                    self.assertEqual(x_f, xx1[ix])
+                    self.assertEqual(y_f, yy1[ix])
+                else:
+                    self.assertTrue(np.isnan(xx1[ix]))
+                    self.assertTrue(np.isnan(yy1[ix]))
+
+                x_f, y_f = pixelCoordsFromRaDec(raList[ix], decList[ix], obs_metadata=obs,
+                                                epoch=2000.0, camera=self.camera,
+                                                includeDistortion=includeDistortion,
+                                                chipNames=chipNameList[ix])
+                self.assertIsInstance(x_f, np.float)
+                self.assertIsInstance(y_f, np.float)
+                if not np.isnan(x_f):
+                    self.assertEqual(x_f, xx1[ix])
+                    self.assertEqual(y_f, yy1[ix])
+                else:
+                    self.assertTrue(np.isnan(xx1[ix]))
+                    self.assertTrue(np.isnan(yy1[ix]))
+
+                x_f, y_f = pixelCoordsFromRaDec(raList[ix], decList[ix], obs_metadata=obs,
+                                                epoch=2000.0, camera=self.camera,
+                                                includeDistortion=includeDistortion,
+                                                chipNames=[chipNameList[ix]])
+                self.assertIsInstance(x_f, np.float)
+                self.assertIsInstance(y_f, np.float)
+                if not np.isnan(x_f):
+                    self.assertEqual(x_f, xx1[ix])
+                    self.assertEqual(y_f, yy1[ix])
+                else:
+                    self.assertTrue(np.isnan(xx1[ix]))
+                    self.assertTrue(np.isnan(yy1[ix]))
+
+
+    def testSingleChipName(self):
+        """
+        Test that pixelCoordsFromRaDec works when a list of RA, Dec are passed in,
+        but only one chipName
+        """
+        ra0 = 95.0
+        dec0 = -33.0
+        obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
+                                  mjd=52350.0, rotSkyPos=27.0)
+
+        nStars = 100
+        raList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        decList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
+
+        xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
+
+        chipNameList = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
+                                         camera=self.camera)
+
+        chosen_chip = 'Det40'
+        valid_pts = np.where(chipNameList==chosen_chip)[0]
+        self.assertGreater(len(valid_pts), 1)
+        xPixControl, yPixControl = pixelCoordsFromRaDec(raList[valid_pts], decList[valid_pts],
+                                                        obs_metadata=obs,
+                                                        includeDistortion=True,
+                                                        camera=self.camera)
+
+        xPixTest, yPixTest = pixelCoordsFromRaDec(raList[valid_pts], decList[valid_pts],
+                                                  obs_metadata=obs,
+                                                  includeDistortion=True,
+                                                  camera=self.camera,
+                                                  chipNames=chosen_chip)
+
+        np.testing.assert_array_almost_equal(xPixControl, xPixTest, 12)
+        np.testing.assert_array_almost_equal(yPixControl, yPixTest, 12)
+
+        xPixTest, yPixTest = pixelCoordsFromRaDec(raList[valid_pts], decList[valid_pts],
+                                                  obs_metadata=obs,
+                                                  includeDistortion=True,
+                                                  camera=self.camera,
+                                                  chipNames=[chosen_chip])
+
+        np.testing.assert_array_almost_equal(xPixControl, xPixTest, 12)
+        np.testing.assert_array_almost_equal(yPixControl, yPixTest, 12)
+
 
     def testExceptions(self):
         """
@@ -446,9 +532,7 @@ class PixelCoordTest(unittest.TestCase):
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You need to pass numpy arrays of RA and Dec ' \
-                         + 'to pixelCoordsFromRaDec')
+        self.assertIn("The arg ra", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(np.radians(raList),
@@ -456,9 +540,9 @@ class PixelCoordTest(unittest.TestCase):
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You need to pass numpy arrays of RA and Dec ' \
-                         + 'to pixelCoordsFromRaDec')
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("dec", context.exception.args[0])
+
         # do not need to run the above test on pixelCoordsFromRaDec,
         # because the conversion from degrees to radians  that happens
         # inside that method automatically casts lists as numpy arrays
@@ -477,9 +561,9 @@ class PixelCoordTest(unittest.TestCase):
                                  obs_metadata=obs,
                                  epoch=2000.0,
                                  camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You passed 100 RA and 10 Dec coordinates ' \
-                         'to pixelCoordsFromRaDec')
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to pixelCoordsFromRaDec all need "
+                         "to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(np.radians(raList),
@@ -487,9 +571,9 @@ class PixelCoordTest(unittest.TestCase):
                                   obs_metadata=obs,
                                   epoch=2000.0,
                                   camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You passed 100 RA and 10 Dec coordinates ' \
-                         'to pixelCoordsFromRaDec')
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to pixelCoordsFromRaDec all need "
+                         "to have the same length")
 
 
         # test that an error is raised if you pass an incorrect
