@@ -12,6 +12,66 @@ __all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
            "raDecFromPixelCoords", "_raDecFromPixelCoords"]
 
 
+def _validate_inputs_and_chipnames(input_list, input_names, method_name,
+                                   chip_name, chip_name_can_be_none = True):
+    """
+    This will wrap _validate_inputs, but also reformat chip_name if necessary.
+
+    input_list is a list of the inputs passed to a method.
+
+    input_name is a list of the variable names associated with
+    input_list
+
+    method_name is the name of the method whose input is being validated.
+
+    chip_name is the chip_name variable passed into the calling method.
+
+    chip_name_can_be_none is a boolean that controls whether or not
+    chip_name is allowed to be None.
+
+    This method will raise a RuntimeError if:
+
+    1) the contents of input_list are not all of the same type
+    2) the contents of input_list are not all floats or numpy arrays
+    3) the contnets of input_list are different lengths (if numpy arrays)
+    4) chip_name is None and chip_name_can_be_none is False
+    5) chip_name is a list or array of different length than input_list[0]
+       (if input_list[0] is a list or array) and len(chip_name)>1
+
+    This method returns a boolean indicating whether input_list[0]
+    is a numpy array and a re-casting of chip_name as a list
+    of length equal to input_list[0] (unless chip_name is None;
+    then it will leave chip_name untouched)
+    """
+
+    are_arrays = _validate_inputs(input_list, input_names, method_name)
+
+    if chip_name is None and not chip_name_can_be_none:
+        raise RuntimeError("You passed chipName=None to %s" % method_name)
+
+    if are_arrays:
+        n_pts = len(input_list[0])
+    else:
+        n_pts = 1
+
+    if isinstance(chip_name, list) or isinstance(chip_name, np.ndarray):
+        if len(chip_name) >1 and len(chip_name) != n_pts:
+            raise RuntimeError("You only passed %d chipNames to %s.\n" % (len(chip_name), method_name)
+                               + "You passed %d %s values." % (len(input_list[0]), input_names[0]))
+
+        if len(chip_name)==1 and n_pts>1:
+            chip_name_out = [chip_name[0]]*n_pts
+        else:
+            chip_name_out = chip_name
+
+        return are_arrays, chip_name_out
+
+    elif chip_name is None:
+        return are_arrays, chip_name
+    else:
+        return are_arrays, [chip_name]*n_pts
+
+
 def getCornerPixels(detector_name, camera):
     """
     Return the pixel coordinates of the corners of a detector.
@@ -347,7 +407,10 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     and the second row is the y pixel coordinate
     """
 
-    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], 'pixelCoordsFromRaDec')
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipnames([ra, dec], ['ra', 'dec'],
+                                                 'pixelCoordsFromRaDec',
+                                                              chipNames)
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
@@ -363,13 +426,8 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into " \
                            + "pixelCoordsFromRaDec")
 
-    if are_arrays and (isinstance(chipNames, list) or isinstance(chipNames, np.ndarray)):
-        if len(ra) != len(chipNames) and len(chipNames)>1:
-            raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromRaDec" %
-                               (len(ra), len(chipNames)))
-
     xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
-    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=chipNames, camera=camera,
+    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=chipNameList, camera=camera,
                                       includeDistortion=includeDistortion)
 
 
@@ -404,9 +462,10 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     and the second row is the y pixel coordinate
     """
 
-    are_arrays = _validate_inputs([xPupil, yPupil], ["xPupil", "yPupil"],
-                                  "pixelCoordsFromPupilCoords")
-
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipnames([xPupil, yPupil], ["xPupil", "yPupil"],
+                                                  "pixelCoordsFromPupilCoords",
+                                                  chipNames)
     if includeDistortion:
         pixelType = PIXELS
     else:
@@ -415,29 +474,15 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     if not camera:
         raise RuntimeError("Camera not specified.  Cannot calculate pixel coordinates.")
 
-    if chipNames is None:
-        chipNames = chipNameFromPupilCoords(xPupil, yPupil, camera=camera)
-    else:
-        # check to see whether a list of chipNames was passed, or if only
-        # one chipName was passed
-        if are_arrays:
-            n_pts = len(xPupil)
-
-            if isinstance(chipNames, list) or isinstance(chipNames, np.ndarray):
-                if len(chipNames) == 1:
-                    chipNames = [chipNames[0]]*n_pts
-            else:
-                chipNames = [chipNames]*n_pts
-
-    if are_arrays:
-        if len(xPupil) != len(chipNames):
-            raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromPupilCoords" %
-                               (len(xPupil), len(chipNames)))
+    if chipNameList is None:
+        chipNameList = chipNameFromPupilCoords(xPupil, yPupil, camera=camera)
+        if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
+            chipNameList = [chipNameList]
 
     if are_arrays:
         xPix = []
         yPix = []
-        for name, x, y in zip(chipNames, xPupil, yPupil):
+        for name, x, y in zip(chipNameList, xPupil, yPupil):
             if not name:
                 xPix.append(np.nan)
                 yPix.append(np.nan)
@@ -450,18 +495,11 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
             yPix.append(detPoint.getPoint().getY())
         return np.array([xPix, yPix])
     else:
-        if isinstance(chipNames, list) or isinstance(chipNames, np.ndarray):
-            if len(chipNames)>1:
-                raise RuntimeError("You passed 1 (RA, Dec) pair but %d chipNames " % len(chipNames)
-                                   + "to pixelCoordsFromPupilCoords")
-
-            chipNames = chipNames[0]
-
-        if not chipNames:
+        if not chipNameList[0]:
             return np.array([np.NaN, np.NaN])
 
         cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)
-        det = camera[chipNames]
+        det = camera[chipNameList[0]]
         cs = det.makeCameraSys(pixelType)
         detPoint = camera.transform(cp, cs)
         return np.array([detPoint.getPoint().getX(), detPoint.getPoint().getY()])
@@ -499,25 +537,11 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     if camera is None:
         raise RuntimeError("You cannot call pupilCoordsFromPixelCoords without specifying a camera")
 
-    are_arrays = _validate_inputs([xPix, yPix], ['xPix', 'yPix'],
-                                  "pupilCoordsFromPixelCoords")
-
-    # map chipName into a list for easy iteration
-    if not are_arrays:
-        n_pts = 1
-    else:
-        n_pts = len(xPix)
-
-    if not are_arrays or len(chipName)==1:
-        if isinstance(chipName, list) or isinstance(chipName, np.ndarray):
-            chipNameList = [chipName[0]]*n_pts
-        else:
-            chipNameList = [chipName]*n_pts
-    else:
-        if isinstance(chipName, list) or isinstance(chipName, np.ndarray):
-            chipNameList = chipName
-        else:
-            chipNameList = [chipName]*n_pts
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipnames([xPix, yPix], ['xPix', 'yPix'],
+                                                  "pupilCoordsFromPixelCoords",
+                                                  chipName,
+                                                  chip_name_can_be_none=False)
 
     if includeDistortion:
         pixelType = PIXELS

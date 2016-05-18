@@ -581,16 +581,14 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, ypList, chipNames=['Det22']*10,
                                  camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         'You passed 100 points but 10 chipNames to pixelCoordsFromPupilCoords')
+        self.assertIn("You only passed 10 chipNames", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList, chipNames=['Det22']*10,
                                  camera=self.camera,
                                  obs_metadata=obs,
                                  epoch=2000.0)
-        self.assertEqual(context.exception.message,
-                         'You passed 100 points but 10 chipNames to pixelCoordsFromRaDec')
+        self.assertIn("You only passed 10 chipNames", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(np.radians(raList),
@@ -599,8 +597,7 @@ class PixelCoordTest(unittest.TestCase):
                                   camera=self.camera,
                                   obs_metadata=obs,
                                   epoch=2000.0)
-        self.assertEqual(context.exception.message,
-                         'You passed 100 points but 10 chipNames to pixelCoordsFromRaDec')
+        self.assertIn("You only passed 10 chipNames", context.exception.args[0])
 
 
         # test that an exception is raised if you call one of the
