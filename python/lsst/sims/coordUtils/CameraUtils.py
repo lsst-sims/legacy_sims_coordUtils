@@ -442,18 +442,22 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
         return np.array([detPoint.getPoint().getX(), detPoint.getPoint().getY()])
 
 
-def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
+def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
                                includeDistortion=True):
 
     """
     Convert pixel coordinates into pupil coordinates
 
-    @param [in] xPixList is a numpy array of x pixel coordinates
+    @param [in] xPix is the x pixel coordinate of the point.
+    Can be either a float or a numpy array.
 
-    @param [in] yPixList is a numpy array of y pixel coordinates
+    @param [in] yPix is the y pixel coordinate of the point.
+    Can be either a float or a numpy array.
 
-    @param [in] chipNameList is a numpy array of chip names (corresponding to the points
-    in xPixList and yPixList)
+    @param [in] chipName is the name of the chip(s) on which the pixel coordinates
+    are defined.  This can be a list (in which case there should be one chip name
+    for each (xPix, yPix) coordinate pair), or a single value (in which case, all
+    of the (xPix, yPix) points will be reckoned on that chip).
 
     @param [in] camera is an afw.CameraGeom.camera object defining the camera
 
@@ -470,6 +474,26 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     if camera is None:
         raise RuntimeError("You cannot call pupilCoordsFromPixelCoords without specifying a camera")
 
+    are_arrays = _validate_inputs([xPix, yPix], ['xPix', 'yPix'],
+                                  "pupilCoordsFromPixelCoords")
+
+    # map chipName into a list for easy iteration
+    if not are_arrays:
+        n_pts = 1
+    else:
+        n_pts = len(xPix)
+
+    if not are_arrays or len(chipName)==1:
+        if isinstance(chipName, list) or isinstance(chipName, np.ndarray):
+            chipNameList = [chipName[0]]*n_pts
+        else:
+            chipNameList = [chipName]*n_pts
+    else:
+        if isinstance(chipName, list) or isinstance(chipName, np.ndarray):
+            chipNameList = chipName
+        else:
+            chipNameList = [chipName]*n_pts
+
     if includeDistortion:
         pixelType = PIXELS
     else:
@@ -484,24 +508,32 @@ def pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
                 pupilSystemDict[name] = camera[name].makeCameraSys(PUPIL)
 
 
+    if are_arrays:
+        xPupilList = []
+        yPupilList = []
 
-    xPupilList = []
-    yPupilList = []
+        for xx, yy, name in zip(xPix, yPix, chipNameList):
+            if name is None or name=='None':
+                xPupilList.append(np.NaN)
+                yPupilList.append(np.NaN)
+            else:
+                pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xx, yy), pixelSystemDict[name])
+                pupilPoint =  camera.transform(pixPoint, pupilSystemDict[name]).getPoint()
+                xPupilList.append(pupilPoint.getX())
+                yPupilList.append(pupilPoint.getY())
 
-    for xPix, yPix, chipName in zip(xPixList, yPixList, chipNameList):
-        if chipName is None or chipName=='None':
-            xPupilList.append(np.NaN)
-            yPupilList.append(np.NaN)
-        else:
-            pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xPix, yPix), pixelSystemDict[chipName])
-            pupilPoint =  camera.transform(pixPoint, pupilSystemDict[chipName]).getPoint()
-            xPupilList.append(pupilPoint.getX())
-            yPupilList.append(pupilPoint.getY())
+        xPupilList = np.array(xPupilList)
+        yPupilList = np.array(yPupilList)
 
-    xPupilList = np.array(xPupilList)
-    yPupilList = np.array(yPupilList)
+        return np.array([xPupilList, yPupilList])
 
-    return np.array([xPupilList, yPupilList])
+    # if not are_arrays
+    if chipNameList[0] is None or chipNameList[0] == 'None':
+        return np.array([np.NaN, np.NaN])
+
+    pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xPix, yPix), pixelSystemDict[chipNameList[0]])
+    pupilPoint = camera.transform(pixPoint, pupilSystemDict[chipNameList[0]]).getPoint()
+    return np.array([pupilPoint.getX(), pupilPoint.getY()])
 
 
 def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,

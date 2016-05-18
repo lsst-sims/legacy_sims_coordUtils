@@ -771,6 +771,22 @@ class PixelCoordTest(unittest.TestCase):
             self.assertAlmostEqual(xpx_f, xPixTest[ix], 12)
             self.assertAlmostEqual(ypx_f, yPixTest[ix], 12)
 
+        # We will now use this opportunity to test that pupilCoordsFromPixelCoords
+        # works when we pass in a list of pixel coords, but only one chip name
+        xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPixTest, yPixTest, 'Det40',
+                                                        camera=self.camera,
+                                                        includeDistortion=False)
+
+        np.testing.assert_array_almost_equal(xPupTest, xPupList, 12)
+        np.testing.assert_array_almost_equal(yPupTest, yPupList, 12)
+
+        xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPixTest, yPixTest, ['Det40'],
+                                                        camera=self.camera,
+                                                        includeDistortion=False)
+
+        np.testing.assert_array_almost_equal(xPupTest, xPupList, 12)
+        np.testing.assert_array_almost_equal(yPupTest, yPupList, 12)
+
 
     def testNaN(self):
         """
@@ -1258,6 +1274,18 @@ class ConversionFromPixelTest(unittest.TestCase):
                 if np.isnan(x) or np.isnan(y):
                     ctNaN += 1
             self.assertLess(ctNaN, len(xPupTest)/10)
+
+            # test passing in pixel coordinates one at a time
+            for ix in range(len(xPupList)):
+                xp_f, yp_f = pupilCoordsFromPixelCoords(xPix[ix], yPix[ix], chipNameList[ix],
+                                                        camera=self.camera,
+                                                        includeDistortion=includeDistortion)
+
+                self.assertIsInstance(xp_f, np.float)
+                self.assertIsInstance(yp_f, np.float)
+                self.assertAlmostEqual(xp_f, xPupTest[ix], 12)
+                self.assertAlmostEqual(yp_f, yPupTest[ix], 12)
+
 
     def testPupCoordsNaN(self):
         """
