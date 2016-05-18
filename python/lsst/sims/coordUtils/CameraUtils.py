@@ -56,7 +56,7 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
 
     if isinstance(chip_name, list) or isinstance(chip_name, np.ndarray):
         if len(chip_name) >1 and len(chip_name) != n_pts:
-            raise RuntimeError("You only passed %d chipNames to %s.\n" % (len(chip_name), method_name)
+            raise RuntimeError("You passed %d chipNames to %s.\n" % (len(chip_name), method_name)
                                + "You passed %d %s values." % (len(input_list[0]), input_names[0]))
 
         if len(chip_name)==1 and n_pts>1:
@@ -590,12 +590,16 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     """
     Convert pixel coordinates into RA, Dec
 
-    @param [in] xPixList is a numpy array of x pixel coordinates
+    @param [in] xPixList is the x pixel coordinate.  It can be either
+    a float or a numpy array.
 
-    @param [in] yPixList is a numpy array of y pixel coordinates
+    @param [in] yPixList is the y pixel coordinate.  It can be either
+    a float or a numpy array.
 
-    @param [in] chipNameList is a numpy array of chip names (corresponding to the points
-    in xPixList and yPixList)
+    @param [in] chipNameList is the name of the chip(s) on which the pixel coordinates
+    are defined.  This can be a list (in which case there should be one chip name
+    for each (xPix, yPix) coordinate pair), or a single value (in which case, all
+    of the (xPix, yPix) points will be reckoned on that chip).
 
     @param [in] camera is an afw.CameraGeom.camera object defining the camera
 
@@ -626,12 +630,16 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     """
     Convert pixel coordinates into RA, Dec
 
-    @param [in] xPixList is a numpy array of x pixel coordinates
+    @param [in] xPixList is the x pixel coordinate.  It can be either
+    a float or a numpy array.
 
-    @param [in] yPixList is a numpy array of y pixel coordinates
+    @param [in] yPixList is the y pixel coordinate.  It can be either
+    a float or a numpy array.
 
-    @param [in] chipNameList is a numpy array of chip names (corresponding to the points
-    in xPixList and yPixList)
+    @param [in] chipNameList is the name of the chip(s) on which the pixel coordinates
+    are defined.  This can be a list (in which case there should be one chip name
+    for each (xPix, yPix) coordinate pair), or a single value (in which case, all
+    of the (xPix, yPix) points will be reckoned on that chip).
 
     @param [in] camera is an afw.CameraGeom.camera object defining the camera
 
@@ -651,6 +659,13 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     Celestial Reference System)
     """
 
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipnames([xPixList, yPixList],
+                                                  ['xPixList', 'yPixList'],
+                                                  'raDecFromPixelCoords',
+                                                  chipNameList,
+                                                  chip_name_can_be_none=False)
+
     if camera is None:
         raise RuntimeError("You cannot call raDecFromPixelCoords without specifying a camera")
 
@@ -665,20 +680,6 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
 
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
-
-    if not isinstance(xPixList, np.ndarray) or not isinstance(yPixList, np.ndarray):
-        raise RuntimeError("You must pass numpy arrays of xPix and yPix to raDecFromPixelCoords")
-
-    if len(xPixList)!=len(yPixList):
-        raise RuntimeError("You passed %d xPix coordinates but %d yPix coordinates " \
-                           % (len(xPixList), len(yPixList)) \
-                           +"to raDecFromPixelCoords")
-
-    if len(xPixList)!=len(chipNameList):
-        raise RuntimeError("You passed %d pixel coordinate pairs but %d chip names " \
-                          % (len(xPixList), len(chipNameList)) \
-                          +"to raDecFromPixelCoords")
-
 
     xPupilList, yPupilList = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList,
                                                         camera=camera, includeDistortion=includeDistortion)

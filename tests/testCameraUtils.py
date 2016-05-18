@@ -474,6 +474,28 @@ class PixelCoordTest(unittest.TestCase):
         np.testing.assert_array_almost_equal(xPixControl, xPixTest, 12)
         np.testing.assert_array_almost_equal(yPixControl, yPixTest, 12)
 
+        # test raDecFromPixelCoords
+        raTest, decTest = raDecFromPixelCoords(xPixControl, yPixControl, chosen_chip,
+                                               camera=self.camera, obs_metadata=obs,
+                                               includeDistortion=True)
+
+        distance = arcsecFromRadians(haversine(np.radians(raList[valid_pts]),
+                                               np.radians(decList[valid_pts]),
+                                               np.radians(raTest), np.radians(decTest)))
+
+        self.assertLess(distance.max(), 0.004) # because of the imprecision in
+                                               # _icrsFromObserved, this is the best we can do
+
+        raTest, decTest = raDecFromPixelCoords(xPixControl, yPixControl, [chosen_chip],
+                                               camera=self.camera, obs_metadata=obs,
+                                               includeDistortion=True)
+
+        distance = arcsecFromRadians(haversine(np.radians(raList[valid_pts]),
+                                               np.radians(decList[valid_pts]),
+                                               np.radians(raTest), np.radians(decTest)))
+
+        self.assertLess(distance.max(), 0.004)
+
 
     def testExceptions(self):
         """
@@ -581,14 +603,14 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, ypList, chipNames=['Det22']*10,
                                  camera=self.camera)
-        self.assertIn("You only passed 10 chipNames", context.exception.args[0])
+        self.assertIn("You passed 10 chipNames", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList, chipNames=['Det22']*10,
                                  camera=self.camera,
                                  obs_metadata=obs,
                                  epoch=2000.0)
-        self.assertIn("You only passed 10 chipNames", context.exception.args[0])
+        self.assertIn("You passed 10 chipNames", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(np.radians(raList),
@@ -597,7 +619,7 @@ class PixelCoordTest(unittest.TestCase):
                                   camera=self.camera,
                                   obs_metadata=obs,
                                   epoch=2000.0)
-        self.assertIn("You only passed 10 chipNames", context.exception.args[0])
+        self.assertIn("You passed 10 chipNames", context.exception.args[0])
 
 
         # test that an exception is raised if you call one of the
@@ -1488,66 +1510,54 @@ class ConversionFromPixelTest(unittest.TestCase):
             ra, dec = raDecFromPixelCoords(list(xPixList), yPixList,
                                            chipNameList, obs_metadata=obs,
                                            epoch=2000.0, camera=self.camera)
-
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of xPix and yPix to raDecFromPixelCoords")
+        self.assertIn("The arg xPixList", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, list(yPixList),
                                            chipNameList, obs_metadata=obs,
                                            epoch=2000.0, camera=self.camera)
-
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of xPix and yPix to raDecFromPixelCoords")
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("yPixList", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(list(xPixList), yPixList,
                                             chipNameList, obs_metadata=obs,
                                             epoch=2000.0, camera=self.camera)
-
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of xPix and yPix to raDecFromPixelCoords")
+        self.assertIn("The arg xPixList", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, list(yPixList),
                                             chipNameList, obs_metadata=obs,
                                             epoch=2000.0, camera=self.camera)
-
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of xPix and yPix to raDecFromPixelCoords")
-
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("yPixList", context.exception.args[0])
 
         # test that an error is raised if you pass in mismatched lists of
         # xPix and yPix
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, yPixList[0:13], chipNameList,
                                            obs_metadata=obs, epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You passed 20 xPix coordinates but 13 yPix coordinates "\
-                         + "to raDecFromPixelCoords")
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to raDecFromPixelCoords all need to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, yPixList[0:13], chipNameList,
                                             obs_metadata=obs, epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You passed 20 xPix coordinates but 13 yPix coordinates "\
-                         + "to raDecFromPixelCoords")
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to raDecFromPixelCoords all need to have the same length")
 
         # test that an error is raised if you do not pass in the same number of chipNames
         # as pixel coordinates
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, yPixList, ['Det22']*22,
                                            obs_metadata=obs, epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You passed 20 pixel coordinate pairs but 22 chip names to "\
-                         + "raDecFromPixelCoords")
+        self.assertIn("22 chipNames", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, yPixList, ['Det22']*22,
                                             obs_metadata=obs, epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You passed 20 pixel coordinate pairs but 22 chip names to "\
-                         + "raDecFromPixelCoords")
+        self.assertIn("22 chipNames", context.exception.args[0])
+
 
 
     def testResults(self):
@@ -1599,6 +1609,17 @@ class ConversionFromPixelTest(unittest.TestCase):
                                                 # we can get; note that, in our test camera, each pixel is 10 microns
                                                 # in size and the plate scale is 2 arcsec per mm, so 0.2 pixels is
                                                 # 0.004 arcsec
+
+            # test passing the pixel coordinates in one at a time
+            for ix in range(len(xPixList)):
+                ra_f, dec_f = raDecFromPixelCoords(xPixList[ix], yPixList[ix],
+                                                   chipNameList[ix], obs_metadata=obs,
+                                                   epoch=2000.0, camera=self.camera,
+                                                   includeDistortion=includeDistortion)
+                self.assertIsInstance(ra_f, np.float)
+                self.assertIsInstance(dec_f, np.float)
+                self.assertAlmostEqual(ra_f, raDeg[ix], 12)
+                self.assertAlmostEqual(dec_f, decDeg[ix], 12)
 
 
     def testResultsOffChip(self):
