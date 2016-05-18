@@ -13,7 +13,7 @@ __all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
 
 
 def _validate_inputs_and_chipnames(input_list, input_names, method_name,
-                                   chip_name, chipnames_can_be_none = True):
+                                   chip_names, chipnames_can_be_none = True):
     """
     This will wrap _validate_inputs, but also reformat chip_name if necessary.
 
@@ -24,7 +24,7 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
 
     method_name is the name of the method whose input is being validated.
 
-    chip_name is the chip_name variable passed into the calling method.
+    chip_names is the chip_name variable passed into the calling method.
 
     chipnames_can_be_none is a boolean that controls whether or not
     chip_name is allowed to be None.
@@ -39,14 +39,14 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
        (if input_list[0] is a list or array) and len(chip_name)>1
 
     This method returns a boolean indicating whether input_list[0]
-    is a numpy array and a re-casting of chip_name as a list
-    of length equal to input_list[0] (unless chip_name is None;
-    then it will leave chip_name untouched)
+    is a numpy array and a re-casting of chip_names as a list
+    of length equal to input_list[0] (unless chip_names is None;
+    then it will leave chip_names untouched)
     """
 
     are_arrays = _validate_inputs(input_list, input_names, method_name)
 
-    if chip_name is None and not chipnames_can_be_none:
+    if chip_names is None and not chipnames_can_be_none:
         raise RuntimeError("You passed chipName=None to %s" % method_name)
 
     if are_arrays:
@@ -54,22 +54,22 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
     else:
         n_pts = 1
 
-    if isinstance(chip_name, list) or isinstance(chip_name, np.ndarray):
-        if len(chip_name) >1 and len(chip_name) != n_pts:
-            raise RuntimeError("You passed %d chipNames to %s.\n" % (len(chip_name), method_name)
+    if isinstance(chip_names, list) or isinstance(chip_names, np.ndarray):
+        if len(chip_names) >1 and len(chip_names) != n_pts:
+            raise RuntimeError("You passed %d chipNames to %s.\n" % (len(chip_names), method_name)
                                + "You passed %d %s values." % (len(input_list[0]), input_names[0]))
 
-        if len(chip_name)==1 and n_pts>1:
-            chip_name_out = [chip_name[0]]*n_pts
+        if len(chip_names)==1 and n_pts>1:
+            chip_names_out = [chip_names[0]]*n_pts
         else:
-            chip_name_out = chip_name
+            chip_names_out = chip_names
 
-        return are_arrays, chip_name_out
+        return are_arrays, chip_names_out
 
-    elif chip_name is None:
-        return are_arrays, chip_name
+    elif chip_names is None:
+        return are_arrays, chip_names
     else:
-        return are_arrays, [chip_name]*n_pts
+        return are_arrays, [chip_names]*n_pts
 
 
 def getCornerPixels(detector_name, camera):
