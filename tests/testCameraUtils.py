@@ -772,7 +772,26 @@ class PixelCoordTest(unittest.TestCase):
             self.assertAlmostEqual(ypx_f, yPixTest[ix], 12)
 
         # We will now use this opportunity to test that pupilCoordsFromPixelCoords
-        # works when we pass in a list of pixel coords, but only one chip name
+        # and pixelCoordsFromPupilCoords work when we pass in a list of pixel
+        # coords, but only one chip name
+        xPix_one, yPix_one = pixelCoordsFromPupilCoords(xPupList, yPupList,
+                                                        camera=self.camera,
+                                                        includeDistortion=False,
+                                                        chipNames='Det40')
+
+        np.testing.assert_array_almost_equal(xPix_one, xPixTest, 12)
+        np.testing.assert_array_almost_equal(yPix_one, yPixTest, 12)
+
+        xPix_one, yPix_one = pixelCoordsFromPupilCoords(xPupList, yPupList,
+                                                        camera=self.camera,
+                                                        includeDistortion=False,
+                                                        chipNames=['Det40'])
+
+        np.testing.assert_array_almost_equal(xPix_one, xPixTest, 12)
+        np.testing.assert_array_almost_equal(yPix_one, yPixTest, 12)
+
+
+
         xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPixTest, yPixTest, 'Det40',
                                                         camera=self.camera,
                                                         includeDistortion=False)

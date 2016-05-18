@@ -380,9 +380,13 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
 
     @param [in] yPupil a numpy array containing y pupil coordinates in radians
 
-    @param [in] chipNames a numpy array of chipNames.  If it is None, this method will call chipName
-    to find the array.  The option exists for the user to specify chipNames, just in case the user
-    has already called chipName for some reason.
+    @param [in] chipNames designates the names of the chips on which the pixel
+    coordinates will be reckoned.  Can be either single value, an array, or None.
+    If an array, there must be as many chipNames as there are (RA, Dec) pairs.
+    If a single value, all of the pixel coordinates will be reckoned on the same
+    chip.  If None, this method will calculate which chip each(RA, Dec) pair actually
+    falls on, and return pixel coordinates for each (RA, Dec) pair on the appropriate
+    chip.  Default is None.
 
     @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
     This is an optional argument to be passed to chipName.
@@ -411,10 +415,21 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     if chipNames is None:
         chipNames = chipNameFromPupilCoords(xPupil, yPupil, camera=camera)
     else:
+        # check to see whether a list of chipNames was passed, or if only
+        # one chipName was passed
         if are_arrays:
-            if len(xPupil) != len(chipNames):
-                raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromPupilCoords" %
-                                   (len(xPupil), len(chipNames)))
+            n_pts = len(xPupil)
+
+            if isinstance(chipNames, list) or isinstance(chipNames, np.ndarray):
+                if len(chipNames) == 1:
+                    chipNames = [chipNames[0]]*n_pts
+            else:
+                chipNames = [chipNames]*n_pts
+
+    if are_arrays:
+        if len(xPupil) != len(chipNames):
+            raise RuntimeError("You passed %d points but %d chipNames to pixelCoordsFromPupilCoords" %
+                               (len(xPupil), len(chipNames)))
 
     if are_arrays:
         xPix = []
