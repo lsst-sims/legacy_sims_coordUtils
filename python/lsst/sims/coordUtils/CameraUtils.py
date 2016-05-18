@@ -696,11 +696,11 @@ def focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=2000.0, camera=N
     """
     Get the focal plane coordinates for all objects in the catalog.
 
-    @param [in] ra is a numpy array in degrees.
-    In the International Celestial Reference System.
+    @param [in] ra is in degrees in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
-    @param [in] dec is a numpy array in degrees.
-    In the International Celestial Reference System.
+    @param [in] dec is in degrees in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
     @param [in] obs_metadata is an ObservationMetaData object describing the telescope
     pointing (only if specifying RA and Dec rather than pupil coordinates)
@@ -724,11 +724,11 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=2000.0, camera=
     """
     Get the focal plane coordinates for all objects in the catalog.
 
-    @param [in] ra is a numpy array in radians.
-    In the International Celestial Reference System.
+    @param [in] ra is in radians in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
-    @param [in] dec is a numpy array in radians.
-    In the International Celestial Reference System.
+    @param [in] dec is in radians in the International Celestial Reference System.
+    Can be either a float or a numpy array.
 
     @param [in] obs_metadata is an ObservationMetaData object describing the telescope
     pointing (only if specifying RA and Dec rather than pupil coordinates)
@@ -743,12 +743,7 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=2000.0, camera=
     coordinate (both in millimeters)
     """
 
-    if not isinstance(ra, np.ndarray) or not isinstance(dec, np.ndarray):
-        raise RuntimeError("You must pass numpy arrays of RA and Dec to focalPlaneCoordsFromRaDec")
-
-    if len(ra) != len(dec):
-        raise RuntimeError("You specified %d RAs and %d Decs in focalPlaneCoordsFromRaDec" %
-                           (len(ra), len(dec)))
+    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], 'focalPlaneCoordsFromRaDec')
 
     if epoch is None:
         raise RuntimeError("You have to specify an epoch to run " + \
@@ -778,9 +773,11 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     """
     Get the focal plane coordinates for all objects in the catalog.
 
-    @param [in] xPupil a numpy array of x pupil coordinates in radians
+    @param [in] xPupil the x pupil coordinates in radians.
+    Can be a float or a numpy array.
 
-    @param [in] yPupil a numpy array of y pupil coordinates in radians
+    @param [in] yPupil the y pupil coordinates in radians.
+    Can be a float or a numpy array.
 
     @param [in] camera is an afw.cameraGeom camera object
 
@@ -789,23 +786,23 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     coordinate (both in millimeters)
     """
 
-    if not isinstance(xPupil, np.ndarray) or not isinstance(yPupil, np.ndarray):
-        raise RuntimeError("You must pass numpy arrays of xPupil and yPupil to " +
-                               "focalPlaneCoordsFromPupilCoords")
-
-    if len(xPupil) != len(yPupil):
-        raise RuntimeError("You specified %d xPupil and %d yPupil coordinates " % (len(xPupil), len(yPupil)) +
-                           "in focalPlaneCoordsFromPupilCoords")
+    are_arrays = _validate_inputs([xPupil, yPupil],
+                                  ['xPupil', 'yPupil'], 'focalPlaneCoordsFromPupilCoords')
 
     if camera is None:
         raise RuntimeError("You cannot calculate focal plane coordinates without specifying a camera")
 
-    xPix = []
-    yPix = []
-    for x, y in zip(xPupil, yPupil):
-        cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-        fpPoint = camera.transform(cp, FOCAL_PLANE)
-        xPix.append(fpPoint.getPoint().getX())
-        yPix.append(fpPoint.getPoint().getY())
+    if are_arrays:
+        xPix = []
+        yPix = []
+        for x, y in zip(xPupil, yPupil):
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
+            xPix.append(fpPoint.getX())
+            yPix.append(fpPoint.getY())
 
-    return np.array([xPix, yPix])
+        return np.array([xPix, yPix])
+
+    cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)
+    fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
+    return np.array([fpPoint.getX(), fpPoint.getY()])

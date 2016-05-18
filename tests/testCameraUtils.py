@@ -1094,6 +1094,25 @@ class FocalPlaneCoordTest(unittest.TestCase):
             self.assertFalse(np.isnan(y))
             self.assertFalse(y is None)
 
+        # now test that focalPlaneCoordsFromRaDec and
+        # focalPlaneCoordsFromPupilCoords give the same results
+        # when you pass the inputs in one-by-one
+        for ix in range(len(xf1)):
+            x_f, y_f = focalPlaneCoordsFromRaDec(raList[ix], decList[ix],
+                                                 camera=self.camera,
+                                                 obs_metadata=obs, epoch=2000.0)
+            self.assertIsInstance(x_f, float)
+            self.assertIsInstance(y_f, float)
+            self.assertEqual(x_f, xf1[ix])
+            self.assertEqual(y_f, yf1[ix])
+
+            x_f, y_f = focalPlaneCoordsFromPupilCoords(xPupList[ix], yPupList[ix],
+                                                       camera=self.camera)
+            self.assertIsInstance(x_f, float)
+            self.assertIsInstance(y_f, float)
+            self.assertEqual(x_f, xf1[ix])
+            self.assertEqual(y_f, yf1[ix])
+
 
     def testExceptions(self):
         """
@@ -1143,35 +1162,29 @@ class FocalPlaneCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromPupilCoords(list(xPupList), yPupList,
                                                      camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of xPupil and yPupil " \
-                         +"to focalPlaneCoordsFromPupilCoords")
+        self.assertIn("The arg xPupil", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromPupilCoords(xPupList, list(yPupList),
                                                      camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of xPupil and yPupil " \
-                         +"to focalPlaneCoordsFromPupilCoords")
-
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("yPupil", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             xf, yf = _focalPlaneCoordsFromRaDec(list(raList), decList,
                                                 obs_metadata=obs,
                                                 epoch=2000.0,
                                                 camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of RA and Dec to " \
-                         + "focalPlaneCoordsFromRaDec")
+        self.assertIn("The arg ra", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             xf, yf = _focalPlaneCoordsFromRaDec(raList, list(decList),
                                                 obs_metadata=obs,
                                                 epoch=2000.0,
                                                 camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You must pass numpy arrays of RA and Dec to " \
-                         + "focalPlaneCoordsFromRaDec")
+        self.assertIn("The input arguments:", context.exception.args[0])
+        self.assertIn("dec", context.exception.args[0])
+
         # we do not have to run the test above on focalPlaneCoordsFromRaDec
         # because the conversion to radians automatically casts lists into
         # numpy arrays
@@ -1181,27 +1194,27 @@ class FocalPlaneCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromPupilCoords(xPupList, yPupList[0:4],
                                                      camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You specified 10 xPupil and 4 yPupil coordinates " \
-                         + "in focalPlaneCoordsFromPupilCoords")
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to focalPlaneCoordsFromPupilCoords "
+                         "all need to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromRaDec(raList, decList[0:4],
                                                obs_metadata=obs,
                                                epoch=2000.0,
                                                camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You specified 10 RAs and 4 Decs in " \
-                         + "focalPlaneCoordsFromRaDec")
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to focalPlaneCoordsFromRaDec "
+                         "all need to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             xf, yf = _focalPlaneCoordsFromRaDec(raList, decList[0:4],
                                                 obs_metadata=obs,
                                                 epoch=2000.0,
                                                 camera=self.camera)
-        self.assertEqual(context.exception.message,
-                         "You specified 10 RAs and 4 Decs in " \
-                         + "focalPlaneCoordsFromRaDec")
+        self.assertEqual(context.exception.args[0],
+                         "The arrays input to focalPlaneCoordsFromRaDec "
+                         "all need to have the same length")
 
 
         # test that an error is raised if you call
