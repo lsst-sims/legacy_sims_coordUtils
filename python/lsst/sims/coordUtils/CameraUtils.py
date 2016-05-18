@@ -13,7 +13,7 @@ __all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
 
 
 def _validate_inputs_and_chipnames(input_list, input_names, method_name,
-                                   chip_name, chip_name_can_be_none = True):
+                                   chip_name, chipnames_can_be_none = True):
     """
     This will wrap _validate_inputs, but also reformat chip_name if necessary.
 
@@ -26,7 +26,7 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
 
     chip_name is the chip_name variable passed into the calling method.
 
-    chip_name_can_be_none is a boolean that controls whether or not
+    chipnames_can_be_none is a boolean that controls whether or not
     chip_name is allowed to be None.
 
     This method will raise a RuntimeError if:
@@ -34,7 +34,7 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
     1) the contents of input_list are not all of the same type
     2) the contents of input_list are not all floats or numpy arrays
     3) the contnets of input_list are different lengths (if numpy arrays)
-    4) chip_name is None and chip_name_can_be_none is False
+    4) chip_name is None and chipnames_can_be_none is False
     5) chip_name is a list or array of different length than input_list[0]
        (if input_list[0] is a list or array) and len(chip_name)>1
 
@@ -46,7 +46,7 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
 
     are_arrays = _validate_inputs(input_list, input_names, method_name)
 
-    if chip_name is None and not chip_name_can_be_none:
+    if chip_name is None and not chipnames_can_be_none:
         raise RuntimeError("You passed chipName=None to %s" % method_name)
 
     if are_arrays:
@@ -543,7 +543,7 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     chipNameList = _validate_inputs_and_chipnames([xPix, yPix], ['xPix', 'yPix'],
                                                   "pupilCoordsFromPixelCoords",
                                                   chipName,
-                                                  chip_name_can_be_none=False)
+                                                  chipnames_can_be_none=False)
 
     if includeDistortion:
         pixelType = PIXELS
@@ -666,7 +666,7 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
                                                   ['xPixList', 'yPixList'],
                                                   'raDecFromPixelCoords',
                                                   chipNameList,
-                                                  chip_name_can_be_none=False)
+                                                  chipnames_can_be_none=False)
 
     if camera is None:
         raise RuntimeError("You cannot call raDecFromPixelCoords without specifying a camera")
