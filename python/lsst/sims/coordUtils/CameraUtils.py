@@ -268,9 +268,11 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     Return the names of detectors that see the object specified by
     either (xPupil, yPupil).
 
-    @param [in] xPupil a numpy array of x pupil coordinates in radians
+    @param [in] xPupil is the x pupil coordinate in radians.
+    Can be either a float or a numpy array.
 
-    @param [in] yPupil a numpy array of y pupil coordinates in radians
+    @param [in] yPupil is the y pupil coordinate in radians.
+    Can be either a float or a numpy array.
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
