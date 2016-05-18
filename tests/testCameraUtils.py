@@ -345,18 +345,18 @@ class PixelCoordTest(unittest.TestCase):
             xx3, yy3 = pixelCoordsFromPupilCoords(xpList, ypList, camera=self.camera,
                                                   includeDistortion=includeDistortion)
 
-            xx4, yy4 = pixelCoordsFromPupilCoords(xpList, ypList, chipNames=chipNameList,
+            xx4, yy4 = pixelCoordsFromPupilCoords(xpList, ypList, chipName=chipNameList,
                                                   camera=self.camera,
                                                   includeDistortion=includeDistortion)
 
             xx5, yy5 = pixelCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                             camera=self.camera, includeDistortion=includeDistortion,
-                                            chipNames=chipNameList)
+                                            chipName=chipNameList)
 
             xx6, yy6 = _pixelCoordsFromRaDec(np.radians(raList), np.radians(decList),
                                              obs_metadata=obs, epoch=2000.0,
                                              camera=self.camera, includeDistortion=includeDistortion,
-                                             chipNames=chipNameList)
+                                             chipName=chipNameList)
 
 
             np.testing.assert_array_equal(xx1, xx2)
@@ -405,7 +405,7 @@ class PixelCoordTest(unittest.TestCase):
                 x_f, y_f = pixelCoordsFromRaDec(raList[ix], decList[ix], obs_metadata=obs,
                                                 epoch=2000.0, camera=self.camera,
                                                 includeDistortion=includeDistortion,
-                                                chipNames=chipNameList[ix])
+                                                chipName=chipNameList[ix])
                 self.assertIsInstance(x_f, np.float)
                 self.assertIsInstance(y_f, np.float)
                 if not np.isnan(x_f):
@@ -418,7 +418,7 @@ class PixelCoordTest(unittest.TestCase):
                 x_f, y_f = pixelCoordsFromRaDec(raList[ix], decList[ix], obs_metadata=obs,
                                                 epoch=2000.0, camera=self.camera,
                                                 includeDistortion=includeDistortion,
-                                                chipNames=[chipNameList[ix]])
+                                                chipName=[chipNameList[ix]])
                 self.assertIsInstance(x_f, np.float)
                 self.assertIsInstance(y_f, np.float)
                 if not np.isnan(x_f):
@@ -460,7 +460,7 @@ class PixelCoordTest(unittest.TestCase):
                                                   obs_metadata=obs,
                                                   includeDistortion=True,
                                                   camera=self.camera,
-                                                  chipNames=chosen_chip)
+                                                  chipName=chosen_chip)
 
         np.testing.assert_array_almost_equal(xPixControl, xPixTest, 12)
         np.testing.assert_array_almost_equal(yPixControl, yPixTest, 12)
@@ -469,7 +469,7 @@ class PixelCoordTest(unittest.TestCase):
                                                   obs_metadata=obs,
                                                   includeDistortion=True,
                                                   camera=self.camera,
-                                                  chipNames=[chosen_chip])
+                                                  chipName=[chosen_chip])
 
         np.testing.assert_array_almost_equal(xPixControl, xPixTest, 12)
         np.testing.assert_array_almost_equal(yPixControl, yPixTest, 12)
@@ -601,12 +601,12 @@ class PixelCoordTest(unittest.TestCase):
         # test that an error is raised if you pass an incorrect
         # number of chipNames to pixelCoordsFromPupilCoords
         with self.assertRaises(RuntimeError) as context:
-            pixelCoordsFromPupilCoords(xpList, ypList, chipNames=['Det22']*10,
+            pixelCoordsFromPupilCoords(xpList, ypList, chipName=['Det22']*10,
                                  camera=self.camera)
         self.assertIn("You passed 10 chipNames", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
-            pixelCoordsFromRaDec(raList, decList, chipNames=['Det22']*10,
+            pixelCoordsFromRaDec(raList, decList, chipName=['Det22']*10,
                                  camera=self.camera,
                                  obs_metadata=obs,
                                  epoch=2000.0)
@@ -615,7 +615,7 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDec(np.radians(raList),
                                   np.radians(decList),
-                                  chipNames=['Det22']*10,
+                                  chipName=['Det22']*10,
                                   camera=self.camera,
                                   obs_metadata=obs,
                                   epoch=2000.0)
@@ -857,7 +857,7 @@ class PixelCoordTest(unittest.TestCase):
         inputChipNames = ['Det40'] * len(xPupList)
         xPixTest, yPixTest = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera,
                                                         includeDistortion=False,
-                                                        chipNames=inputChipNames)
+                                                        chipName=inputChipNames)
 
         np.testing.assert_array_almost_equal(xPixTest, xPixControl, 2)
         np.testing.assert_array_almost_equal(yPixTest, yPixControl, 2)
@@ -868,7 +868,7 @@ class PixelCoordTest(unittest.TestCase):
             xpx_f, ypx_f = pixelCoordsFromPupilCoords(xPupList[ix], yPupList[ix],
                                                       camera=self.camera,
                                                       includeDistortion=False,
-                                                      chipNames=inputChipNames[ix])
+                                                      chipName=inputChipNames[ix])
             self.assertIsInstance(xpx_f, np.float)
             self.assertIsInstance(ypx_f, np.float)
             self.assertAlmostEqual(xpx_f, xPixTest[ix], 12)
@@ -880,7 +880,7 @@ class PixelCoordTest(unittest.TestCase):
         xPix_one, yPix_one = pixelCoordsFromPupilCoords(xPupList, yPupList,
                                                         camera=self.camera,
                                                         includeDistortion=False,
-                                                        chipNames='Det40')
+                                                        chipName='Det40')
 
         np.testing.assert_array_almost_equal(xPix_one, xPixTest, 12)
         np.testing.assert_array_almost_equal(yPix_one, yPixTest, 12)
@@ -888,7 +888,7 @@ class PixelCoordTest(unittest.TestCase):
         xPix_one, yPix_one = pixelCoordsFromPupilCoords(xPupList, yPupList,
                                                         camera=self.camera,
                                                         includeDistortion=False,
-                                                        chipNames=['Det40'])
+                                                        chipName=['Det40'])
 
         np.testing.assert_array_almost_equal(xPix_one, xPixTest, 12)
         np.testing.assert_array_almost_equal(yPix_one, yPixTest, 12)
@@ -1523,27 +1523,27 @@ class ConversionFromPixelTest(unittest.TestCase):
             ra, dec = raDecFromPixelCoords(list(xPixList), yPixList,
                                            chipNameList, obs_metadata=obs,
                                            epoch=2000.0, camera=self.camera)
-        self.assertIn("The arg xPixList", context.exception.args[0])
+        self.assertIn("The arg xPix", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, list(yPixList),
                                            chipNameList, obs_metadata=obs,
                                            epoch=2000.0, camera=self.camera)
         self.assertIn("The input arguments:", context.exception.args[0])
-        self.assertIn("yPixList", context.exception.args[0])
+        self.assertIn("yPix", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(list(xPixList), yPixList,
                                             chipNameList, obs_metadata=obs,
                                             epoch=2000.0, camera=self.camera)
-        self.assertIn("The arg xPixList", context.exception.args[0])
+        self.assertIn("The arg xPix", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, list(yPixList),
                                             chipNameList, obs_metadata=obs,
                                             epoch=2000.0, camera=self.camera)
         self.assertIn("The input arguments:", context.exception.args[0])
-        self.assertIn("yPixList", context.exception.args[0])
+        self.assertIn("yPix", context.exception.args[0])
 
         # test that an error is raised if you pass in mismatched lists of
         # xPix and yPix
@@ -1678,7 +1678,7 @@ class ConversionFromPixelTest(unittest.TestCase):
             # with the results from pixelCoordsFromRaDec by taking the ra and dec
             # arrays found above and feeding them back into pixelCoordsFromRaDec
             # and seeing if we get the same results
-            xPixTest, yPixTest = pixelCoordsFromRaDec(raDeg, decDeg, chipNames=chipNameList,
+            xPixTest, yPixTest = pixelCoordsFromRaDec(raDeg, decDeg, chipName=chipNameList,
                                                       obs_metadata=obs,
                                                       epoch=2000.0,
                                                       camera=self.camera,

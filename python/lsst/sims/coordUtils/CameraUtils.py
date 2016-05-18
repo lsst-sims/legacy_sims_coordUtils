@@ -12,8 +12,8 @@ __all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
            "raDecFromPixelCoords", "_raDecFromPixelCoords"]
 
 
-def _validate_inputs_and_chipnames(input_list, input_names, method_name,
-                                   chip_names, chipnames_can_be_none = True):
+def _validate_inputs_and_chipname(input_list, input_names, method_name,
+                                   chip_name, chipname_can_be_none = True):
     """
     This will wrap _validate_inputs, but also reformat chip_name if necessary.
 
@@ -24,9 +24,9 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
 
     method_name is the name of the method whose input is being validated.
 
-    chip_names is the chip_name variable passed into the calling method.
+    chip_name is the chip_name variable passed into the calling method.
 
-    chipnames_can_be_none is a boolean that controls whether or not
+    chipname_can_be_none is a boolean that controls whether or not
     chip_name is allowed to be None.
 
     This method will raise a RuntimeError if:
@@ -34,19 +34,19 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
     1) the contents of input_list are not all of the same type
     2) the contents of input_list are not all floats or numpy arrays
     3) the contnets of input_list are different lengths (if numpy arrays)
-    4) chip_name is None and chipnames_can_be_none is False
+    4) chip_name is None and chipname_can_be_none is False
     5) chip_name is a list or array of different length than input_list[0]
        (if input_list[0] is a list or array) and len(chip_name)>1
 
     This method returns a boolean indicating whether input_list[0]
-    is a numpy array and a re-casting of chip_names as a list
-    of length equal to input_list[0] (unless chip_names is None;
-    then it will leave chip_names untouched)
+    is a numpy array and a re-casting of chip_name as a list
+    of length equal to input_list[0] (unless chip_name is None;
+    then it will leave chip_name untouched)
     """
 
     are_arrays = _validate_inputs(input_list, input_names, method_name)
 
-    if chip_names is None and not chipnames_can_be_none:
+    if chip_name is None and not chipname_can_be_none:
         raise RuntimeError("You passed chipName=None to %s" % method_name)
 
     if are_arrays:
@@ -54,22 +54,22 @@ def _validate_inputs_and_chipnames(input_list, input_names, method_name,
     else:
         n_pts = 1
 
-    if isinstance(chip_names, list) or isinstance(chip_names, np.ndarray):
-        if len(chip_names) >1 and len(chip_names) != n_pts:
-            raise RuntimeError("You passed %d chipNames to %s.\n" % (len(chip_names), method_name)
+    if isinstance(chip_name, list) or isinstance(chip_name, np.ndarray):
+        if len(chip_name) >1 and len(chip_name) != n_pts:
+            raise RuntimeError("You passed %d chipNames to %s.\n" % (len(chip_name), method_name)
                                + "You passed %d %s values." % (len(input_list[0]), input_names[0]))
 
-        if len(chip_names)==1 and n_pts>1:
-            chip_names_out = [chip_names[0]]*n_pts
+        if len(chip_name)==1 and n_pts>1:
+            chip_name_out = [chip_name[0]]*n_pts
         else:
-            chip_names_out = chip_names
+            chip_name_out = chip_name
 
-        return are_arrays, chip_names_out
+        return are_arrays, chip_name_out
 
-    elif chip_names is None:
-        return are_arrays, chip_names
+    elif chip_name is None:
+        return are_arrays, chip_name
     else:
-        return are_arrays, [chip_names]*n_pts
+        return are_arrays, [chip_name]*n_pts
 
 
 def getCornerPixels(detector_name, camera):
@@ -324,7 +324,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
 
 
 def pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
-                         chipNames=None, camera=None,
+                         chipName=None, camera=None,
                          epoch=2000.0, includeDistortion=True):
     """
     Get the pixel positions (or nan if not on a chip) for objects based
@@ -342,7 +342,7 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     @param [in] epoch is the epoch in Julian years of the equinox against which
     RA is measured.  Default is 2000.
 
-    @param [in] chipNames designates the names of the chips on which the pixel
+    @param [in] chipName designates the names of the chips on which the pixel
     coordinates will be reckoned.  Can be either single value, an array, or None.
     If an array, there must be as many chipNames as there are (RA, Dec) pairs.
     If a single value, all of the pixel coordinates will be reckoned on the same
@@ -364,13 +364,13 @@ def pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     """
 
     return _pixelCoordsFromRaDec(np.radians(ra), np.radians(dec),
-                                 chipNames=chipNames, camera=camera,
+                                 chipName=chipName, camera=camera,
                                  includeDistortion=includeDistortion,
                                  obs_metadata=obs_metadata, epoch=epoch)
 
 
 def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
-                          chipNames=None, camera=None,
+                          chipName=None, camera=None,
                           epoch=2000.0, includeDistortion=True):
     """
     Get the pixel positions (or nan if not on a chip) for objects based
@@ -388,7 +388,7 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     @param [in] epoch is the epoch in Julian years of the equinox against which
     RA is measured.  Default is 2000.
 
-    @param [in] chipNames designates the names of the chips on which the pixel
+    @param [in] chipName designates the names of the chips on which the pixel
     coordinates will be reckoned.  Can be either single value, an array, or None.
     If an array, there must be as many chipNames as there are (RA, Dec) pairs.
     If a single value, all of the pixel coordinates will be reckoned on the same
@@ -410,9 +410,9 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     """
 
     are_arrays, \
-    chipNameList = _validate_inputs_and_chipnames([ra, dec], ['ra', 'dec'],
+    chipNameList = _validate_inputs_and_chipname([ra, dec], ['ra', 'dec'],
                                                  'pixelCoordsFromRaDec',
-                                                              chipNames)
+                                                  chipName)
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
@@ -429,11 +429,11 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
                            + "pixelCoordsFromRaDec")
 
     xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
-    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=chipNameList, camera=camera,
+    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=camera,
                                       includeDistortion=includeDistortion)
 
 
-def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
+def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
                                camera=None, includeDistortion=True):
     """
     Get the pixel positions (or nan if not on a chip) for objects based
@@ -445,7 +445,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     @param [in] yPupil is the y pupil coordinates in radians.
     Can be either a float or a numpy array.
 
-    @param [in] chipNames designates the names of the chips on which the pixel
+    @param [in] chipName designates the names of the chips on which the pixel
     coordinates will be reckoned.  Can be either single value, an array, or None.
     If an array, there must be as many chipNames as there are (RA, Dec) pairs.
     If a single value, all of the pixel coordinates will be reckoned on the same
@@ -467,9 +467,9 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipNames=None,
     """
 
     are_arrays, \
-    chipNameList = _validate_inputs_and_chipnames([xPupil, yPupil], ["xPupil", "yPupil"],
+    chipNameList = _validate_inputs_and_chipname([xPupil, yPupil], ["xPupil", "yPupil"],
                                                   "pixelCoordsFromPupilCoords",
-                                                  chipNames)
+                                                  chipName)
     if includeDistortion:
         pixelType = PIXELS
     else:
@@ -542,10 +542,10 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
         raise RuntimeError("You cannot call pupilCoordsFromPixelCoords without specifying a camera")
 
     are_arrays, \
-    chipNameList = _validate_inputs_and_chipnames([xPix, yPix], ['xPix', 'yPix'],
+    chipNameList = _validate_inputs_and_chipname([xPix, yPix], ['xPix', 'yPix'],
                                                   "pupilCoordsFromPixelCoords",
                                                   chipName,
-                                                  chipnames_can_be_none=False)
+                                                  chipname_can_be_none=False)
 
     if includeDistortion:
         pixelType = PIXELS
@@ -589,18 +589,18 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     return np.array([pupilPoint.getX(), pupilPoint.getY()])
 
 
-def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
+def raDecFromPixelCoords(xPix, yPix, chipName, camera=None,
                          obs_metadata=None, epoch=2000.0, includeDistortion=True):
     """
     Convert pixel coordinates into RA, Dec
 
-    @param [in] xPixList is the x pixel coordinate.  It can be either
+    @param [in] xPix is the x pixel coordinate.  It can be either
     a float or a numpy array.
 
-    @param [in] yPixList is the y pixel coordinate.  It can be either
+    @param [in] yPix is the y pixel coordinate.  It can be either
     a float or a numpy array.
 
-    @param [in] chipNameList is the name of the chip(s) on which the pixel coordinates
+    @param [in] chipName is the name of the chip(s) on which the pixel coordinates
     are defined.  This can be a list (in which case there should be one chip name
     for each (xPix, yPix) coordinate pair), or a single value (in which case, all
     of the (xPix, yPix) points will be reckoned on that chip).
@@ -622,25 +622,25 @@ def raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     and the second row is the Dec coordinate (both in degrees; in the
     International Celestial Reference System)
     """
-    output = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
+    output = _raDecFromPixelCoords(xPix, yPix, chipName,
                                    camera=camera, obs_metadata=obs_metadata,
                                    epoch=epoch, includeDistortion=includeDistortion)
 
     return np.degrees(output)
 
 
-def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
+def _raDecFromPixelCoords(xPix, yPix, chipName, camera=None,
                           obs_metadata=None, epoch=2000.0, includeDistortion=True):
     """
     Convert pixel coordinates into RA, Dec
 
-    @param [in] xPixList is the x pixel coordinate.  It can be either
+    @param [in] xPix is the x pixel coordinate.  It can be either
     a float or a numpy array.
 
-    @param [in] yPixList is the y pixel coordinate.  It can be either
+    @param [in] yPix is the y pixel coordinate.  It can be either
     a float or a numpy array.
 
-    @param [in] chipNameList is the name of the chip(s) on which the pixel coordinates
+    @param [in] chipName is the name of the chip(s) on which the pixel coordinates
     are defined.  This can be a list (in which case there should be one chip name
     for each (xPix, yPix) coordinate pair), or a single value (in which case, all
     of the (xPix, yPix) points will be reckoned on that chip).
@@ -664,11 +664,11 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     """
 
     are_arrays, \
-    chipNameList = _validate_inputs_and_chipnames([xPixList, yPixList],
-                                                  ['xPixList', 'yPixList'],
+    chipNameList = _validate_inputs_and_chipname([xPix, yPix],
+                                                  ['xPix', 'yPix'],
                                                   'raDecFromPixelCoords',
-                                                  chipNameList,
-                                                  chipnames_can_be_none=False)
+                                                  chipName,
+                                                  chipname_can_be_none=False)
 
     if camera is None:
         raise RuntimeError("You cannot call raDecFromPixelCoords without specifying a camera")
@@ -685,7 +685,7 @@ def _raDecFromPixelCoords(xPixList, yPixList, chipNameList, camera=None,
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
 
-    xPupilList, yPupilList = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList,
+    xPupilList, yPupilList = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList,
                                                         camera=camera, includeDistortion=includeDistortion)
 
     raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
