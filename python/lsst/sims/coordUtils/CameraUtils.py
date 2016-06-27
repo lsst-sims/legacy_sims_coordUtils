@@ -13,7 +13,7 @@ __all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
 
 
 def _validate_inputs_and_chipname(input_list, input_names, method_name,
-                                   chip_name, chipname_can_be_none = True):
+                                  chip_name, chipname_can_be_none = True):
     """
     This will wrap _validate_inputs, but also reformat chip_name if necessary.
 
@@ -55,11 +55,11 @@ def _validate_inputs_and_chipname(input_list, input_names, method_name,
         n_pts = 1
 
     if isinstance(chip_name, list) or isinstance(chip_name, np.ndarray):
-        if len(chip_name) >1 and len(chip_name) != n_pts:
-            raise RuntimeError("You passed %d chipNames to %s.\n" % (len(chip_name), method_name)
-                               + "You passed %d %s values." % (len(input_list[0]), input_names[0]))
+        if len(chip_name) > 1 and len(chip_name) != n_pts:
+            raise RuntimeError("You passed %d chipNames to %s.\n" % (len(chip_name), method_name) +
+                               "You passed %d %s values." % (len(input_list[0]), input_names[0]))
 
-        if len(chip_name)==1 and n_pts>1:
+        if len(chip_name) == 1 and n_pts > 1:
             chip_name_out = [chip_name[0]]*n_pts
         else:
             chip_name_out = chip_name
@@ -183,7 +183,6 @@ def _getCornerRaDec(detector_name, camera, obs_metadata,
     return [(ra[0], dec[0]), (ra[1], dec[1]), (ra[2], dec[2]), (ra[3], dec[3])]
 
 
-
 def chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
                       epoch=2000.0, allow_multiple_chips=False):
     """
@@ -213,8 +212,8 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
     """
 
     return _chipNameFromRaDec(np.radians(ra), np.radians(dec),
-                                  obs_metadata=obs_metadata, epoch=epoch,
-                                  camera=camera, allow_multiple_chips=allow_multiple_chips)
+                              obs_metadata=obs_metadata, epoch=epoch,
+                              camera=camera, allow_multiple_chips=allow_multiple_chips)
 
 
 def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
@@ -245,7 +244,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
     @param [out] a numpy array of chip names
     """
 
-    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDec")
+    _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDec")
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into chipName")
@@ -294,25 +293,25 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     chipNames = []
 
     if are_arrays:
-        cameraPointList = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
+        cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
     else:
         cameraPointList = [afwGeom.Point2D(xPupil, yPupil)]
 
     detList = camera.findDetectorsList(cameraPointList, PUPIL)
 
     for pt, det in zip(cameraPointList, detList):
-        if len(det)==0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
+        if len(det) == 0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
             chipNames.append(None)
         else:
             names = [dd.getName() for dd in det]
-            if len(names)>1 and not allow_multiple_chips:
+            if len(names) > 1 and not allow_multiple_chips:
                 raise RuntimeError("This method does not know how to deal with cameras " +
                                    "where points can be on multiple detectors.  " +
                                    "Override CameraCoords.get_chipName to add this.\n" +
                                    "If you were only asking for the chip name (as opposed " +
                                    "to pixel coordinates) you can try re-running with " +
                                    "the kwarg allow_multiple_chips=True.")
-            elif len(names)==0:
+            elif len(names) == 0:
                 chipNames.append(None)
             else:
                 chipNames.append(names[0])
@@ -412,7 +411,7 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
     are_arrays, \
     chipNameList = _validate_inputs_and_chipname([ra, dec], ['ra', 'dec'],
                                                  'pixelCoordsFromRaDec',
-                                                  chipName)
+                                                 chipName)
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
@@ -421,12 +420,12 @@ def _pixelCoordsFromRaDec(ra, dec, obs_metadata=None,
         raise RuntimeError("You need to pass an ObservationMetaData into pixelCoordsFromRaDec")
 
     if obs_metadata.mjd is None:
-        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into " \
-                           + "pixelCoordsFromRaDec")
+        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into "
+                           "pixelCoordsFromRaDec")
 
     if obs_metadata.rotSkyPos is None:
-        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into " \
-                           + "pixelCoordsFromRaDec")
+        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into "
+                           "pixelCoordsFromRaDec")
 
     xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
     return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=camera,
@@ -468,8 +467,8 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
 
     are_arrays, \
     chipNameList = _validate_inputs_and_chipname([xPupil, yPupil], ["xPupil", "yPupil"],
-                                                  "pixelCoordsFromPupilCoords",
-                                                  chipName)
+                                                 "pixelCoordsFromPupilCoords",
+                                                 chipName)
     if includeDistortion:
         pixelType = PIXELS
     else:
@@ -543,9 +542,9 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
 
     are_arrays, \
     chipNameList = _validate_inputs_and_chipname([xPix, yPix], ['xPix', 'yPix'],
-                                                  "pupilCoordsFromPixelCoords",
-                                                  chipName,
-                                                  chipname_can_be_none=False)
+                                                 "pupilCoordsFromPixelCoords",
+                                                 chipName,
+                                                 chipname_can_be_none=False)
 
     if includeDistortion:
         pixelType = PIXELS
@@ -554,24 +553,22 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
 
     pixelSystemDict = {}
     pupilSystemDict = {}
-    detectorDict = {}
     for name in chipNameList:
-        if name not in pixelSystemDict and name is not None and name!='None':
+        if name not in pixelSystemDict and name is not None and name != 'None':
                 pixelSystemDict[name] = camera[name].makeCameraSys(pixelType)
                 pupilSystemDict[name] = camera[name].makeCameraSys(PUPIL)
-
 
     if are_arrays:
         xPupilList = []
         yPupilList = []
 
         for xx, yy, name in zip(xPix, yPix, chipNameList):
-            if name is None or name=='None':
+            if name is None or name == 'None':
                 xPupilList.append(np.NaN)
                 yPupilList.append(np.NaN)
             else:
                 pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xx, yy), pixelSystemDict[name])
-                pupilPoint =  camera.transform(pixPoint, pupilSystemDict[name]).getPoint()
+                pupilPoint = camera.transform(pixPoint, pupilSystemDict[name]).getPoint()
                 xPupilList.append(pupilPoint.getX())
                 yPupilList.append(pupilPoint.getY())
 
@@ -665,10 +662,10 @@ def _raDecFromPixelCoords(xPix, yPix, chipName, camera=None,
 
     are_arrays, \
     chipNameList = _validate_inputs_and_chipname([xPix, yPix],
-                                                  ['xPix', 'yPix'],
-                                                  'raDecFromPixelCoords',
-                                                  chipName,
-                                                  chipname_can_be_none=False)
+                                                 ['xPix', 'yPix'],
+                                                 'raDecFromPixelCoords',
+                                                 chipName,
+                                                 chipname_can_be_none=False)
 
     if camera is None:
         raise RuntimeError("You cannot call raDecFromPixelCoords without specifying a camera")
@@ -689,7 +686,7 @@ def _raDecFromPixelCoords(xPix, yPix, chipName, camera=None,
                                                         camera=camera, includeDistortion=includeDistortion)
 
     raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
-                                  obs_metadata=obs_metadata, epoch=epoch)
+                                          obs_metadata=obs_metadata, epoch=epoch)
 
     return np.array([raOut, decOut])
 
@@ -745,28 +742,26 @@ def _focalPlaneCoordsFromRaDec(ra, dec, obs_metadata=None, epoch=2000.0, camera=
     coordinate (both in millimeters)
     """
 
-    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], 'focalPlaneCoordsFromRaDec')
+    _validate_inputs([ra, dec], ['ra', 'dec'], 'focalPlaneCoordsFromRaDec')
 
     if epoch is None:
-        raise RuntimeError("You have to specify an epoch to run " + \
-                            "focalPlaneCoordsFromRaDec")
+        raise RuntimeError("You have to specify an epoch to run "
+                           "focalPlaneCoordsFromRaDec")
 
     if obs_metadata is None:
-        raise RuntimeError("You have to specify an ObservationMetaData to run " + \
-                               "focalPlaneCoordsFromRaDec")
-
+        raise RuntimeError("You have to specify an ObservationMetaData to run "
+                           "focalPlaneCoordsFromRaDec")
 
     if obs_metadata.mjd is None:
-        raise RuntimeError("You need to pass an ObservationMetaData with an " \
-                           + "mjd into focalPlaneCoordsFromRaDec")
+        raise RuntimeError("You need to pass an ObservationMetaData with an "
+                           "mjd into focalPlaneCoordsFromRaDec")
 
     if obs_metadata.rotSkyPos is None:
-        raise RuntimeError("You need to pass an ObservationMetaData with a " \
-                           + "rotSkyPos into focalPlaneCoordsFromRaDec")
-
+        raise RuntimeError("You need to pass an ObservationMetaData with a "
+                           "rotSkyPos into focalPlaneCoordsFromRaDec")
 
     xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata,
-                                                epoch=epoch)
+                                           epoch=epoch)
 
     return focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=camera)
 
