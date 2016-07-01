@@ -797,6 +797,7 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
 
         return np.array([xPix, yPix])
 
+    # if not are_arrays
     cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)
     fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
     return np.array([fpPoint.getX(), fpPoint.getY()])
