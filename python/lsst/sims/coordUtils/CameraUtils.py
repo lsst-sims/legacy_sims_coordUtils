@@ -132,10 +132,7 @@ def getCornerRaDec(detector_name, camera, obs_metadata, epoch=2000.0,
 
     cc = _getCornerRaDec(detector_name, camera, obs_metadata,
                          epoch=epoch, includeDistortion=includeDistortion)
-    return [(np.degrees(cc[0][0]), np.degrees(cc[0][1])),
-            (np.degrees(cc[1][0]), np.degrees(cc[1][1])),
-            (np.degrees(cc[2][0]), np.degrees(cc[2][1])),
-            (np.degrees(cc[3][0]), np.degrees(cc[3][1]))]
+    return [tuple(np.degrees(row)) for row in cc]
 
 
 def _getCornerRaDec(detector_name, camera, obs_metadata,
