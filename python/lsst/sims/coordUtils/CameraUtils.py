@@ -33,7 +33,7 @@ def _validate_inputs_and_chipname(input_list, input_names, method_name,
 
     1) the contents of input_list are not all of the same type
     2) the contents of input_list are not all floats or numpy arrays
-    3) the contnets of input_list are different lengths (if numpy arrays)
+    3) the contents of input_list are different lengths (if numpy arrays)
     4) chip_name is None and chipname_can_be_none is False
     5) chip_name is a list or array of different length than input_list[0]
        (if input_list[0] is a list or array) and len(chip_name)>1
