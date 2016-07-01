@@ -435,7 +435,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
     Get the pixel positions (or nan if not on a chip) for objects based
     on their pupil coordinates.
 
-    @param [in] xPupil is thex pupil coordinates in radians.
+    @param [in] xPupil is the x pupil coordinates in radians.
     Can be either a float or a numpy array.
 
     @param [in] yPupil is the y pupil coordinates in radians.
