@@ -1747,6 +1747,8 @@ class CornerTest(unittest.TestCase):
         self.assertEqual(corners[3][0], 3999)
         self.assertEqual(corners[3][1], 3999)
         self.assertEqual(len(corners), 4)
+        for row in corners:
+            self.assertEqual(len(row), 2)
 
     def testCornerRaDec_radians(self):
         """
