@@ -22,9 +22,7 @@ from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, \
                                  _focalPlaneCoordsFromRaDec
 
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
-
 from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
-
 from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDec
 
 
