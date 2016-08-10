@@ -1,10 +1,7 @@
-setupRequired(sims_utils)
-setupRequired(utils)
 setupRequired(base)
 setupRequired(python)
-setupRequired(throughputs)
-setupRequired(palpy)
-setupRequired(pyfits)
+setupRequired(utils)
 setupRequired(afw)
+setupRequired(sims_utils)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
