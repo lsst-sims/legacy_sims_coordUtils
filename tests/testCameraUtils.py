@@ -258,9 +258,9 @@ class ChipNameTest(unittest.TestCase):
 
             for ix in range(len(names1)):
                 if ix != 5 and ix != 10 and ix != 25:
-                    self.assertTrue(names1[ix] == 'Det22')
-                    self.assertTrue(names2[ix] == 'Det22')
-                    self.assertTrue(names3[ix] == 'Det22')
+                    self.assertEqual(names1[ix], 'Det22')
+                    self.assertEqual(names2[ix], 'Det22')
+                    self.assertEqual(names3[ix], 'Det22')
                 else:
                     self.assertIsNone(names1[ix], None)
                     self.assertIsNone(names2[ix], None)
@@ -392,12 +392,12 @@ class PixelCoordTest(unittest.TestCase):
             ctNotNaN = 0
             for x, y, name in zip(xx1, yy1, chipNameList):
                 if name is None:
-                    self.assertTrue(np.isnan(x))
-                    self.assertTrue(np.isnan(y))
+                    np.testing.assert_equal(x, np.NaN)
+                    np.testing.assert_equal(y, np.NaN)
                     ctNaN += 1
                 else:
-                    self.assertFalse(np.isnan(x))
-                    self.assertFalse(np.isnan(y))
+                    self.assertFalse(np.isnan(x), msg='x is Nan; should not be')
+                    self.assertFalse(np.isnan(y), msg='y is Nan; should not be')
                     ctNotNaN += 1
 
             self.assertGreater(ctNaN, 0)
@@ -414,8 +414,8 @@ class PixelCoordTest(unittest.TestCase):
                     self.assertEqual(x_f, xx1[ix])
                     self.assertEqual(y_f, yy1[ix])
                 else:
-                    self.assertTrue(np.isnan(xx1[ix]))
-                    self.assertTrue(np.isnan(yy1[ix]))
+                    np.testing.assert_equal(xx1[ix], np.NaN)
+                    np.testing.assert_equal(yy1[ix], np.NaN)
 
                 x_f, y_f = pixelCoordsFromRaDec(raList[ix], decList[ix], obs_metadata=obs,
                                                 epoch=2000.0, camera=self.camera,
@@ -427,8 +427,8 @@ class PixelCoordTest(unittest.TestCase):
                     self.assertEqual(x_f, xx1[ix])
                     self.assertEqual(y_f, yy1[ix])
                 else:
-                    self.assertTrue(np.isnan(xx1[ix]))
-                    self.assertTrue(np.isnan(yy1[ix]))
+                    np.testing.assert_equal(xx1[ix], np.NaN)
+                    np.testing.assert_equal(yy1[ix], np.NaN)
 
                 x_f, y_f = pixelCoordsFromRaDec(raList[ix], decList[ix], obs_metadata=obs,
                                                 epoch=2000.0, camera=self.camera,
@@ -440,8 +440,8 @@ class PixelCoordTest(unittest.TestCase):
                     self.assertEqual(x_f, xx1[ix])
                     self.assertEqual(y_f, yy1[ix])
                 else:
-                    self.assertTrue(np.isnan(xx1[ix]))
-                    self.assertTrue(np.isnan(yy1[ix]))
+                    np.testing.assert_equal(xx1[ix], np.NaN)
+                    np.testing.assert_equal(yy1[ix], np.NaN)
 
     def testSingleChipName(self):
         """
@@ -962,10 +962,10 @@ class PixelCoordTest(unittest.TestCase):
                                                   epoch=2000.0, camera=self.camera)
 
         for xx, yy in zip(xPixList, yPixList):
-            self.assertFalse(np.isnan(xx))
-            self.assertFalse(np.isnan(yy))
-            self.assertFalse(xx is None)
-            self.assertFalse(yy is None)
+            self.assertFalse(np.isnan(xx), msg='xx is NaN; should not be')
+            self.assertFalse(np.isnan(yy), msg='yy is NaN; should not be')
+            self.assertIsNotNone(xx, None)
+            self.assertIsNotNone(yy, None)
 
         for badVal in [np.NaN, None]:
             raList[5] = badVal
@@ -978,26 +978,26 @@ class PixelCoordTest(unittest.TestCase):
 
             for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
                 if ix in [5, 7, 9]:
-                    self.assertTrue(np.isnan(xx))
-                    self.assertTrue(np.isnan(yy))
+                    np.testing.assert_equal(xx, np.NaN)
+                    np.testing.assert_equal(yy, np.NaN)
                 else:
-                    self.assertFalse(np.isnan(xx))
-                    self.assertFalse(np.isnan(yy))
-                    self.assertIsNotNone(xx, None)
-                    self.assertIsNotNone(yy, None)
+                    self.assertFalse(np.isnan(xx), msg='xx is NaN; should not be')
+                    self.assertFalse(np.isnan(yy), msg='yy is NaN; should not be')
+                    self.assertIsNotNone(xx)
+                    self.assertIsNotNone(yy)
 
             xPixList, yPixList = _pixelCoordsFromRaDec(np.radians(raList), np.radians(decList),
                                                        obs_metadata=obs, epoch=2000.0, camera=self.camera)
 
             for ix, (xx, yy) in enumerate(zip(xPixList, yPixList)):
                 if ix in [5, 7, 9]:
-                    self.assertTrue(np.isnan(xx))
-                    self.assertTrue(np.isnan(yy))
+                    np.testing.assert_equal(xx, np.NaN)
+                    np.testing.assert_equal(yy, np.NaN)
                 else:
-                    self.assertFalse(np.isnan(xx))
-                    self.assertFalse(np.isnan(yy))
-                    self.assertIsNotNone(xx, None)
-                    self.assertIsNotNone(yy, None)
+                    self.assertFalse(np.isnan(xx), msg='xx is NaN; should not be')
+                    self.assertFalse(np.isnan(yy), msg='yy is NaN; should not be')
+                    self.assertIsNotNone(xx)
+                    self.assertIsNotNone(yy)
 
             xPupList[5] = badVal
             yPupList[7] = badVal
@@ -1012,13 +1012,13 @@ class PixelCoordTest(unittest.TestCase):
                 self.assertIsInstance(ypx_f, np.float)
 
                 if ix in [5, 7, 9]:
-                    self.assertTrue(np.isnan(xx))
-                    self.assertTrue(np.isnan(yy))
-                    self.assertTrue(np.isnan(xpx_f))
-                    self.assertTrue(np.isnan(ypx_f))
+                    np.testing.assert_equal(xx, np.NaN)
+                    np.testing.assert_equal(yy, np.NaN)
+                    np.testing.assert_equal(xpx_f, np.NaN)
+                    np.testing.assert_equal(ypx_f, np.NaN)
                 else:
-                    self.assertFalse(np.isnan(xx))
-                    self.assertFalse(np.isnan(yy))
+                    self.assertFalse(np.isnan(xx), msg='xx is NaN; should not be')
+                    self.assertFalse(np.isnan(yy), msg='yy is NaN; should not be')
                     self.assertIsNotNone(xx)
                     self.assertIsNotNone(yy)
                     self.assertAlmostEqual(xx, xpx_f, 12)
@@ -1115,10 +1115,10 @@ class FocalPlaneCoordTest(unittest.TestCase):
         np.testing.assert_array_equal(yf1, yf3)
 
         for x, y in zip(xf1, yf1):
-            self.assertFalse(np.isnan(x))
-            self.assertFalse(x is None)
-            self.assertFalse(np.isnan(y))
-            self.assertFalse(y is None)
+            self.assertFalse(np.isnan(x), msg='x is NaN; should not be')
+            self.assertIsNotNone(x)
+            self.assertFalse(np.isnan(y), msg='y is NaN; should not be')
+            self.assertIsNotNone(y)
 
         # now test that focalPlaneCoordsFromRaDec and
         # focalPlaneCoordsFromPupilCoords give the same results
@@ -1461,8 +1461,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         chipNameList[5] = None
         xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
         xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList, camera=self.camera)
-        self.assertTrue(np.isnan(xPupTest[5]))
-        self.assertTrue(np.isnan(yPupTest[5]))
+        np.testing.assert_equal(xPupTest[5], np.NaN)
+        np.testing.assert_equal(yPupTest[5], np.NaN)
 
     def testRaDecExceptions(self):
         """
