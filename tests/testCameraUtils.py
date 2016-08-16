@@ -9,17 +9,17 @@ from lsst.sims.utils import ObservationMetaData, radiansFromArcsec, arcsecFromRa
 from lsst.sims.utils import haversine
 from lsst.sims.coordUtils.utils import ReturnCamera
 from lsst.sims.utils import pupilCoordsFromRaDec, observedFromICRS
-from lsst.sims.coordUtils import chipNameFromRaDec, \
-                                 chipNameFromPupilCoords, \
-                                 _chipNameFromRaDec
+from lsst.sims.coordUtils import (chipNameFromRaDec,
+                                  chipNameFromPupilCoords,
+                                  _chipNameFromRaDec)
 
-from lsst.sims.coordUtils import pixelCoordsFromPupilCoords, \
-                                 pixelCoordsFromRaDec, \
-                                 _pixelCoordsFromRaDec
+from lsst.sims.coordUtils import (pixelCoordsFromPupilCoords,
+                                  pixelCoordsFromRaDec,
+                                  _pixelCoordsFromRaDec)
 
-from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords, \
-                                 focalPlaneCoordsFromRaDec, \
-                                 _focalPlaneCoordsFromRaDec
+from lsst.sims.coordUtils import (focalPlaneCoordsFromPupilCoords,
+                                  focalPlaneCoordsFromRaDec,
+                                  _focalPlaneCoordsFromRaDec)
 
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
