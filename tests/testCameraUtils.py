@@ -2,7 +2,7 @@ from __future__ import with_statement
 import os
 import numpy as np
 import unittest
-import lsst.utils.tests as utilsTests
+import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData, radiansFromArcsec, arcsecFromRadians
@@ -26,6 +26,10 @@ from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
 from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDec
 
 
+def setup_module(module):
+    lsst.utils.tests.init()
+
+
 class ChipNameTest(unittest.TestCase):
 
     @classmethod
@@ -33,6 +37,10 @@ class ChipNameTest(unittest.TestCase):
         cameraDir = getPackageDir('sims_coordUtils')
         cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
         cls.camera = ReturnCamera(cameraDir)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.camera
 
     def setUp(self):
         np.random.seed(45532)
@@ -314,6 +322,10 @@ class PixelCoordTest(unittest.TestCase):
         cameraDir = getPackageDir('sims_coordUtils')
         cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
         cls.camera = ReturnCamera(cameraDir)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.camera
 
     def setUp(self):
         np.random.seed(11324)
@@ -1054,6 +1066,10 @@ class FocalPlaneCoordTest(unittest.TestCase):
         cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
         cls.camera = ReturnCamera(cameraDir)
 
+    @classmethod
+    def tearDownClass(cls):
+        del cls.camera
+
     def setUp(self):
         np.random.seed(8374522)
 
@@ -1372,6 +1388,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         cameraDir = getPackageDir('sims_coordUtils')
         cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
         cls.camera = ReturnCamera(cameraDir)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.camera
 
     def setUp(self):
         np.random.seed(543)
@@ -1731,6 +1751,10 @@ class CornerTest(unittest.TestCase):
         cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
         cls.camera = ReturnCamera(cameraDir)
 
+    @classmethod
+    def tearDownClass(cls):
+        del cls.camera
+
     def testCornerPixels(self):
         """
         Test the method to get the pixel coordinates of the corner
@@ -1796,19 +1820,9 @@ class CornerTest(unittest.TestCase):
             self.assertLess(arcsecFromRadians(dd), 0.000001)
 
 
-def suite():
-    utilsTests.init()
-    suites = []
-    suites += unittest.makeSuite(ChipNameTest)
-    suites += unittest.makeSuite(PixelCoordTest)
-    suites += unittest.makeSuite(FocalPlaneCoordTest)
-    suites += unittest.makeSuite(ConversionFromPixelTest)
-    suites += unittest.makeSuite(CornerTest)
-    return unittest.TestSuite(suites)
-
-
-def run(shouldExit=False):
-    utilsTests.run(suite(), shouldExit)
+class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
+    pass
 
 if __name__ == "__main__":
-    run(True)
+    lsst.utils.tests.init()
+    unittest.main()
