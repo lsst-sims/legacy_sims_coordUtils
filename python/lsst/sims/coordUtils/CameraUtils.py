@@ -323,7 +323,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                 else:
                     warnings.warn("And object has landed on multiple chips.  You asked for this not to happen.\n" +
                                   "We will return only one of the chip names.  If you want both," +
-                                  "Try re-running with " +
+                                  "try re-running with " +
                                   "the kwarg allow_multiple_chips=True.\n" +
                                   "Offending chip names were %s\n" % str(name_list) +
                                   "Offending pupil coordinate point was %.12f %.12f\n" % (pt[0], pt[1]),
