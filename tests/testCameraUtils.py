@@ -2,6 +2,7 @@ from __future__ import with_statement
 import os
 import numpy as np
 import unittest
+import warnings
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 
@@ -24,6 +25,8 @@ from lsst.sims.coordUtils import (focalPlaneCoordsFromPupilCoords,
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
 from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDec
+from lsst.sims.coordUtils import MultipleChipWarning
+from lsst.obs.lsstSim import LsstSimMapper
 
 
 def setup_module(module):
@@ -313,6 +316,37 @@ class ChipNameTest(unittest.TestCase):
                 n_not_none += 1
 
         self.assertGreater(n_not_none, 50)
+
+    def test_multiple_chips(self):
+        """
+        Test that findChipName handles multiple chips as expected
+        """
+        chipA = 'R:4,0 S:0,2,A'
+        chipB = 'R:4,0 S:0,2,B'
+        camera = LsstSimMapper().camera
+
+        # from past experience, objects that appear at y=0 on
+        # R:4,0 S:0,2,A also appear on R:4,0 S:0,2,B
+        xpup, ypup = pupilCoordsFromPixelCoords(1500.0, 0.0, chipA, camera=camera)
+
+        with warnings.catch_warnings(record=True) as w_list:
+            name = chipNameFromPupilCoords(xpup, ypup, camera=camera,
+                                           allow_multiple_chips=False)
+
+        self.assertEqual(len(w_list), 1)
+        self.assertEqual(w_list[0].category, MultipleChipWarning)
+        self.assertIsInstance(name, str)
+        self.assertTrue(name == chipA or name == chipB,
+                        msg='unexpected chip name: %s' % name)
+
+        with warnings.catch_warnings(record=True) as w_list:
+            name = chipNameFromPupilCoords(xpup, ypup, camera=camera,
+                                           allow_multiple_chips=True)
+
+        self.assertEqual(len(w_list), 0)
+        self.assertEqual(len(name), 2)
+        self.assertIn(chipA, name)
+        self.assertIn(chipB, name)
 
 
 class PixelCoordTest(unittest.TestCase):
