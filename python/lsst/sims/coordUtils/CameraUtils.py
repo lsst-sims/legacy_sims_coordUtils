@@ -307,7 +307,9 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                                    "Override CameraCoords.get_chipName to add this.\n" +
                                    "If you were only asking for the chip name (as opposed " +
                                    "to pixel coordinates) you can try re-running with " +
-                                   "the kwarg allow_multiple_chips=True.")
+                                   "the kwarg allow_multiple_chips=True.\n" +
+                                   "Chip names were %s\n" % str(names) +
+                                   "Pupil coordinat point was %.12f %.12f\n" % (pt[0], pt[1]))
             elif len(names) == 0:
                 chipNames.append(None)
             else:
