@@ -311,7 +311,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                     # we will permit it.
                     #
                     # See figure 2 of arXiv:1506.04839v2
-                    if dd.getType() != WAVEFRONT:
+                    if dd.getType() == WAVEFRONT:
                         n_wavefront += 1
                         break
 
