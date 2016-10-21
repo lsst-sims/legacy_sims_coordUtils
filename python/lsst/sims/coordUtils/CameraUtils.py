@@ -1,6 +1,7 @@
 import numpy as np
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
+from lsst.afw.cameraGeom import WAVEFRONT
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
@@ -300,20 +301,31 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
         if len(det) == 0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
             chipNames.append(None)
         else:
-            names = [dd.getName() for dd in det]
-            if len(names) > 1 and not allow_multiple_chips:
-                raise RuntimeError("This method does not know how to deal with cameras " +
-                                   "where points can be on multiple detectors.  " +
-                                   "Override CameraCoords.get_chipName to add this.\n" +
-                                   "If you were only asking for the chip name (as opposed " +
-                                   "to pixel coordinates) you can try re-running with " +
-                                   "the kwarg allow_multiple_chips=True.\n" +
-                                   "Chip names were %s\n" % str(names) +
-                                   "Pupil coordinat point was %.12f %.12f\n" % (pt[0], pt[1]))
-            elif len(names) == 0:
+            name_list = [dd.getName() for dd in det]
+            if len(name_list) > 1 and not allow_multiple_chips:
+                for dd in det:
+                    # Because each A, B pair of wavefront sensors is positioned so that
+                    # one is in focus and one is out of focus, it is possible that a particular
+                    # RA, Dec could land on both wavefront sensors.  If that is what happened,
+                    # we will permit it.
+                    #
+                    # See figure 2 of arXiv:1506.04839v2
+                    if dd.getType() != WAVEFRONT:
+                        raise RuntimeError("This method does not know how to deal with cameras " +
+                                           "where points can be on multiple detectors.  " +
+                                           "Override CameraCoords.get_chipName to add this.\n" +
+                                           "If you were only asking for the chip name (as opposed " +
+                                           "to pixel coordinates) you can try re-running with " +
+                                           "the kwarg allow_multiple_chips=True.\n" +
+                                           "Chip names were %s\n" % str(name_list) +
+                                           "Pupil coordinat point was %.12f %.12f\n" % (pt[0], pt[1]))
+
+                chipNames.append('%s' % str(name_list))
+
+            elif len(name_list) == 0:
                 chipNames.append(None)
             else:
-                chipNames.append(names[0])
+                chipNames.append(name_list[0])
 
     if not are_arrays:
         return chipNames[0]
