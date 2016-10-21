@@ -103,7 +103,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
     nativePointList = _lsst_camera._transformSingleSysArray(cameraPointList, PUPIL, _lsst_camera._nativeCameraSys)
 
     outputDetList = [None]*len(cameraPointList)
-    outputNameList = ['None']*len(cameraPointList)
+    outputNameList = [None]*len(cameraPointList)
     chip_has_found = np.array([-1]*len(cameraPointList))
     checked_detectors = []
 
@@ -145,7 +145,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
                                         outputDetList[ix] = [outputDetList[ix], detector]
                                         outputNameList[ix] = [outputNameList[ix], detector.getName()]
 
-    return outputDetList, outputNameList
+    return np.array(outputDetList), np.array(outputNameList)
 
 
 
