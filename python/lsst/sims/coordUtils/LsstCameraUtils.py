@@ -104,6 +104,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
 
     outputDetList = [None]*len(cameraPointList)
     outputNameList = np.array(['None']*len(cameraPointList), dtype=(str, 100))
+    chip_has_found = np.array([-1]*len(cameraPointList))
     checked_detectors = []
 
     for ipt, nativePoint in enumerate(nativePointList):
@@ -111,7 +112,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
             for detector in detectorList[ipt]:
                 if detector.getName() not in checked_detectors:
                     checked_detectors.append(detector.getName())
-                    unfound_pts = np.where(np.char.rfind(outputNameList, 'None')>=0)[0]
+                    unfound_pts = np.where(chip_has_found<0)[0]
                     if len(unfound_pts) == 0:
                         return outputDetList, outputNameList
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
@@ -125,6 +126,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
                             if box.contains(pt):
                                 outputDetList[ix] = detector
                                 outputNameList[ix] = detector.getName()
+                                chip_has_found[ix] = 1
 
     return outputDetList, outputNameList
 
