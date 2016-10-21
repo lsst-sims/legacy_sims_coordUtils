@@ -344,7 +344,6 @@ class ChipNameTest(unittest.TestCase):
                                            allow_multiple_chips=True)
 
         self.assertEqual(len(w_list), 0)
-        self.assertEqual(len(name), 2)
         self.assertIn(chipA, name)
         self.assertIn(chipB, name)
 

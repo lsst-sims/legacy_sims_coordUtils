@@ -77,7 +77,7 @@ def _build_lsst_pupil_coord_map():
     _lsst_pupil_coord_map['dp'] = extent
 
 
-def _findDetectorsListLSST(cameraPointList, detectorList):
+def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=False):
     """!Find the detectors that cover a list of points specified by x and y coordinates in any system
 
     This is based one afw.camerGeom.camera.findDetectorsList.  It has been optimized for the LSST
@@ -91,9 +91,16 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
          camera does not allow an object to fall on more than one detector)
 
     @param[in] cameraPointList  a list of cameraPoints in PUPIL coordinates
+
     @param[in] detecorList is a list of lists.  Each row contains the detectors that should be searched
     for the correspdonding cameraPoint
-    @return outputDetList is a numpy array of detectors containing each point
+
+    @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
+    this method will allow objects to be visible on more than one chip.  If it is 'False'
+    and an object appears on more than one chip, only the first chip will appear in the list of
+    chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
+    chip, a list of chipNames will appear for that object.
+
     @return outputNameList is a numpy array of the names of the detectors
     """
 
@@ -102,25 +109,28 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
     #transform the points to the native coordinate system
     nativePointList = _lsst_camera._transformSingleSysArray(cameraPointList, PUPIL, _lsst_camera._nativeCameraSys)
 
-    outputDetList = [None]*len(cameraPointList)
     outputNameList = [None]*len(cameraPointList)
     chip_has_found = np.array([-1]*len(cameraPointList))
     checked_detectors = []
 
     could_be_multiple = [False]*len(cameraPointList)
-    for ipt in range(len(cameraPointList)):
-        for det in detectorList[ipt]:
-            if det.getType() == WAVEFRONT:
-                could_be_multiple[ipt] = True
+    if allow_multiple_chips:
+        for ipt in range(len(cameraPointList)):
+            for det in detectorList[ipt]:
+                if det.getType() == WAVEFRONT:
+                    could_be_multiple[ipt] = True
 
     for ipt, nativePoint in enumerate(nativePointList):
-        if outputDetList[ipt] is None:
+        if outputNameList[ipt] is None:
             for detector in detectorList[ipt]:
                 if detector.getName() not in checked_detectors:
                     checked_detectors.append(detector.getName())
                     unfound_pts = np.where(chip_has_found<0)[0]
                     if len(unfound_pts) == 0:
-                        return outputDetList, outputNameList
+                        for ix, name in enumerate(outputNameList):
+                            if isinstance(name, list):
+                                outputNameList[ix] = str(name)
+                        return np.array(outputNameList)
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
                     if len(valid_pt_dexes)>0:
                         valid_pt_list = [nativePointList[ii] for ii in valid_pt_dexes]
@@ -131,34 +141,40 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
                         for ix, pt in zip(valid_pt_dexes, detectorPointList):
                             if box.contains(pt):
                                 if not could_be_multiple[ix]:
-                                    outputDetList[ix] = detector
                                     outputNameList[ix] = detector.getName()
                                     chip_has_found[ix] = 1
                                 else:
-                                    if outputDetList[ix] is None:
-                                        outputDetList[ix] = detector
+                                    if outputNameList[ix] is None:
                                         outputNameList[ix] = detector.getName()
-                                    elif isinstance(outputDetList[ix], list):
-                                        outputDetList[ix].append(detector)
+                                    elif isinstance(outputNameList[ix], list):
                                         outputNameList[ix].append(detector.getName())
                                     else:
-                                        outputDetList[ix] = [outputDetList[ix], detector]
                                         outputNameList[ix] = [outputNameList[ix], detector.getName()]
 
-    return np.array(outputDetList), np.array(outputNameList)
+    for ix, name in enumerate(outputNameList):
+        if isinstance(name, list):
+            outputNameList[ix] = str(name)
+
+    return np.array(outputNameList)
 
 
 
-def chipNameFromPupilCoordsLSST(xPupil, yPupil):
+def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     """
     Return the names of LSST detectors that see the object specified by
     either (xPupil, yPupil).
 
     @param [in] xPupil is the x pupil coordinate in radians.
-    Can be either a float or a numpy array.
+    Must be a numpy array.
 
     @param [in] yPupil is the y pupil coordinate in radians.
-    Can be either a float or a numpy array.
+    Must be a numpy array.
+
+    @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
+    this method will allow objects to be visible on more than one chip.  If it is 'False'
+    and an object appears on more than one chip, only the first chip will appear in the list of
+    chipNames and warning will be emitted.  If it is 'True' and an object falls on more than one
+    chip, a list of chipNames will appear for that object.
 
     @param [out] a numpy array of chip names
 
@@ -170,10 +186,10 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil):
 
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
-    if are_arrays:
-        cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
-    else:
-        cameraPointList = [afwGeom.Point2D(xPupil, yPupil)]
+    if not are_arrays:
+        raise RuntimeError("Pupil coordinates passed to chipNameFromPupilCoordsLSST must be in numpy arrays")
+
+    cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
 
     valid_detectors = []
     for xx, yy in zip(xPupil, yPupil):
@@ -183,6 +199,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil):
         local_valid = [_lsst_camera[_lsst_pupil_coord_map['name'][ii]] for ii in possible_dexes[0]]
         valid_detectors.append(local_valid)
 
-    detList, nameList = _findDetectorsListLSST(cameraPointList, valid_detectors)
+    nameList = _findDetectorsListLSST(cameraPointList, valid_detectors, allow_multiple_chips=allow_multiple_chips)
 
     return nameList

@@ -283,7 +283,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     this method will allow objects to be visible on more than one chip.  If it is 'False'
     and an object appears on more than one chip, only the first chip will appear in the list of
     chipNames and warning will be emitted.  If it is 'True' and an object falls on more than one
-    chip, a list of chipNames will appear for that object.
+    chip, the resulting chip name will be the string representation of the list of valid chip names.
 
     @param [in] camera is an afwCameraGeom object that specifies the attributes of the camera.
 
@@ -319,7 +319,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                     # we will permit it.
                     #
                     # See figure 2 of arXiv:1506.04839v2
-                    chipNames.append(name_list)
+                    chipNames.append(str(name_list))
                 else:
                     warnings.warn("And object has landed on multiple chips.  You asked for this not to happen.\n" +
                                   "We will return only one of the chip names.  If you want both," +
