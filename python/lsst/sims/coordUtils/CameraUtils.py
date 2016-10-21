@@ -1,17 +1,25 @@
 import numpy as np
+import warnings
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.afw.cameraGeom import WAVEFRONT
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
-__all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
+__all__ = ["MultipleChipWarning", "getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
            "chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
            "pupilCoordsFromPixelCoords",
            "raDecFromPixelCoords", "_raDecFromPixelCoords"]
 
+
+class MultipleChipWarning(Warning):
+    """
+    A sub-class of Warning emitted when we try to detect the chip that an object falls on and
+    multiple chips are returned.
+    """
+    pass
 
 def _validate_inputs_and_chipname(input_list, input_names, method_name,
                                   chip_name, chipname_can_be_none = True):
@@ -273,9 +281,9 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
-    and an object appears on more than one chip, an exception will be raised.  If it is 'True'
-    and an object falls on more than one chip, it will still only return the first chip in the
-    list of chips returned. THIS BEHAVIOR SHOULD BE FIXED IN A FUTURE TICKET.
+    and an object appears on more than one chip, only the first chip will appear in the list of
+    chipNames and warning will be emitted.  If it is 'True' and an object falls on more than one
+    chip, a list of chipNames will appear for that object.
 
     @param [in] camera is an afwCameraGeom object that specifies the attributes of the camera.
 
@@ -302,29 +310,25 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
             chipNames.append(None)
         else:
             name_list = [dd.getName() for dd in det]
-            if len(name_list) > 1 and not allow_multiple_chips:
-                n_wavefront = 0
-                for dd in det:
-                    # Because each A, B pair of wavefront sensors is positioned so that
+            if len(name_list) > 1:
+                if allow_multiple_chips:
+                    # In the case of LSST, multiple chips are possible
+                    # because each A, B pair of wavefront sensors is positioned so that
                     # one is in focus and one is out of focus, it is possible that a particular
                     # RA, Dec could land on both wavefront sensors.  If that is what happened,
                     # we will permit it.
                     #
                     # See figure 2 of arXiv:1506.04839v2
-                    if dd.getType() == WAVEFRONT:
-                        n_wavefront += 1
-                        break
+                    chipNames.append(name_list)
+                else:
+                    warnings.warn("And object has landed on multiple chips.  You asked for this not to happen.\n" +
+                                  "Try re-running with " +
+                                  "the kwarg allow_multiple_chips=True.\n" +
+                                  "Offending chip names were %s\n" % str(name_list) +
+                                  "Offending pupil coordinate point was %.12f %.12f\n" % (pt[0], pt[1]),
+                                  category=MultipleChipWarning)
 
-                    if n_wavefront == 0:
-                        raise RuntimeError("This method does not know how to deal with cameras " +
-                                           "where points can be on multiple detectors.\n" +
-                                           "If you were only asking for the chip name (as opposed " +
-                                           "to pixel coordinates) you can try re-running with " +
-                                           "the kwarg allow_multiple_chips=True.\n" +
-                                           "Chip names were %s\n" % str(name_list) +
-                                           "Pupil coordinate point was %.12f %.12f\n" % (pt[0], pt[1]))
-
-                chipNames.append(name_list)
+                chipNames.append(name_list[0])
 
             elif len(name_list) == 0:
                 chipNames.append(None)
