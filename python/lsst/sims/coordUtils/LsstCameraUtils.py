@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import PUPIL, PIXELS
+from lsst.afw.cameraGeom import PUPIL, PIXELS, WAVEFRONT
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.coordUtils import getCornerPixels
 from lsst.sims.utils.CodeUtilities import _validate_inputs
@@ -103,9 +103,15 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
     nativePointList = _lsst_camera._transformSingleSysArray(cameraPointList, PUPIL, _lsst_camera._nativeCameraSys)
 
     outputDetList = [None]*len(cameraPointList)
-    outputNameList = np.array(['None']*len(cameraPointList), dtype=(str, 100))
+    outputNameList = ['None']*len(cameraPointList)
     chip_has_found = np.array([-1]*len(cameraPointList))
     checked_detectors = []
+
+    could_be_multiple = [False]*len(cameraPointList)
+    for ipt in range(len(cameraPointList)):
+        for det in detectorList[ipt]:
+            if det.getType() == WAVEFRONT:
+                could_be_multiple[ipt] = True
 
     for ipt, nativePoint in enumerate(nativePointList):
         if outputDetList[ipt] is None:
@@ -124,9 +130,20 @@ def _findDetectorsListLSST(cameraPointList, detectorList):
                         box = afwGeom.Box2D(detector.getBBox())
                         for ix, pt in zip(valid_pt_dexes, detectorPointList):
                             if box.contains(pt):
-                                outputDetList[ix] = detector
-                                outputNameList[ix] = detector.getName()
-                                chip_has_found[ix] = 1
+                                if not could_be_multiple[ix]:
+                                    outputDetList[ix] = detector
+                                    outputNameList[ix] = detector.getName()
+                                    chip_has_found[ix] = 1
+                                else:
+                                    if outputDetList[ix] is None:
+                                        outputDetList[ix] = detector
+                                        outputNameList[ix] = detector.getName()
+                                    elif isinstance(outputDetList[ix], list):
+                                        outputDetList[ix].append(detector)
+                                        outputNameList[ix].append(detector.getName())
+                                    else:
+                                        outputDetList[ix] = [outputDetList[ix], detector]
+                                        outputNameList[ix] = [outputNameList[ix], detector.getName()]
 
     return outputDetList, outputNameList
 
