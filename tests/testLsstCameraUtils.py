@@ -39,10 +39,10 @@ class ChipNameTestCase(unittest.TestCase):
 
             control_name_list = chipNameFromPupilCoords(x_pup, y_pup, camera=camera)
             test_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup)
-            np.testing.assert_array_equal(control_name_list.astype(str), test_name_list)
+            np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
 
             # make sure we didn't accidentally get a lot of positions that don't land on chips
-            self.assertLess(len(np.where(np.char.rfind(test_name_list, 'None')>=0)[0]), n_obj/10)
+            self.assertLess(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

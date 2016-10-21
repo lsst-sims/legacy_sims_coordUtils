@@ -324,7 +324,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                                            "Chip names were %s\n" % str(name_list) +
                                            "Pupil coordinate point was %.12f %.12f\n" % (pt[0], pt[1]))
 
-                chipNames.append('%s' % str(name_list))
+                chipNames.append(name_list)
 
             elif len(name_list) == 0:
                 chipNames.append(None)
