@@ -322,7 +322,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                                            "to pixel coordinates) you can try re-running with " +
                                            "the kwarg allow_multiple_chips=True.\n" +
                                            "Chip names were %s\n" % str(name_list) +
-                                           "Pupil coordinat point was %.12f %.12f\n" % (pt[0], pt[1]))
+                                           "Pupil coordinate point was %.12f %.12f\n" % (pt[0], pt[1]))
 
                 chipNames.append('%s' % str(name_list))
 
