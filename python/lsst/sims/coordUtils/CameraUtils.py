@@ -328,7 +328,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                                   "Offending pupil coordinate point was %.12f %.12f\n" % (pt[0], pt[1]),
                                   category=MultipleChipWarning)
 
-                chipNames.append(name_list[0])
+                    chipNames.append(name_list[0])
 
             elif len(name_list) == 0:
                 chipNames.append(None)
