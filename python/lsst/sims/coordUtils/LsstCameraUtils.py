@@ -161,7 +161,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil):
     valid_detectors = []
     for xx, yy in zip(xPupil, yPupil):
         possible_dexes = np.where(np.sqrt(np.power(xx-_lsst_pupil_coord_map['xx'],2)
-                                          + np.power(yy-_lsst_pupil_coord_map['yy'],2))/_lsst_pupil_coord_map['dp']<2.0)
+                                          + np.power(yy-_lsst_pupil_coord_map['yy'],2))/_lsst_pupil_coord_map['dp']<1.1)
 
         local_valid = [_lsst_camera[_lsst_pupil_coord_map['name'][ii]] for ii in possible_dexes[0]]
         valid_detectors.append(local_valid)
