@@ -312,8 +312,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                     # See figure 2 of arXiv:1506.04839v2
                     if dd.getType() != WAVEFRONT:
                         raise RuntimeError("This method does not know how to deal with cameras " +
-                                           "where points can be on multiple detectors.  " +
-                                           "Override CameraCoords.get_chipName to add this.\n" +
+                                           "where points can be on multiple detectors.\n" +
                                            "If you were only asking for the chip name (as opposed " +
                                            "to pixel coordinates) you can try re-running with " +
                                            "the kwarg allow_multiple_chips=True.\n" +
