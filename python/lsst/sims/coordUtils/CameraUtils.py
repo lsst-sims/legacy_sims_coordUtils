@@ -303,6 +303,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
         else:
             name_list = [dd.getName() for dd in det]
             if len(name_list) > 1 and not allow_multiple_chips:
+                n_wavefront = 0
                 for dd in det:
                     # Because each A, B pair of wavefront sensors is positioned so that
                     # one is in focus and one is out of focus, it is possible that a particular
@@ -311,6 +312,10 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                     #
                     # See figure 2 of arXiv:1506.04839v2
                     if dd.getType() != WAVEFRONT:
+                        n_wavefront += 1
+                        break
+
+                    if n_wavefront == 0:
                         raise RuntimeError("This method does not know how to deal with cameras " +
                                            "where points can be on multiple detectors.\n" +
                                            "If you were only asking for the chip name (as opposed " +
