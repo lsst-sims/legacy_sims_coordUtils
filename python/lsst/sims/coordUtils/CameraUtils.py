@@ -322,7 +322,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                     chipNames.append(str(name_list))
                 else:
                     warnings.warn("And object has landed on multiple chips.  You asked for this not to happen.\n" +
-                                  "We will return only one of the chip names.  If you want both," +
+                                  "We will return only one of the chip names.  If you want both, " +
                                   "try re-running with " +
                                   "the kwarg allow_multiple_chips=True.\n" +
                                   "Offending chip names were %s\n" % str(name_list) +
