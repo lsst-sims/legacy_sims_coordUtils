@@ -193,7 +193,7 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
                       epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
-    either (xPupil, yPupil).
+    (RA, Dec).
 
     @param [in] ra in degrees (a numpy array or a float).
     In the International Celestial Reference System.
@@ -226,7 +226,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
                        epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
-    either (xPupil, yPupil).
+    (RA, Dec).
 
     @param [in] ra in radians (a numpy array or a float).
     In the International Celestial Reference System.
@@ -271,7 +271,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
 def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
-    either (xPupil, yPupil).
+    (xPupil, yPupil).
 
     @param [in] xPupil is the x pupil coordinate in radians.
     Can be either a float or a numpy array.
