@@ -31,7 +31,7 @@ class ChipNameTestCase(unittest.TestCase):
         results as chipNameFromPupilCoords
         """
         n_pointings = 3
-        n_obj = 10000
+        n_obj = 5000
         rng = np.random.RandomState(8831)
         ra_pointing_list = rng.random_sample(n_pointings)*360.0
         dec_pointing_list = rng.random_sample(n_pointings)*180.0-90.0
