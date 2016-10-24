@@ -3,11 +3,13 @@ import numpy as np
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, WAVEFRONT
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
+from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
 
-__all__ = ["chipNameFromPupilCoordsLSST"]
+__all__ = ["chipNameFromPupilCoordsLSST",
+           "_chipNameFromRaDecLSST"]
 
 _lsst_camera = LsstSimMapper().camera
 
@@ -202,3 +204,46 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     nameList = _findDetectorsListLSST(cameraPointList, valid_detectors, allow_multiple_chips=allow_multiple_chips)
 
     return nameList
+
+
+def _chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
+    """
+    Return the names of detectors on the LSST camera that see the object specified by
+    (RA, Dec) in radians.
+
+    @param [in] ra in radians (a numpy array or a float).
+    In the International Celestial Reference System.
+
+    @param [in] dec in radians (a numpy array or a float).
+    In the International Celestial Reference System.
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
+
+    @param [in] epoch is the epoch in Julian years of the equinox against which RA and Dec are
+    measured.  Default is 2000.
+
+    @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
+    this method will allow objects to be visible on more than one chip.  If it is 'False'
+    and an object appears on more than one chip, only the first chip will appear in the list of
+    chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
+    chip, a list of chipNames will appear for that object.
+
+    @param [out] a numpy array of chip names
+    """
+
+    _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDecLSST")
+
+    if epoch is None:
+        raise RuntimeError("You need to pass an epoch into chipName")
+
+    if obs_metadata is None:
+        raise RuntimeError("You need to pass an ObservationMetaData into chipName")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into chipName")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
+
+    xp, yp = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+    return chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips)

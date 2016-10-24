@@ -3,7 +3,9 @@ import numpy as np
 import lsst.utils.tests
 from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   chipNameFromPupilCoordsLSST,
-                                  pupilCoordsFromPixelCoords)
+                                  pupilCoordsFromPixelCoords,
+                                  _chipNameFromRaDec,
+                                  _chipNameFromRaDecLSST)
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
@@ -75,6 +77,32 @@ class ChipNameTestCase(unittest.TestCase):
         self.assertIn(chipA, name[1])
         self.assertIn(chipB, name[1])
         self.assertIsInstance(name[0], str)
+
+    def test_chip_name_from_ra_dec(self):
+        """
+        test that chipNameFromRaDecLSST agrees with chipNameFromRaDec
+        """
+        n_obj = 5000
+        raP = 112.1
+        decP = -34.1
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
+                                  rotSkyPos=45.0, mjd=43000.0)
+
+        rng = np.random.RandomState(8731)
+        rr = rng.random_sample(n_obj)*1.75
+        theta = rng.random_sample(n_obj)*2.0*np.pi
+        ra_list = np.radians(raP + rr*np.cos(theta))
+        dec_list = np.radians(decP + rr*np.sin(theta))
+        control_name_list = _chipNameFromRaDec(ra_list, dec_list,
+                                               obs_metadata=obs,
+                                               camera=self.camera)
+
+        test_name_list = _chipNameFromRaDecLSST(ra_list, dec_list,
+                                                obs_metadata=obs)
+
+        np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
+        self.assertLess(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
