@@ -209,6 +209,26 @@ class ChipNameTestCase(unittest.TestCase):
         np.testing.assert_array_equal(x_pix, x_pix_test)
         np.testing.assert_array_equal(y_pix, y_pix_test)
 
+        # test that exceptions are raised when incomplete ObservationMetaData are used
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("rotSkyPos", context.exception.message)
+
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("mjd", context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            name = _pixelCoordsFromRaDecLSST(ra_list, dec_list)
+        self.assertIn("ObservationMetaData", context.exception.message)
+
+        # check that exceptions are raised when ra_list, dec_list are of the wrong shape
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = _pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
+        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.message)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
