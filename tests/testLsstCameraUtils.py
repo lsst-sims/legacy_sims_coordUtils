@@ -198,6 +198,18 @@ class ChipNameTestCase(unittest.TestCase):
         np.testing.assert_array_equal(x_pix, x_pix_test)
         np.testing.assert_array_equal(y_pix, y_pix_test)
 
+        # test when we force a chipName
+        x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
+                                             obs_metadata=obs, camera=self.camera)
+        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+
+        x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
+                                                           obs_metadata=obs)
+        np.testing.assert_array_equal(x_pix, x_pix_test)
+        np.testing.assert_array_equal(y_pix, y_pix_test)
+
+
         # test without distortion
         x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
                                              includeDistortion=False)
