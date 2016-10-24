@@ -6,7 +6,9 @@ from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   chipNameFromPupilCoordsLSST,
                                   pupilCoordsFromPixelCoords,
                                   _chipNameFromRaDec, chipNameFromRaDec,
-                                  _chipNameFromRaDecLSST, chipNameFromRaDecLSST)
+                                  _chipNameFromRaDecLSST, chipNameFromRaDecLSST,
+                                  _pixelCoordsFromRaDec,
+                                  _pixelCoordsFromRaDecLSST)
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
@@ -173,6 +175,28 @@ class ChipNameTestCase(unittest.TestCase):
             name = chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
         self.assertIn("chipNameFromRaDecLSST", context.exception.message)
 
+    def test_pixel_coords_from_ra_dec_radians(self):
+        """
+        Test that _pixelCoordsFromRaDec and _pixelCoordsFromRaDecLSST agree
+        """
+        raP = 74.2
+        decP = 13.0
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
+                                  rotSkyPos=13.0, mjd=43441.0)
+
+        n_obj = 5000
+        rng = np.random.RandomState(83241)
+        rr = rng.random_sample(n_obj)*1.75
+        theta = rng.random_sample(n_obj)*2.0*np.pi
+        ra_list = np.radians(raP + rr*np.cos(theta))
+        dec_list = np.radians(decP + rr*np.sin(theta))
+        x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
+        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+
+        x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        np.testing.assert_array_equal(x_pix, x_pix_test)
+        np.testing.assert_array_equal(y_pix, y_pix_test)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

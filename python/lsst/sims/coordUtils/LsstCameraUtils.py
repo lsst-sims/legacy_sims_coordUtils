@@ -2,14 +2,15 @@ from __future__ import division
 import numpy as np
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, WAVEFRONT
-from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
+from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
-from lsst.sims.coordUtils import getCornerPixels
+from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
 
 __all__ = ["chipNameFromPupilCoordsLSST",
-           "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST"]
+           "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
+           "_pixelCoordsFromRaDecLSST"]
 
 _lsst_camera = LsstSimMapper().camera
 
@@ -276,3 +277,73 @@ def chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multip
     return _chipNameFromRaDecLSST(np.radians(ra), np.radians(dec),
                                   obs_metadata=obs_metadata, epoch=epoch,
                                   allow_multiple_chips=allow_multiple_chips)
+
+
+def _pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
+                              chipName=None, camera=None,
+                              epoch=2000.0, includeDistortion=True):
+    """
+    Get the pixel positions on the LSST camera (or nan if not on a chip) for objects based
+    on their RA, and Dec (in radians)
+
+    @param [in] ra is in radians in the International Celestial Reference System.
+    Can be either a float or a numpy array.
+
+    @param [in] dec is in radians in the International Celestial Reference System.
+    Can be either a float or a numpy array.
+
+    @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
+    pointing.
+
+    @param [in] epoch is the epoch in Julian years of the equinox against which
+    RA is measured.  Default is 2000.
+
+    @param [in] chipName designates the names of the chips on which the pixel
+    coordinates will be reckoned.  Can be either single value, an array, or None.
+    If an array, there must be as many chipNames as there are (RA, Dec) pairs.
+    If a single value, all of the pixel coordinates will be reckoned on the same
+    chip.  If None, this method will calculate which chip each(RA, Dec) pair actually
+    falls on, and return pixel coordinates for each (RA, Dec) pair on the appropriate
+    chip.  Default is None.
+
+    @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
+    This is an optional argument to be passed to chipName.
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    return the true pixel coordinates with optical distortion included.  If False, this
+    method will return TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
+    and the second row is the y pixel coordinate
+    """
+
+    global _lsst_camera
+
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipname([ra, dec], ['ra', 'dec'],
+                                                 'pixelCoordsFromRaDecLSST',
+                                                 chipName)
+
+    if epoch is None:
+        raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
+
+    if obs_metadata is None:
+        raise RuntimeError("You need to pass an ObservationMetaData into pixelCoordsFromRaDec")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with an mjd into "
+                           "pixelCoordsFromRaDec")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into "
+                           "pixelCoordsFromRaDec")
+
+    xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+
+    if chipNameList is None:
+        chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
+
+    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=_lsst_camera,
+                                      includeDistortion=includeDistortion)

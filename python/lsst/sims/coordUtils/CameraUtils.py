@@ -11,7 +11,8 @@ __all__ = ["MultipleChipWarning", "getCornerPixels", "_getCornerRaDec", "getCorn
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
            "pupilCoordsFromPixelCoords",
-           "raDecFromPixelCoords", "_raDecFromPixelCoords"]
+           "raDecFromPixelCoords", "_raDecFromPixelCoords",
+           "_validate_inputs_and_chipname"]
 
 
 class MultipleChipWarning(Warning):
