@@ -507,7 +507,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
         xPix = []
         yPix = []
         for name, x, y in zip(chipNameList, xPupil, yPupil):
-            if not name:
+            if name is None:
                 xPix.append(np.nan)
                 yPix.append(np.nan)
                 continue
@@ -519,7 +519,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
             yPix.append(detPoint.getPoint().getY())
         return np.array([xPix, yPix])
     else:
-        if not chipNameList[0]:
+        if chipNameList[0] is None:
             return np.array([np.NaN, np.NaN])
 
         cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)
