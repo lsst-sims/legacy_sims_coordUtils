@@ -5,8 +5,8 @@ import lsst.utils.tests
 from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   chipNameFromPupilCoordsLSST,
                                   pupilCoordsFromPixelCoords,
-                                  _chipNameFromRaDec,
-                                  _chipNameFromRaDecLSST)
+                                  _chipNameFromRaDec, chipNameFromRaDec,
+                                  _chipNameFromRaDecLSST, chipNameFromRaDecLSST)
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
@@ -79,9 +79,9 @@ class ChipNameTestCase(unittest.TestCase):
         self.assertIn(chipB, name[1])
         self.assertIsInstance(name[0], str)
 
-    def test_chip_name_from_ra_dec(self):
+    def test_chip_name_from_ra_dec_radians(self):
         """
-        test that chipNameFromRaDecLSST agrees with chipNameFromRaDec
+        test that _chipNameFromRaDecLSST agrees with _chipNameFromRaDec
         """
 
         n_obj = 5000
@@ -125,6 +125,54 @@ class ChipNameTestCase(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             name = _chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
         self.assertIn("chipNameFromRaDecLSST", context.exception.message)
+
+    def test_chip_name_from_ra_dec_degrees(self):
+        """
+        test that chipNameFromRaDecLSST agrees with chipNameFromRaDec
+        """
+
+        n_obj = 5000
+        raP = 112.1
+        decP = -34.1
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
+                                  rotSkyPos=45.0, mjd=43000.0)
+
+        rng = np.random.RandomState(8731)
+        rr = rng.random_sample(n_obj)*1.75
+        theta = rng.random_sample(n_obj)*2.0*np.pi
+        ra_list = raP + rr*np.cos(theta)
+        dec_list = decP + rr*np.sin(theta)
+        control_name_list = chipNameFromRaDec(ra_list, dec_list,
+                                              obs_metadata=obs,
+                                              camera=self.camera)
+
+        test_name_list = chipNameFromRaDecLSST(ra_list, dec_list,
+                                               obs_metadata=obs)
+
+        np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
+        self.assertLess(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
+
+        # test that exceptions are raised when incomplete ObservationMetaData are used
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("rotSkyPos", context.exception.message)
+
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("mjd", context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            name = chipNameFromRaDecLSST(ra_list, dec_list)
+        self.assertIn("ObservationMetaData", context.exception.message)
+
+        # check that exceptions are raised when ra_list, dec_list are of the wrong shape
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
+        self.assertIn("chipNameFromRaDecLSST", context.exception.message)
+
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
