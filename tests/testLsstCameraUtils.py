@@ -1,3 +1,4 @@
+from __future__ import with_statement
 import unittest
 import numpy as np
 import lsst.utils.tests
@@ -82,6 +83,7 @@ class ChipNameTestCase(unittest.TestCase):
         """
         test that chipNameFromRaDecLSST agrees with chipNameFromRaDec
         """
+
         n_obj = 5000
         raP = 112.1
         decP = -34.1
@@ -102,6 +104,27 @@ class ChipNameTestCase(unittest.TestCase):
 
         np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
         self.assertLess(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
+
+        # test that exceptions are raised when incomplete ObservationMetaData are used
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = _chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("rotSkyPos", context.exception.message)
+
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = _chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("mjd", context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            name = _chipNameFromRaDecLSST(ra_list, dec_list)
+        self.assertIn("ObservationMetaData", context.exception.message)
+
+        # check that exceptions are raised when ra_list, dec_list are of the wrong shape
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = _chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
+        self.assertIn("chipNameFromRaDecLSST", context.exception.message)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
