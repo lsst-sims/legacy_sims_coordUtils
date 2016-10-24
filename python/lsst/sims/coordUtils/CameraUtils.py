@@ -504,6 +504,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
             chipNameList = [chipNameList]
 
     if are_arrays:
+        det_sys_dict = {}
         xPix = []
         yPix = []
         for name, x, y in zip(chipNameList, xPupil, yPupil):
@@ -512,9 +513,11 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
                 yPix.append(np.nan)
                 continue
             cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            det = camera[name]
-            cs = det.makeCameraSys(pixelType)
-            detPoint = camera.transform(cp, cs)
+            if name not in det_sys_dict:
+                det = camera[name]
+                cs = det.makeCameraSys(pixelType)
+                det_sys_dict[name] = cs
+            detPoint = camera.transform(cp, det_sys_dict[name])
             xPix.append(detPoint.getPoint().getX())
             yPix.append(detPoint.getPoint().getY())
         return np.array([xPix, yPix])
