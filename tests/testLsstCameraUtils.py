@@ -34,7 +34,7 @@ class ChipNameTestCase(unittest.TestCase):
         results as chipNameFromPupilCoords
         """
         n_pointings = 3
-        n_obj = 5000
+        n_obj = 1000
         rng = np.random.RandomState(8831)
         ra_pointing_list = rng.random_sample(n_pointings)*360.0
         dec_pointing_list = rng.random_sample(n_pointings)*180.0-90.0
@@ -55,7 +55,7 @@ class ChipNameTestCase(unittest.TestCase):
             np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
 
             # make sure we didn't accidentally get a lot of positions that don't land on chips
-            self.assertLess(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
+            self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
 
     def test_multiple_chip_names(self):
         """
@@ -86,7 +86,7 @@ class ChipNameTestCase(unittest.TestCase):
         test that _chipNameFromRaDecLSST agrees with _chipNameFromRaDec
         """
 
-        n_obj = 5000
+        n_obj = 1000
         raP = 112.1
         decP = -34.1
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
@@ -105,7 +105,7 @@ class ChipNameTestCase(unittest.TestCase):
                                                 obs_metadata=obs)
 
         np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
-        self.assertLess(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
 
         # test that exceptions are raised when incomplete ObservationMetaData are used
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
@@ -133,7 +133,7 @@ class ChipNameTestCase(unittest.TestCase):
         test that chipNameFromRaDecLSST agrees with chipNameFromRaDec
         """
 
-        n_obj = 5000
+        n_obj = 1000
         raP = 112.1
         decP = -34.1
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
@@ -152,7 +152,7 @@ class ChipNameTestCase(unittest.TestCase):
                                                obs_metadata=obs)
 
         np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
-        self.assertLess(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None')>=0)[0]), n_obj/10)
 
         # test that exceptions are raised when incomplete ObservationMetaData are used
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
@@ -184,15 +184,15 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
                                   rotSkyPos=13.0, mjd=43441.0)
 
-        n_obj = 5000
+        n_obj = 1000
         rng = np.random.RandomState(83241)
         rr = rng.random_sample(n_obj)*1.75
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = np.radians(raP + rr*np.cos(theta))
         dec_list = np.radians(decP + rr*np.sin(theta))
         x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
-        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
-        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
         np.testing.assert_array_equal(x_pix, x_pix_test)
@@ -201,8 +201,8 @@ class ChipNameTestCase(unittest.TestCase):
         # test when we force a chipName
         x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
                                              obs_metadata=obs, camera=self.camera)
-        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
-        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
                                                            obs_metadata=obs)
@@ -213,8 +213,8 @@ class ChipNameTestCase(unittest.TestCase):
         # test without distortion
         x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
                                              includeDistortion=False)
-        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
-        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
                                                            includeDistortion=False)
@@ -251,15 +251,15 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
                                   rotSkyPos=13.0, mjd=43441.0)
 
-        n_obj = 5000
+        n_obj = 1000
         rng = np.random.RandomState(83241)
         rr = rng.random_sample(n_obj)*1.75
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = raP + rr*np.cos(theta)
         dec_list = decP + rr*np.sin(theta)
         x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
-        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
-        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
         np.testing.assert_array_equal(x_pix, x_pix_test)
@@ -268,8 +268,8 @@ class ChipNameTestCase(unittest.TestCase):
         # test when we force a chipName
         x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
                                             obs_metadata=obs, camera=self.camera)
-        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
-        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
                                                           obs_metadata=obs)
@@ -280,8 +280,8 @@ class ChipNameTestCase(unittest.TestCase):
         # test without distortion
         x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
                                             includeDistortion=False)
-        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
-        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
                                                           includeDistortion=False)
