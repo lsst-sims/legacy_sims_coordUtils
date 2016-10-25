@@ -16,6 +16,7 @@ _lsst_camera = LsstSimMapper().camera
 
 _lsst_pupil_coord_map = None
 
+
 def _build_lsst_pupil_coord_map():
     """
     This method populates the global variable _lsst_pupil_coord_map
@@ -57,14 +58,14 @@ def _build_lsst_pupil_coord_map():
     for ix_ct in range(n_chips):
         ix = ix_ct*4
         chip_name = name_list[ix]
-        xx = 0.25*(x_pup_list[ix] + x_pup_list[ix+1]
-                   + x_pup_list[ix+2] + x_pup_list[ix+3])
+        xx = 0.25*(x_pup_list[ix] + x_pup_list[ix+1] +
+                   x_pup_list[ix+2] + x_pup_list[ix+3])
 
-        yy = 0.25*(y_pup_list[ix] + y_pup_list[ix+1]
-                   + y_pup_list[ix+2] + y_pup_list[ix+3])
+        yy = 0.25*(y_pup_list[ix] + y_pup_list[ix+1] +
+                   y_pup_list[ix+2] + y_pup_list[ix+3])
 
-        dx = 0.25*np.array([np.sqrt(np.power(xx-x_pup_list[ix+ii], 2)
-                                    + np.power(yy-y_pup_list[ix+ii], 2)) for ii in range(4)]).sum()
+        dx = 0.25*np.array([np.sqrt(np.power(xx-x_pup_list[ix+ii], 2) +
+                                    np.power(yy-y_pup_list[ix+ii], 2)) for ii in range(4)]).sum()
 
         center_x[ix_ct] = xx
         center_y[ix_ct] = yy
@@ -109,8 +110,9 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
 
     global _lsst_camera
 
-    #transform the points to the native coordinate system
-    nativePointList = _lsst_camera._transformSingleSysArray(cameraPointList, PUPIL, _lsst_camera._nativeCameraSys)
+    # transform the points to the native coordinate system
+    nativePointList = _lsst_camera._transformSingleSysArray(cameraPointList, PUPIL,
+                                                            _lsst_camera._nativeCameraSys)
 
     # initialize output and some caching lists
     outputNameList = [None]*len(cameraPointList)
@@ -131,7 +133,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
 
     # loop over (RA, Dec) pairs
     for ipt, nativePoint in enumerate(nativePointList):
-        if chip_has_found[ipt]<0:  # i.e. if we have not yet found this (RA, Dec) pair
+        if chip_has_found[ipt] < 0:  # i.e. if we have not yet found this (RA, Dec) pair
             for detector in detectorList[ipt]:
 
                 # check that we have not already considered this detector
@@ -141,7 +143,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
                     # in order to avoid constantly re-instantiating the same afwCameraGeom detector,
                     # we will now find all of the (RA, Dec) pairs that could be on the present
                     # chip and test them.
-                    unfound_pts = np.where(chip_has_found<0)[0]
+                    unfound_pts = np.where(chip_has_found < 0)[0]
                     if len(unfound_pts) == 0:
                         # we have already found all of the (RA, Dec) pairs
                         for ix, name in enumerate(outputNameList):
@@ -150,11 +152,12 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
                         return np.array(outputNameList)
 
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
-                    if len(valid_pt_dexes)>0:
+                    if len(valid_pt_dexes) > 0:
                         valid_pt_list = [nativePointList[ii] for ii in valid_pt_dexes]
                         coordMap = detector.getTransformMap()
                         cameraSys = detector.makeCameraSys(PIXELS)
-                        detectorPointList = coordMap.transform(valid_pt_list, _lsst_camera._nativeCameraSys, cameraSys)
+                        detectorPointList = coordMap.transform(valid_pt_list, _lsst_camera._nativeCameraSys,
+                                                               cameraSys)
                         box = afwGeom.Box2D(detector.getBBox())
                         for ix, pt in zip(valid_pt_dexes, detectorPointList):
                             if box.contains(pt):
@@ -183,7 +186,6 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
             outputNameList[ix] = str(name)
 
     return np.array(outputNameList)
-
 
 
 def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
@@ -224,13 +226,14 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # which will be passed to _findDetectorsListLSST()
     valid_detectors = []
     for xx, yy in zip(xPupil, yPupil):
-        possible_dexes = np.where(np.sqrt(np.power(xx-_lsst_pupil_coord_map['xx'],2)
-                                          + np.power(yy-_lsst_pupil_coord_map['yy'],2))/_lsst_pupil_coord_map['dp']<1.1)
+        possible_dexes = np.where(np.sqrt(np.power(xx-_lsst_pupil_coord_map['xx'], 2) +
+                                          np.power(yy-_lsst_pupil_coord_map['yy'], 2))/_lsst_pupil_coord_map['dp'] < 1.1)
 
         local_valid = [_lsst_camera[_lsst_pupil_coord_map['name'][ii]] for ii in possible_dexes[0]]
         valid_detectors.append(local_valid)
 
-    nameList = _findDetectorsListLSST(cameraPointList, valid_detectors, allow_multiple_chips=allow_multiple_chips)
+    nameList = _findDetectorsListLSST(cameraPointList, valid_detectors,
+                                      allow_multiple_chips=allow_multiple_chips)
 
     return nameList
 
@@ -375,6 +378,7 @@ def _pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
 
     return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=_lsst_camera,
                                       includeDistortion=includeDistortion)
+
 
 def pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
                              chipName=None, camera=None,
