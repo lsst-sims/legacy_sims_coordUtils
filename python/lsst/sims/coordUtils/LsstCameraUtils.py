@@ -124,7 +124,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
                     could_be_multiple[ipt] = True
 
     for ipt, nativePoint in enumerate(nativePointList):
-        if outputNameList[ipt] is None:
+        if chip_has_found[ipt]<0:  # i.e. if we have not yet found this (RA, Dec) pair
             for detector in detectorList[ipt]:
                 if detector.getName() not in checked_detectors:
                     checked_detectors.append(detector.getName())
