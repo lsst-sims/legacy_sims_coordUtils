@@ -2,7 +2,6 @@ import numpy as np
 import warnings
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
-from lsst.afw.cameraGeom import WAVEFRONT
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
@@ -21,6 +20,7 @@ class MultipleChipWarning(Warning):
     multiple chips are returned.
     """
     pass
+
 
 def _validate_inputs_and_chipname(input_list, input_names, method_name,
                                   chip_name, chipname_can_be_none = True):
@@ -322,7 +322,8 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
                     # See figure 2 of arXiv:1506.04839v2
                     chipNames.append(str(name_list))
                 else:
-                    warnings.warn("An object has landed on multiple chips.  You asked for this not to happen.\n" +
+                    warnings.warn("An object has landed on multiple chips.  " +
+                                  "You asked for this not to happen.\n" +
                                   "We will return only one of the chip names.  If you want both, " +
                                   "try re-running with " +
                                   "the kwarg allow_multiple_chips=True.\n" +
