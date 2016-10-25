@@ -112,10 +112,16 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
     #transform the points to the native coordinate system
     nativePointList = _lsst_camera._transformSingleSysArray(cameraPointList, PUPIL, _lsst_camera._nativeCameraSys)
 
+    # initialize output and some caching lists
     outputNameList = [None]*len(cameraPointList)
     chip_has_found = np.array([-1]*len(cameraPointList))
     checked_detectors = []
 
+    # Figure out if any of these (RA, Dec) pairs could be
+    # on more than one chip.  This is possible on the
+    # wavefront sensors, since adjoining wavefront sensors
+    # are kept one in focus, one out of focus.
+    # See figure 2 of arXiv:1506.04839v2
     could_be_multiple = [False]*len(cameraPointList)
     if allow_multiple_chips:
         for ipt in range(len(cameraPointList)):
@@ -123,17 +129,26 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
                 if det.getType() == WAVEFRONT:
                     could_be_multiple[ipt] = True
 
+    # loop over (RA, Dec) pairs
     for ipt, nativePoint in enumerate(nativePointList):
         if chip_has_found[ipt]<0:  # i.e. if we have not yet found this (RA, Dec) pair
             for detector in detectorList[ipt]:
+
+                # check that we have not already considered this detector
                 if detector.getName() not in checked_detectors:
                     checked_detectors.append(detector.getName())
+
+                    # in order to avoid constantly re-instantiating the same afwCameraGeom detector,
+                    # we will now find all of the (RA, Dec) pairs that could be on the present
+                    # chip and test them.
                     unfound_pts = np.where(chip_has_found<0)[0]
                     if len(unfound_pts) == 0:
+                        # we have already found all of the (RA, Dec) pairs
                         for ix, name in enumerate(outputNameList):
                             if isinstance(name, list):
                                 outputNameList[ix] = str(name)
                         return np.array(outputNameList)
+
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
                     if len(valid_pt_dexes)>0:
                         valid_pt_list = [nativePointList[ii] for ii in valid_pt_dexes]
@@ -144,9 +159,16 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
                         for ix, pt in zip(valid_pt_dexes, detectorPointList):
                             if box.contains(pt):
                                 if not could_be_multiple[ix]:
+                                    # because this (RA, Dec) pair is not marked as could_be_multiple,
+                                    # the fact that this (RA, Dec) pair is on the current chip
+                                    # means this (RA, Dec) pair no longer needs to be considered.
+                                    # You can set chip_has_found[ix] to unity.
                                     outputNameList[ix] = detector.getName()
                                     chip_has_found[ix] = 1
                                 else:
+                                    # Since this (RA, Dec) pair has been makred could_be_multiple,
+                                    # finding this (RA, Dec) pair on the chip does not remove the
+                                    # (RA, Dec) pair from contention.
                                     if outputNameList[ix] is None:
                                         outputNameList[ix] = detector.getName()
                                     elif isinstance(outputNameList[ix], list):
@@ -154,6 +176,8 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
                                     else:
                                         outputNameList[ix] = [outputNameList[ix], detector.getName()]
 
+    # convert entries corresponding to multiple chips into strings
+    # (i.e. [R:2,2 S:0,0, R:2,2 S:0,1] becomes `[R:2,2 S:0,0, R:2,2 S:0,1]`)
     for ix, name in enumerate(outputNameList):
         if isinstance(name, list):
             outputNameList[ix] = str(name)
@@ -194,6 +218,10 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
 
+    # Loop through every point being considered.  For each point, assemble a list of detectors
+    # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
+    # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
+    # which will be passed to _findDetectorsListLSST()
     valid_detectors = []
     for xx, yy in zip(xPupil, yPupil):
         possible_dexes = np.where(np.sqrt(np.power(xx-_lsst_pupil_coord_map['xx'],2)
