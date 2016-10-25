@@ -7,8 +7,8 @@ from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   pupilCoordsFromPixelCoords,
                                   _chipNameFromRaDec, chipNameFromRaDec,
                                   _chipNameFromRaDecLSST, chipNameFromRaDecLSST,
-                                  _pixelCoordsFromRaDec,
-                                  _pixelCoordsFromRaDecLSST)
+                                  _pixelCoordsFromRaDec, pixelCoordsFromRaDec,
+                                  _pixelCoordsFromRaDecLSST, pixelCoordsFromRaDecLSST)
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
@@ -240,6 +240,73 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             name = _pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
+        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.message)
+
+    def test_pixel_coords_from_ra_dec_degrees(self):
+        """
+        Test that pixelCoordsFromRaDec and pixelCoordsFromRaDecLSST agree
+        """
+        raP = 74.2
+        decP = 13.0
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP,
+                                  rotSkyPos=13.0, mjd=43441.0)
+
+        n_obj = 5000
+        rng = np.random.RandomState(83241)
+        rr = rng.random_sample(n_obj)*1.75
+        theta = rng.random_sample(n_obj)*2.0*np.pi
+        ra_list = raP + rr*np.cos(theta)
+        dec_list = decP + rr*np.sin(theta)
+        x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
+        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+
+        x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        np.testing.assert_array_equal(x_pix, x_pix_test)
+        np.testing.assert_array_equal(y_pix, y_pix_test)
+
+        # test when we force a chipName
+        x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
+                                            obs_metadata=obs, camera=self.camera)
+        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+
+        x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
+                                                          obs_metadata=obs)
+        np.testing.assert_array_equal(x_pix, x_pix_test)
+        np.testing.assert_array_equal(y_pix, y_pix_test)
+
+
+        # test without distortion
+        x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
+                                            includeDistortion=False)
+        self.assertLess(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
+        self.assertLess(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
+
+        x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
+                                                          includeDistortion=False)
+        np.testing.assert_array_equal(x_pix, x_pix_test)
+        np.testing.assert_array_equal(y_pix, y_pix_test)
+
+        # test that exceptions are raised when incomplete ObservationMetaData are used
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("rotSkyPos", context.exception.message)
+
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        self.assertIn("mjd", context.exception.message)
+
+        with self.assertRaises(RuntimeError) as context:
+            name = pixelCoordsFromRaDecLSST(ra_list, dec_list)
+        self.assertIn("ObservationMetaData", context.exception.message)
+
+        # check that exceptions are raised when ra_list, dec_list are of the wrong shape
+        obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
+        with self.assertRaises(RuntimeError) as context:
+            name = pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
         self.assertIn("pixelCoordsFromRaDecLSST", context.exception.message)
 
 
