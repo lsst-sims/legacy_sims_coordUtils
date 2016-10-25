@@ -58,30 +58,6 @@ class ChipNameTestCase(unittest.TestCase):
             self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None') >= 0)[0]),
                                  n_obj/10)
 
-    def test_multiple_chip_names(self):
-        """
-        Test that chipNameFromPupilCoordsLSST behaves as expected when
-        objects fall on more than one chip (as they could with the
-        wavefront sensors).
-        """
-        chipA = 'R:4,0 S:0,2,A'
-        chipB = 'R:4,0 S:0,2,B'
-
-        # from past experience, objects that appear at y=0 on
-        # R:4,0 S:0,2,A also appear on R:4,0 S:0,2,B
-        xpup, ypup = pupilCoordsFromPixelCoords(1500.0, 0.0, chipA, camera=self.camera)
-        xpup_list = np.array([0.0, xpup])
-        ypup_list = np.array([0.0, ypup])
-        name = chipNameFromPupilCoordsLSST(xpup_list, ypup_list, allow_multiple_chips=False)
-        self.assertIsInstance(name[1], str)
-        self.assertTrue(name[1] == chipA or name[1] == chipB,
-                        msg = 'got unexpected chip name %s' % name)
-
-        name = chipNameFromPupilCoordsLSST(xpup_list, ypup_list, allow_multiple_chips=True)
-        self.assertIn(chipA, name[1])
-        self.assertIn(chipB, name[1])
-        self.assertIsInstance(name[0], str)
-
     def test_chip_name_from_ra_dec_radians(self):
         """
         test that _chipNameFromRaDecLSST agrees with _chipNameFromRaDec
