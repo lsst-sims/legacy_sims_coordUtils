@@ -124,6 +124,8 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
     # wavefront sensors, since adjoining wavefront sensors
     # are kept one in focus, one out of focus.
     # See figure 2 of arXiv:1506.04839v2
+    # (This might actually be a bug in obs_lsstSim
+    # I opened DM-8075 on 25 October 2016 to investigate)
     could_be_multiple = [False]*len(cameraPointList)
     if allow_multiple_chips:
         for ipt in range(len(cameraPointList)):

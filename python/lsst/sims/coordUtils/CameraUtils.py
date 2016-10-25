@@ -313,13 +313,6 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
             name_list = [dd.getName() for dd in det]
             if len(name_list) > 1:
                 if allow_multiple_chips:
-                    # In the case of LSST, multiple chips are possible
-                    # because each A, B pair of wavefront sensors is positioned so that
-                    # one is in focus and one is out of focus, it is possible that a particular
-                    # RA, Dec could land on both wavefront sensors.  If that is what happened,
-                    # we will permit it.
-                    #
-                    # See figure 2 of arXiv:1506.04839v2
                     chipNames.append(str(name_list))
                 else:
                     warnings.warn("An object has landed on multiple chips.  " +
