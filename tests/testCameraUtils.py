@@ -2,6 +2,7 @@ from __future__ import with_statement
 import os
 import numpy as np
 import unittest
+import warnings
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 
@@ -24,6 +25,8 @@ from lsst.sims.coordUtils import (focalPlaneCoordsFromPupilCoords,
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
 from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDec
+from lsst.sims.coordUtils import MultipleChipWarning
+from lsst.obs.lsstSim import LsstSimMapper
 
 
 def setup_module(module):

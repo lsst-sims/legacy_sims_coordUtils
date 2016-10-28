@@ -1,15 +1,25 @@
 import numpy as np
+import warnings
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 
-__all__ = ["getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
+__all__ = ["MultipleChipWarning", "getCornerPixels", "_getCornerRaDec", "getCornerRaDec",
            "chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
            "pupilCoordsFromPixelCoords",
-           "raDecFromPixelCoords", "_raDecFromPixelCoords"]
+           "raDecFromPixelCoords", "_raDecFromPixelCoords",
+           "_validate_inputs_and_chipname"]
+
+
+class MultipleChipWarning(Warning):
+    """
+    A sub-class of Warning emitted when we try to detect the chip that an object falls on and
+    multiple chips are returned.
+    """
+    pass
 
 
 def _validate_inputs_and_chipname(input_list, input_names, method_name,
@@ -184,7 +194,7 @@ def chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
                       epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
-    either (xPupil, yPupil).
+    (RA, Dec) in degrees.
 
     @param [in] ra in degrees (a numpy array or a float).
     In the International Celestial Reference System.
@@ -217,7 +227,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
                        epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
-    either (xPupil, yPupil).
+    (RA, Dec)  in radians.
 
     @param [in] ra in radians (a numpy array or a float).
     In the International Celestial Reference System.
@@ -262,7 +272,7 @@ def _chipNameFromRaDec(ra, dec, obs_metadata=None, camera=None,
 def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):
     """
     Return the names of detectors that see the object specified by
-    either (xPupil, yPupil).
+    (xPupil, yPupil).
 
     @param [in] xPupil is the x pupil coordinate in radians.
     Can be either a float or a numpy array.
@@ -272,9 +282,9 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
-    and an object appears on more than one chip, an exception will be raised.  If it is 'True'
-    and an object falls on more than one chip, it will still only return the first chip in the
-    list of chips returned. THIS BEHAVIOR SHOULD BE FIXED IN A FUTURE TICKET.
+    and an object appears on more than one chip, only the first chip will appear in the list of
+    chipNames and warning will be emitted.  If it is 'True' and an object falls on more than one
+    chip, the resulting chip name will be the string representation of the list of valid chip names.
 
     @param [in] camera is an afwCameraGeom object that specifies the attributes of the camera.
 
@@ -300,18 +310,26 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
         if len(det) == 0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
             chipNames.append(None)
         else:
-            names = [dd.getName() for dd in det]
-            if len(names) > 1 and not allow_multiple_chips:
-                raise RuntimeError("This method does not know how to deal with cameras " +
-                                   "where points can be on multiple detectors.  " +
-                                   "Override CameraCoords.get_chipName to add this.\n" +
-                                   "If you were only asking for the chip name (as opposed " +
-                                   "to pixel coordinates) you can try re-running with " +
-                                   "the kwarg allow_multiple_chips=True.")
-            elif len(names) == 0:
+            name_list = [dd.getName() for dd in det]
+            if len(name_list) > 1:
+                if allow_multiple_chips:
+                    chipNames.append(str(name_list))
+                else:
+                    warnings.warn("An object has landed on multiple chips.  " +
+                                  "You asked for this not to happen.\n" +
+                                  "We will return only one of the chip names.  If you want both, " +
+                                  "try re-running with " +
+                                  "the kwarg allow_multiple_chips=True.\n" +
+                                  "Offending chip names were %s\n" % str(name_list) +
+                                  "Offending pupil coordinate point was %.12f %.12f\n" % (pt[0], pt[1]),
+                                  category=MultipleChipWarning)
+
+                    chipNames.append(name_list[0])
+
+            elif len(name_list) == 0:
                 chipNames.append(None)
             else:
-                chipNames.append(names[0])
+                chipNames.append(name_list[0])
 
     if not are_arrays:
         return chipNames[0]
@@ -480,22 +498,25 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
             chipNameList = [chipNameList]
 
     if are_arrays:
+        det_sys_dict = {}
         xPix = []
         yPix = []
         for name, x, y in zip(chipNameList, xPupil, yPupil):
-            if not name:
+            if name is None:
                 xPix.append(np.nan)
                 yPix.append(np.nan)
                 continue
             cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
-            det = camera[name]
-            cs = det.makeCameraSys(pixelType)
-            detPoint = camera.transform(cp, cs)
+            if name not in det_sys_dict:
+                det = camera[name]
+                cs = det.makeCameraSys(pixelType)
+                det_sys_dict[name] = cs
+            detPoint = camera.transform(cp, det_sys_dict[name])
             xPix.append(detPoint.getPoint().getX())
             yPix.append(detPoint.getPoint().getY())
         return np.array([xPix, yPix])
     else:
-        if not chipNameList[0]:
+        if chipNameList[0] is None:
             return np.array([np.NaN, np.NaN])
 
         cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)

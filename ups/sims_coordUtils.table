@@ -3,5 +3,6 @@ setupRequired(python)
 setupRequired(utils)
 setupRequired(afw)
 setupRequired(sims_utils)
+setupRequired(obs_lsstSim)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
