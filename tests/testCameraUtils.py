@@ -1960,6 +1960,55 @@ class MotionTestCase(unittest.TestCase):
             np.testing.assert_array_equal(ypx_control, ypx_radians)
             self.assertLess(len(np.where(np.isnan(xpx_control))[0]), 2*len(xpx_control)/3)
 
+    def test_focal_plane_coords(self):
+        """
+        Test that focalPlaneCoordsFromRaDec with non-zero proper motion etc.
+        agrees with pixelCoordsFromPupilCoords when pupilCoords are
+        calculated with the same proper motion, etc.
+        """
+        (obs, ra_list, dec_list,
+         pm_ra_list, pm_dec_list,
+         parallax_list, v_rad_list) = self.set_data(72)
+
+        for is_none in ('pm_ra', 'pm_dec', 'parallax', 'v_rad'):
+            pm_ra = pm_ra_list
+            pm_dec = pm_dec_list
+            parallax = parallax_list
+            v_rad = v_rad_list
+
+            if is_none == 'pm_ra':
+                pm_ra = None
+            elif is_none == 'pm_dec':
+                pm_dec = None
+            elif is_none == 'parallax':
+                parallax = None
+            elif is_none == 'v_rad':
+                v_rad = None
+
+            xp, yp = pupilCoordsFromRaDec(ra_list, dec_list,
+                                          pm_ra=pm_ra, pm_dec=pm_dec,
+                                          parallax=parallax, v_rad=v_rad,
+                                          obs_metadata=obs)
+
+            xf_control, yf_control = focalPlaneCoordsFromPupilCoords(xp, yp, camera=self.camera)
+
+            xf_test, yf_test = focalPlaneCoordsFromRaDec(ra_list, dec_list,
+                                                         pm_ra=pm_ra, pm_dec=pm_dec,
+                                                         parallax=parallax, v_rad=v_rad,
+                                                         obs_metadata=obs, camera=self.camera)
+
+            xf_radians, yf_radians = _focalPlaneCoordsFromRaDec(np.radians(ra_list), np.radians(dec_list),
+                                                                pm_ra=radiansFromArcsec(pm_ra), pm_dec=radiansFromArcsec(pm_dec),
+                                                                parallax=radiansFromArcsec(parallax), v_rad=v_rad,
+                                                                obs_metadata=obs, camera=self.camera)
+
+            np.testing.assert_array_equal(xf_control, xf_test)
+            np.testing.assert_array_equal(yf_control, yf_test)
+            np.testing.assert_array_equal(xf_control, xf_radians)
+            np.testing.assert_array_equal(yf_control, yf_radians)
+            self.assertEqual(len(np.where(np.isnan(xf_control))[0]), 0)
+            self.assertEqual(len(np.where(np.isnan(yf_control))[0]), 0)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
