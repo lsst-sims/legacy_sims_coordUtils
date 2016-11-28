@@ -2,12 +2,10 @@ from __future__ import with_statement
 import os
 import numpy as np
 import unittest
-import warnings
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData, radiansFromArcsec, arcsecFromRadians
-from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import haversine
 from lsst.sims.coordUtils.utils import ReturnCamera
 from lsst.sims.utils import pupilCoordsFromRaDec, observedFromICRS
@@ -26,8 +24,6 @@ from lsst.sims.coordUtils import (focalPlaneCoordsFromPupilCoords,
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
 from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDec
-from lsst.sims.coordUtils import MultipleChipWarning
-from lsst.obs.lsstSim import LsstSimMapper
 
 
 def setup_module(module):
@@ -1854,7 +1850,7 @@ class MotionTestCase(unittest.TestCase):
         rotSkyPos = 23.56
         mjd = 59723.2
         obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
-                                       rotSkyPos=rotSkyPos, mjd=mjd)
+                                  rotSkyPos=rotSkyPos, mjd=mjd)
         rr = rng.random_sample(n_obj)*0.1
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = ra + rr*np.cos(theta)
@@ -1903,7 +1899,8 @@ class MotionTestCase(unittest.TestCase):
                                           obs_metadata=obs, camera=self.camera)
 
             name_radians = _chipNameFromRaDec(np.radians(ra_list), np.radians(dec_list),
-                                              pm_ra=radiansFromArcsec(pm_ra), pm_dec=radiansFromArcsec(pm_dec),
+                                              pm_ra=radiansFromArcsec(pm_ra),
+                                              pm_dec=radiansFromArcsec(pm_dec),
                                               parallax=radiansFromArcsec(parallax), v_rad=v_rad,
                                               obs_metadata=obs, camera=self.camera)
 
@@ -1950,8 +1947,10 @@ class MotionTestCase(unittest.TestCase):
                                                       obs_metadata=obs, camera=self.camera)
 
             xpx_radians, ypx_radians = _pixelCoordsFromRaDec(np.radians(ra_list), np.radians(dec_list),
-                                                             pm_ra=radiansFromArcsec(pm_ra), pm_dec=radiansFromArcsec(pm_dec),
-                                                             parallax=radiansFromArcsec(parallax), v_rad=v_rad,
+                                                             pm_ra=radiansFromArcsec(pm_ra),
+                                                             pm_dec=radiansFromArcsec(pm_dec),
+                                                             parallax=radiansFromArcsec(parallax),
+                                                             v_rad=v_rad,
                                                              obs_metadata=obs, camera=self.camera)
 
             np.testing.assert_array_equal(xpx_control, xpx_test)
@@ -1998,9 +1997,11 @@ class MotionTestCase(unittest.TestCase):
                                                          obs_metadata=obs, camera=self.camera)
 
             xf_radians, yf_radians = _focalPlaneCoordsFromRaDec(np.radians(ra_list), np.radians(dec_list),
-                                                                pm_ra=radiansFromArcsec(pm_ra), pm_dec=radiansFromArcsec(pm_dec),
-                                                                parallax=radiansFromArcsec(parallax), v_rad=v_rad,
-                                                                obs_metadata=obs, camera=self.camera)
+                                                                pm_ra=radiansFromArcsec(pm_ra),
+                                                                pm_dec=radiansFromArcsec(pm_dec),
+                                                                parallax=radiansFromArcsec(parallax),
+                                                                v_rad=v_rad, obs_metadata=obs,
+                                                                camera=self.camera)
 
             np.testing.assert_array_equal(xf_control, xf_test)
             np.testing.assert_array_equal(yf_control, yf_test)
