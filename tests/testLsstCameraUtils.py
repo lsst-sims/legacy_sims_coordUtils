@@ -327,7 +327,7 @@ class MotionTestCase(unittest.TestCase):
 
     def test_chip_name(self):
         """
-        Test that chipNameFromRaDec with non-zero proper motion etc.
+        Test that chipNameFromRaDecLSST with non-zero proper motion etc.
         agrees with chipNameFromPupilCoords when pupilCoords are
         calculated with the same proper motion, etc.
         """

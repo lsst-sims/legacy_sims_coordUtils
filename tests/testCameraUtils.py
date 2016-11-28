@@ -1963,7 +1963,7 @@ class MotionTestCase(unittest.TestCase):
     def test_focal_plane_coords(self):
         """
         Test that focalPlaneCoordsFromRaDec with non-zero proper motion etc.
-        agrees with pixelCoordsFromPupilCoords when pupilCoords are
+        agrees with focalPlaneCoordsFromPupilCoords when pupilCoords are
         calculated with the same proper motion, etc.
         """
         (obs, ra_list, dec_list,
