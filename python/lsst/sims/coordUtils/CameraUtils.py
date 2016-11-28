@@ -232,17 +232,17 @@ def chipNameFromRaDec(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=Non
     @param [out] a numpy array of chip names
     """
     if pm_ra is not None:
-        pm_ra_out = radiansFromArcSec(pm_ra)
+        pm_ra_out = radiansFromArcsec(pm_ra)
     else:
         pm_ra_out = None
 
     if pm_dec is not None:
-        pm_dec_out = radiansFromArcSec(pm_dec)
+        pm_dec_out = radiansFromArcsec(pm_dec)
     else:
         pm_dec_out = None
 
     if parallax is not None:
-        parallax_out = radiansFromArcSec(parallax)
+        parallax_out = radiansFromArcsec(parallax)
     else:
         parallax_out = None
 
@@ -449,7 +449,7 @@ def pixelCoordsFromRaDec(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=
         pm_dec_out = None
 
     if parallax is not None:
-        parallax_out = radiansFromArcSec(parallax)
+        parallax_out = radiansFromArcsec(parallax)
     else:
         parallax_out = None
 
