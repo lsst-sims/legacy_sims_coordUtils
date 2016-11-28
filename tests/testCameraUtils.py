@@ -1855,7 +1855,7 @@ class MotionTestCase(unittest.TestCase):
         mjd = 59723.2
         obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
                                        rotSkyPos=rotSkyPos, mjd=mjd)
-        rr = rng.random_sample(n_obj)*0.33
+        rr = rng.random_sample(n_obj)*0.1
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = ra + rr*np.cos(theta)
         dec_list = dec + rr*np.sin(theta)
@@ -1910,6 +1910,55 @@ class MotionTestCase(unittest.TestCase):
             np.testing.assert_array_equal(name_control, name_test)
             np.testing.assert_array_equal(name_control, name_radians)
             self.assertGreater(len(np.unique(name_control)), 4)
+            self.assertLess(len(np.where(np.equal(name_control, None))[0]), 2*len(name_control)/3)
+
+    def test_pixel_coords(self):
+        """
+        Test that pixelCoordsFromRaDec with non-zero proper motion etc.
+        agrees with pixelCoordsFromPupilCoords when pupilCoords are
+        calculated with the same proper motion, etc.
+        """
+        (obs, ra_list, dec_list,
+         pm_ra_list, pm_dec_list,
+         parallax_list, v_rad_list) = self.set_data(72)
+
+        for is_none in ('pm_ra', 'pm_dec', 'parallax', 'v_rad'):
+            pm_ra = pm_ra_list
+            pm_dec = pm_dec_list
+            parallax = parallax_list
+            v_rad = v_rad_list
+
+            if is_none == 'pm_ra':
+                pm_ra = None
+            elif is_none == 'pm_dec':
+                pm_dec = None
+            elif is_none == 'parallax':
+                parallax = None
+            elif is_none == 'v_rad':
+                v_rad = None
+
+            xp, yp = pupilCoordsFromRaDec(ra_list, dec_list,
+                                          pm_ra=pm_ra, pm_dec=pm_dec,
+                                          parallax=parallax, v_rad=v_rad,
+                                          obs_metadata=obs)
+
+            xpx_control, ypx_control = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera)
+
+            xpx_test, ypx_test = pixelCoordsFromRaDec(ra_list, dec_list,
+                                                      pm_ra=pm_ra, pm_dec=pm_dec,
+                                                      parallax=parallax, v_rad=v_rad,
+                                                      obs_metadata=obs, camera=self.camera)
+
+            xpx_radians, ypx_radians = _pixelCoordsFromRaDec(np.radians(ra_list), np.radians(dec_list),
+                                                             pm_ra=radiansFromArcsec(pm_ra), pm_dec=radiansFromArcsec(pm_dec),
+                                                             parallax=radiansFromArcsec(parallax), v_rad=v_rad,
+                                                             obs_metadata=obs, camera=self.camera)
+
+            np.testing.assert_array_equal(xpx_control, xpx_test)
+            np.testing.assert_array_equal(ypx_control, ypx_test)
+            np.testing.assert_array_equal(xpx_control, xpx_radians)
+            np.testing.assert_array_equal(ypx_control, ypx_radians)
+            self.assertLess(len(np.where(np.isnan(xpx_control))[0]), 2*len(xpx_control)/3)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
