@@ -4,7 +4,6 @@ import numpy as np
 import lsst.utils.tests
 from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   chipNameFromPupilCoordsLSST,
-                                  pupilCoordsFromPixelCoords,
                                   _chipNameFromRaDec, chipNameFromRaDec,
                                   _chipNameFromRaDecLSST, chipNameFromRaDecLSST,
                                   _pixelCoordsFromRaDec, pixelCoordsFromRaDec,
@@ -315,7 +314,7 @@ class MotionTestCase(unittest.TestCase):
         rotSkyPos = 23.56
         mjd = 59723.2
         obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
-                                       rotSkyPos=rotSkyPos, mjd=mjd)
+                                  rotSkyPos=rotSkyPos, mjd=mjd)
         rr = rng.random_sample(n_obj)*1.75
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = ra + rr*np.cos(theta)
@@ -364,7 +363,8 @@ class MotionTestCase(unittest.TestCase):
                                               obs_metadata=obs)
 
             name_radians = _chipNameFromRaDecLSST(np.radians(ra_list), np.radians(dec_list),
-                                                  pm_ra=radiansFromArcsec(pm_ra), pm_dec=radiansFromArcsec(pm_dec),
+                                                  pm_ra=radiansFromArcsec(pm_ra),
+                                                  pm_dec=radiansFromArcsec(pm_dec),
                                                   parallax=radiansFromArcsec(parallax), v_rad=v_rad,
                                                   obs_metadata=obs)
 
