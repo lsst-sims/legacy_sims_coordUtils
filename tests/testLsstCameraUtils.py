@@ -373,7 +373,7 @@ class MotionTestCase(unittest.TestCase):
             self.assertGreater(len(np.unique(name_control)), 4)
             self.assertLess(len(np.where(np.equal(name_control, None))[0]), len(name_control)/4)
 
-    def test_pixel_coords_name(self):
+    def test_pixel_coords(self):
         """
         Test that pixelCoordsFromRaDecLSST with non-zero proper motion etc.
         agrees with pixelCoordsFromPupilCoords when pupilCoords are
