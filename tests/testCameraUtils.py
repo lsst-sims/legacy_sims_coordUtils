@@ -7,6 +7,7 @@ import lsst.utils.tests
 from lsst.utils import getPackageDir
 
 from lsst.sims.utils import ObservationMetaData, radiansFromArcsec, arcsecFromRadians
+from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import haversine
 from lsst.sims.coordUtils.utils import ReturnCamera
 from lsst.sims.utils import pupilCoordsFromRaDec, observedFromICRS
@@ -1821,6 +1822,94 @@ class CornerTest(unittest.TestCase):
         for cc1, cc2 in zip(cornerRad, cornerDeg):
             dd = haversine(cc1[0], cc1[1], np.radians(cc2[0]), np.radians(cc2[1]))
             self.assertLess(arcsecFromRadians(dd), 0.000001)
+
+
+class MotionTestCase(unittest.TestCase):
+    """
+    This class will contain test methods to verify that the camera utils
+    work when proper motion, parallax, and radial velocity are not None.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cameraDir = getPackageDir('sims_coordUtils')
+        cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
+        cls.camera = ReturnCamera(cameraDir)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.camera
+
+    def set_data(self, seed):
+        """
+        Accept a seed integer.  Return an ObservationMetaData
+        and numpy arrays of RA, Dec (in degrees),
+        pm_ra, pm_dec, parallax (in arcsec) and v_rad (in km/s)
+        centered on that bore site.
+        """
+        rng = np.random.RandomState(seed)
+        n_obj = 100
+        ra = 23.1
+        dec = -15.6
+        rotSkyPos = 23.56
+        mjd = 59723.2
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                       rotSkyPos=rotSkyPos, mjd=mjd)
+        rr = rng.random_sample(n_obj)*0.33
+        theta = rng.random_sample(n_obj)*2.0*np.pi
+        ra_list = ra + rr*np.cos(theta)
+        dec_list = dec + rr*np.sin(theta)
+        pm_ra = rng.random_sample(n_obj)*20.0 - 10.0
+        pm_dec = rng.random_sample(n_obj)*20.0 - 10.0
+        parallax = rng.random_sample(n_obj)*1.0 - 0.5
+        v_rad = rng.random_sample(n_obj)*600.0 - 300.0
+        return obs, ra_list, dec_list, pm_ra, pm_dec, parallax, v_rad
+
+    def test_chip_name(self):
+        """
+        Test that chipNameFromRaDec with non-zero proper motion etc.
+        agrees with chipNameFromPupilCoords when pupilCoords are
+        calculated with the same proper motion, etc.
+        """
+        (obs, ra_list, dec_list,
+         pm_ra_list, pm_dec_list,
+         parallax_list, v_rad_list) = self.set_data(8231)
+
+        for is_none in ('pm_ra', 'pm_dec', 'parallax', 'v_rad'):
+            pm_ra = pm_ra_list
+            pm_dec = pm_dec_list
+            parallax = parallax_list
+            v_rad = v_rad_list
+
+            if is_none == 'pm_ra':
+                pm_ra = None
+            elif is_none == 'pm_dec':
+                pm_dec = None
+            elif is_none == 'parallax':
+                parallax = None
+            elif is_none == 'v_rad':
+                v_rad = None
+
+            xp, yp = pupilCoordsFromRaDec(ra_list, dec_list,
+                                          pm_ra=pm_ra, pm_dec=pm_dec,
+                                          parallax=parallax, v_rad=v_rad,
+                                          obs_metadata=obs)
+
+            name_control = chipNameFromPupilCoords(xp, yp, camera=self.camera)
+
+            name_test = chipNameFromRaDec(ra_list, dec_list,
+                                          pm_ra=pm_ra, pm_dec=pm_dec,
+                                          parallax=parallax, v_rad=v_rad,
+                                          obs_metadata=obs, camera=self.camera)
+
+            name_radians = _chipNameFromRaDec(np.radians(ra_list), np.radians(dec_list),
+                                              pm_ra=radiansFromArcsec(pm_ra), pm_dec=radiansFromArcsec(pm_dec),
+                                              parallax=radiansFromArcsec(parallax), v_rad=v_rad,
+                                              obs_metadata=obs, camera=self.camera)
+
+            np.testing.assert_array_equal(name_control, name_test)
+            np.testing.assert_array_equal(name_control, name_radians)
+            self.assertGreater(len(np.unique(name_control)), 4)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
