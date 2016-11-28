@@ -8,7 +8,8 @@ from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   _chipNameFromRaDec, chipNameFromRaDec,
                                   _chipNameFromRaDecLSST, chipNameFromRaDecLSST,
                                   _pixelCoordsFromRaDec, pixelCoordsFromRaDec,
-                                  _pixelCoordsFromRaDecLSST, pixelCoordsFromRaDecLSST)
+                                  _pixelCoordsFromRaDecLSST, pixelCoordsFromRaDecLSST,
+                                  pixelCoordsFromPupilCoords)
 from lsst.sims.utils import pupilCoordsFromRaDec, radiansFromArcsec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
@@ -372,6 +373,55 @@ class MotionTestCase(unittest.TestCase):
             self.assertGreater(len(np.unique(name_control)), 4)
             self.assertLess(len(np.where(np.equal(name_control, None))[0]), len(name_control)/4)
 
+    def test_pixel_coords_name(self):
+        """
+        Test that pixelCoordsFromRaDecLSST with non-zero proper motion etc.
+        agrees with pixelCoordsFromPupilCoords when pupilCoords are
+        calculated with the same proper motion, etc.
+        """
+        (obs, ra_list, dec_list,
+         pm_ra_list, pm_dec_list,
+         parallax_list, v_rad_list) = self.set_data(8231)
+
+        for is_none in ('pm_ra', 'pm_dec', 'parallax', 'v_rad'):
+            pm_ra = pm_ra_list
+            pm_dec = pm_dec_list
+            parallax = parallax_list
+            v_rad = v_rad_list
+
+            if is_none == 'pm_ra':
+                pm_ra = None
+            elif is_none == 'pm_dec':
+                pm_dec = None
+            elif is_none == 'parallax':
+                parallax = None
+            elif is_none == 'v_rad':
+                v_rad = None
+
+            xp, yp = pupilCoordsFromRaDec(ra_list, dec_list,
+                                          pm_ra=pm_ra, pm_dec=pm_dec,
+                                          parallax=parallax, v_rad=v_rad,
+                                          obs_metadata=obs)
+
+            xpx_control, ypx_control = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera)
+
+            xpx_test, ypx_test = pixelCoordsFromRaDecLSST(ra_list, dec_list,
+                                                          pm_ra=pm_ra, pm_dec=pm_dec,
+                                                          parallax=parallax, v_rad=v_rad,
+                                                          obs_metadata=obs)
+
+            xpx_radians, ypx_radians = _pixelCoordsFromRaDecLSST(np.radians(ra_list), np.radians(dec_list),
+                                                                 pm_ra=radiansFromArcsec(pm_ra),
+                                                                 pm_dec=radiansFromArcsec(pm_dec),
+                                                                 parallax=radiansFromArcsec(parallax),
+                                                                 v_rad=v_rad, obs_metadata=obs)
+
+            np.testing.assert_array_equal(xpx_control, xpx_test)
+            np.testing.assert_array_equal(ypx_control, ypx_test)
+            np.testing.assert_array_equal(xpx_control, xpx_radians)
+            np.testing.assert_array_equal(ypx_control, ypx_radians)
+            self.assertLess(len(np.where(np.isnan(xpx_control))[0]), len(xpx_test)/4)
+            self.assertLess(len(np.where(np.isnan(ypx_control))[0]), len(ypx_test)/4)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
