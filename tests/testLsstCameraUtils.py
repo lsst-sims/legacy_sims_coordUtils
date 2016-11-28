@@ -334,7 +334,7 @@ class MotionTestCase(unittest.TestCase):
         """
         (obs, ra_list, dec_list,
          pm_ra_list, pm_dec_list,
-         parallax_list, v_rad_list) = self.set_data(8231)
+         parallax_list, v_rad_list) = self.set_data(11)
 
         for is_none in ('pm_ra', 'pm_dec', 'parallax', 'v_rad'):
             pm_ra = pm_ra_list
@@ -381,7 +381,7 @@ class MotionTestCase(unittest.TestCase):
         """
         (obs, ra_list, dec_list,
          pm_ra_list, pm_dec_list,
-         parallax_list, v_rad_list) = self.set_data(8231)
+         parallax_list, v_rad_list) = self.set_data(26)
 
         for is_none in ('pm_ra', 'pm_dec', 'parallax', 'v_rad'):
             pm_ra = pm_ra_list
