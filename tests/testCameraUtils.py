@@ -46,7 +46,7 @@ class ChipNameTest(unittest.TestCase):
         del cls.camera
 
     def setUp(self):
-        np.random.seed(45532)
+        self.rng = np.random.RandomState(45532)
 
     def testRuns(self):
         """
@@ -61,8 +61,8 @@ class ChipNameTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=mjd, rotSkyPos=rotSkyPos)
 
-        raList = (np.random.random_sample(nStars)-0.5)*1000.0/3600.0 + ra0
-        decList = (np.random.random_sample(nStars)-0.5)*1000.0/3600.0 + dec0
+        raList = (self.rng.random_sample(nStars)-0.5)*1000.0/3600.0 + ra0
+        decList = (self.rng.random_sample(nStars)-0.5)*1000.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList,
                                               obs_metadata=obs,
@@ -99,8 +99,8 @@ class ChipNameTest(unittest.TestCase):
         """
 
         nStars = 10
-        xpList = np.random.random_sample(nStars)*0.1
-        ypList = np.random.random_sample(nStars)*0.1
+        xpList = self.rng.random_sample(nStars)*0.1
+        ypList = self.rng.random_sample(nStars)*0.1
 
         obs = ObservationMetaData(pointingRA=25.0, pointingDec=112.0, mjd=42351.0,
                                   rotSkyPos=35.0)
@@ -146,7 +146,7 @@ class ChipNameTest(unittest.TestCase):
 
         # verify that an exception is raised if the two coordinate arrays contain
         # different numbers of elements
-        xpDummy = np.random.random_sample(nStars/2)
+        xpDummy = self.rng.random_sample(nStars/2)
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
@@ -236,8 +236,8 @@ class ChipNameTest(unittest.TestCase):
 
         for badVal in [np.NaN, None]:
 
-            raList = (np.random.random_sample(nStars)-0.5)*5.0/3600.0 + ra0
-            decList = (np.random.random_sample(nStars)-0.5)*5.0/3600.0 + dec0
+            raList = (self.rng.random_sample(nStars)-0.5)*5.0/3600.0 + ra0
+            decList = (self.rng.random_sample(nStars)-0.5)*5.0/3600.0 + dec0
 
             raList[5] = badVal
             raList[10] = badVal
@@ -284,8 +284,8 @@ class ChipNameTest(unittest.TestCase):
                                   mjd=mjd, rotSkyPos=rotSkyPos)
 
         nStars = 100
-        raList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
-        decList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
+        raList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        decList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
 
         chipNameList = chipNameFromRaDec(raList, decList, camera=self.camera, obs_metadata=obs)
 
@@ -331,7 +331,7 @@ class PixelCoordTest(unittest.TestCase):
         del cls.camera
 
     def setUp(self):
-        np.random.seed(11324)
+        self.rng = np.random.RandomState(11324)
 
     def testConsistency(self):
         """
@@ -344,8 +344,8 @@ class PixelCoordTest(unittest.TestCase):
                                   mjd=52350.0, rotSkyPos=27.0)
 
         nStars = 100
-        raList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
-        decList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
+        raList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        decList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
 
@@ -457,8 +457,8 @@ class PixelCoordTest(unittest.TestCase):
                                   mjd=52350.0, rotSkyPos=27.0)
 
         nStars = 100
-        raList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
-        decList = (np.random.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
+        raList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        decList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
 
@@ -519,15 +519,15 @@ class PixelCoordTest(unittest.TestCase):
         they should
         """
         nPoints = 100
-        xpList = np.random.random_sample(nPoints)*np.radians(1.0)
-        ypList = np.random.random_sample(nPoints)*np.radians(1.0)
+        xpList = self.rng.random_sample(nPoints)*np.radians(1.0)
+        ypList = self.rng.random_sample(nPoints)*np.radians(1.0)
         obs = ObservationMetaData(pointingRA=25.0,
                                   pointingDec=-36.0,
                                   rotSkyPos=122.0,
                                   mjd=41325.0)
 
-        raList = np.random.random_sample(nPoints)*1.0+25.0
-        decList = np.random.random_sample(nPoints)*1.0-36.0
+        raList = self.rng.random_sample(nPoints)*1.0+25.0
+        decList = self.rng.random_sample(nPoints)*1.0-36.0
 
         # check that an error is raised when you forget to
         # pass in a camera
@@ -949,8 +949,8 @@ class PixelCoordTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   rotSkyPos=42.0, mjd=42356.0)
 
-        raList = np.random.random_sample(100)*100.0/3600.0 + ra0
-        decList = np.random.random_sample(100)*100.0/3600.0 + dec0
+        raList = self.rng.random_sample(100)*100.0/3600.0 + ra0
+        decList = self.rng.random_sample(100)*100.0/3600.0 + dec0
         chipNameList = chipNameFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0,
                                          camera=self.camera)
 
@@ -1035,8 +1035,8 @@ class PixelCoordTest(unittest.TestCase):
         Note: This test passes because the test camera has a pincushion distortion.
         If we take that away, the test will no longer pass.
         """
-        xp = radiansFromArcsec((np.random.random_sample(100)-0.5)*100.0)
-        yp = radiansFromArcsec((np.random.random_sample(100)-0.5)*100.0)
+        xp = radiansFromArcsec((self.rng.random_sample(100)-0.5)*100.0)
+        yp = radiansFromArcsec((self.rng.random_sample(100)-0.5)*100.0)
 
         xu, yu = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera, includeDistortion=False)
         xd, yd = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera, includeDistortion=True)
@@ -1074,7 +1074,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
         del cls.camera
 
     def setUp(self):
-        np.random.seed(8374522)
+        self.rng = np.random.RandomState(8374522)
 
     def testConsistency(self):
         """
@@ -1093,8 +1093,8 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                epoch=2000.0)
 
         nStars = 100
-        raList = np.random.random_sample(nStars)*1000.0/3600.0 + raCenter[0]
-        decList = np.random.random_sample(nStars)*1000.0/3600.0 + decCenter[0]
+        raList = self.rng.random_sample(nStars)*1000.0/3600.0 + raCenter[0]
+        decList = self.rng.random_sample(nStars)*1000.0/3600.0 + decCenter[0]
 
         xPupList, yPupList = pupilCoordsFromRaDec(raList, decList,
                                                   obs_metadata=obs,
@@ -1154,8 +1154,8 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                   rotSkyPos=61.0, mjd=52349.0)
 
         nStars = 10
-        raList = (np.random.random_sample(nStars)-0.5) + ra0
-        decList = (np.random.random_sample(nStars)-0.5) + dec0
+        raList = (self.rng.random_sample(nStars)-0.5) + ra0
+        decList = (self.rng.random_sample(nStars)-0.5) + dec0
         xPupList, yPupList = pupilCoordsFromRaDec(raList, decList,
                                                   obs_metadata=obs,
                                                   epoch=2000.0)
@@ -1397,7 +1397,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         del cls.camera
 
     def setUp(self):
-        np.random.seed(543)
+        self.rng = np.random.RandomState(543)
 
     def testPupCoordsException(self):
         """
@@ -1405,8 +1405,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         call it without a camera
         """
         nStars = 100
-        xPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
-        yPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
+        xPupList = radiansFromArcsec((self.rng.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((self.rng.random_sample(nStars)-0.5)*320.0)
         chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
         xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
         with self.assertRaises(RuntimeError) as context:
@@ -1422,8 +1422,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         """
 
         nStars = 100
-        xPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
-        yPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
+        xPupList = radiansFromArcsec((self.rng.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((self.rng.random_sample(nStars)-0.5)*320.0)
         chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
         for includeDistortion in [True, False]:
             xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera,
@@ -1458,8 +1458,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         Test that points which do not have a chip return NaN for pupilCoordsFromPixelCoords
         """
         nStars = 10
-        xPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
-        yPupList = radiansFromArcsec((np.random.random_sample(nStars)-0.5)*320.0)
+        xPupList = radiansFromArcsec((self.rng.random_sample(nStars)-0.5)*320.0)
+        yPupList = radiansFromArcsec((self.rng.random_sample(nStars)-0.5)*320.0)
         chipNameList = chipNameFromPupilCoords(xPupList, yPupList, camera=self.camera)
         chipNameList[5] = None
         xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
@@ -1477,10 +1477,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
-        xPixList = np.random.random_sample(nStars)*4000.0
-        yPixList = np.random.random_sample(nStars)*4000.0
+        xPixList = self.rng.random_sample(nStars)*4000.0
+        yPixList = self.rng.random_sample(nStars)*4000.0
 
-        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         # test that an error is raised if you do not pass in a camera
@@ -1609,10 +1609,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
-        xPixList = np.random.random_sample(nStars)*4000.0
-        yPixList = np.random.random_sample(nStars)*4000.0
+        xPixList = self.rng.random_sample(nStars)*4000.0
+        yPixList = self.rng.random_sample(nStars)*4000.0
 
-        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
@@ -1672,10 +1672,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=ra0, pointingDec=dec0,
                                   mjd=43525.0, rotSkyPos=145.0)
 
-        xPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
-        yPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
+        xPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
+        yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
-        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
@@ -1720,10 +1720,10 @@ class ConversionFromPixelTest(unittest.TestCase):
         If we take that away, the test will no longer pass.
         """
         nStars = 200
-        xPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
-        yPixList = np.random.random_sample(nStars)*4000.0 + 4000.0
+        xPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
+        yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
-        chipDexList = np.random.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
         chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
 
         xu, yu = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=self.camera,
