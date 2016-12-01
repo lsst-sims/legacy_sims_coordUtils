@@ -10,7 +10,7 @@ from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
 
-__all__ = ["chipNameFromPupilCoordsLSST",
+__all__ = ["_lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
 
