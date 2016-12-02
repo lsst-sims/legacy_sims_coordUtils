@@ -7,6 +7,8 @@ from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
+from lsst.sims.utils import radiansFromArcsec
+
 
 __all__ = ["chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
@@ -240,7 +242,8 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     return nameList
 
 
-def _chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
+def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+                           obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors on the LSST camera that see the object specified by
     (RA, Dec) in radians.
@@ -250,6 +253,18 @@ def _chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multi
 
     @param [in] dec in radians (a numpy array or a float).
     In the International Celestial Reference System.
+
+    @param [in] pm_ra is proper motion in RA multiplied by cos(Dec) (radians/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] pm_dec is proper motion in dec (radians/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] parallax is parallax in radians
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] v_rad is radial velocity (km/s)
+    Can be a numpy array or a number or None (default=None).
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
 
@@ -279,11 +294,16 @@ def _chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multi
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
 
-    xp, yp = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+    xp, yp = _pupilCoordsFromRaDec(ra, dec,
+                                   pm_ra=pm_ra, pm_dec=pm_dec,
+                                   parallax=parallax, v_rad=v_rad,
+                                   obs_metadata=obs_metadata, epoch=epoch)
+
     return chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips)
 
 
-def chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
+def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+                          obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
     """
     Return the names of detectors on the LSST camera that see the object specified by
     (RA, Dec) in degrees.
@@ -293,6 +313,18 @@ def chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multip
 
     @param [in] dec in degrees (a numpy array or a float).
     In the International Celestial Reference System.
+
+    @param [in] pm_ra is proper motion in RA multiplied by cos(Dec) (arcsec/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] pm_dec is proper motion in dec (arcsec/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] parallax is parallax in arcsec
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] v_rad is radial velocity (km/s)
+    Can be a numpy array or a number or None (default=None).
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope pointing
 
@@ -307,12 +339,30 @@ def chipNameFromRaDecLSST(ra, dec, obs_metadata=None, epoch=2000.0, allow_multip
 
     @param [out] a numpy array of chip names
     """
+    if pm_ra is not None:
+        pm_ra_out = radiansFromArcsec(pm_ra)
+    else:
+        pm_ra_out = None
+
+    if pm_dec is not None:
+        pm_dec_out = radiansFromArcsec(pm_dec)
+    else:
+        pm_dec_out = None
+
+    if parallax is not None:
+        parallax_out = radiansFromArcsec(parallax)
+    else:
+        parallax_out = None
+
     return _chipNameFromRaDecLSST(np.radians(ra), np.radians(dec),
+                                  pm_ra=pm_ra_out, pm_dec=pm_dec_out,
+                                  parallax=parallax_out, v_rad=v_rad,
                                   obs_metadata=obs_metadata, epoch=epoch,
                                   allow_multiple_chips=allow_multiple_chips)
 
 
-def _pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
+def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+                              obs_metadata=None,
                               chipName=None, camera=None,
                               epoch=2000.0, includeDistortion=True):
     """
@@ -324,6 +374,18 @@ def _pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
 
     @param [in] dec is in radians in the International Celestial Reference System.
     Can be either a float or a numpy array.
+
+    @param [in] pm_ra is proper motion in RA multiplied by cos(Dec) (radians/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] pm_dec is proper motion in dec (radians/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] parallax is parallax in radians
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] v_rad is radial velocity (km/s)
+    Can be a numpy array or a number or None (default=None).
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
     pointing.
@@ -373,7 +435,10 @@ def _pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into "
                            "pixelCoordsFromRaDec")
 
-    xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec, obs_metadata=obs_metadata, epoch=epoch)
+    xPupil, yPupil = _pupilCoordsFromRaDec(ra, dec,
+                                           pm_ra=pm_ra, pm_dec=pm_dec,
+                                           parallax=parallax, v_rad=v_rad,
+                                           obs_metadata=obs_metadata, epoch=epoch)
 
     if chipNameList is None:
         chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
@@ -382,7 +447,8 @@ def _pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
                                       includeDistortion=includeDistortion)
 
 
-def pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
+def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
+                             obs_metadata=None,
                              chipName=None, camera=None,
                              epoch=2000.0, includeDistortion=True):
     """
@@ -394,6 +460,18 @@ def pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
 
     @param [in] dec is in degrees in the International Celestial Reference System.
     Can be either a float or a numpy array.
+
+    @param [in] pm_ra is proper motion in RA multiplied by cos(Dec) (arcsec/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] pm_dec is proper motion in dec (arcsec/yr)
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] parallax is parallax in arcsec
+    Can be a numpy array or a number or None (default=None).
+
+    @param [in] v_rad is radial velocity (km/s)
+    Can be a numpy array or a number or None (default=None).
 
     @param [in] obs_metadata is an ObservationMetaData characterizing the telescope
     pointing.
@@ -422,6 +500,23 @@ def pixelCoordsFromRaDecLSST(ra, dec, obs_metadata=None,
     and the second row is the y pixel coordinate
     """
 
+    if pm_ra is not None:
+        pm_ra_out = radiansFromArcsec(pm_ra)
+    else:
+        pm_ra_out = None
+
+    if pm_dec is not None:
+        pm_dec_out = radiansFromArcsec(pm_dec)
+    else:
+        pm_dec_out = None
+
+    if parallax is not None:
+        parallax_out = radiansFromArcsec(parallax)
+    else:
+        parallax_out = None
+
     return _pixelCoordsFromRaDecLSST(np.radians(ra), np.radians(dec),
+                                     pm_ra=pm_ra_out, pm_dec=pm_dec_out,
+                                     parallax=parallax_out, v_rad=v_rad,
                                      chipName=chipName, obs_metadata=obs_metadata,
                                      epoch=2000.0, includeDistortion=includeDistortion)
