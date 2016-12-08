@@ -186,7 +186,8 @@ def _getCornerRaDec(detector_name, camera, obs_metadata,
                                     np.array([cc[1] for cc in cc_pix]),
                                     [detector_name]*len(cc_pix),
                                     camera=camera, obs_metadata=obs_metadata,
-                                    epoch=epoch, includeDistortion=True)
+                                    epoch=epoch,
+                                    includeDistortion=includeDistortion)
 
     return [(ra[0], dec[0]), (ra[1], dec[1]), (ra[2], dec[2]), (ra[3], dec[3])]
 
