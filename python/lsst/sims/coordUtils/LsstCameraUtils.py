@@ -10,7 +10,7 @@ from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
 
-__all__ = ["chipNameFromPupilCoordsLSST",
+__all__ = ["_lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
 
@@ -448,8 +448,7 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
 
 
 def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
-                             obs_metadata=None,
-                             chipName=None, camera=None,
+                             obs_metadata=None, chipName=None,
                              epoch=2000.0, includeDistortion=True):
     """
     Get the pixel positions on the LSST camera (or nan if not on a chip) for objects based
@@ -486,9 +485,6 @@ def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_
     chip.  If None, this method will calculate which chip each(RA, Dec) pair actually
     falls on, and return pixel coordinates for each (RA, Dec) pair on the appropriate
     chip.  Default is None.
-
-    @param [in] camera is an afwCameraGeom object specifying the attributes of the camera.
-    This is an optional argument to be passed to chipName.
 
     @param [in] includeDistortion is a boolean.  If True (default), then this method will
     return the true pixel coordinates with optical distortion included.  If False, this
