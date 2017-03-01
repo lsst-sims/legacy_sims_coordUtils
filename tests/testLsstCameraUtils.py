@@ -9,6 +9,7 @@ from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   _pixelCoordsFromRaDec, pixelCoordsFromRaDec,
                                   _pixelCoordsFromRaDecLSST, pixelCoordsFromRaDecLSST,
                                   pixelCoordsFromPupilCoords)
+from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.utils import pupilCoordsFromRaDec, radiansFromArcsec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
@@ -27,6 +28,7 @@ class ChipNameTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.camera
+        del lsst_camera._lsst_camera
 
     def test_chip_name_from_pupil_coords(self):
         """
@@ -299,6 +301,7 @@ class MotionTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.camera
+        del lsst_camera._lsst_camera
 
     def set_data(self, seed):
         """
