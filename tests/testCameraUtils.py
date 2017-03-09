@@ -1912,7 +1912,7 @@ class MotionTestCase(unittest.TestCase):
 
             np.testing.assert_array_equal(name_control, name_test)
             np.testing.assert_array_equal(name_control, name_radians)
-            self.assertGreater(len(np.unique(name_control)), 4)
+            self.assertGreater(len(np.unique(name_control.astype(str))), 4)
             self.assertLess(len(np.where(np.equal(name_control, None))[0]), 2*len(name_control)/3)
 
     def test_pixel_coords(self):
