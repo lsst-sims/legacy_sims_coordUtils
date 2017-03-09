@@ -31,6 +31,20 @@ class ChipNameTestCase(unittest.TestCase):
         del cls.camera
         del lsst_camera._lsst_camera
 
+    def test_chip_center(self):
+        """
+        Test that, if we ask for the chip at the bore site,
+        we get back 'R:2,2 S:1,1'
+        """
+
+        ra = 145.0
+        dec = -25.0
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  mjd=59580.0, rotSkyPos=113.0)
+
+        name = chipNameFromRaDecLSST(ra, dec, obs_metadata=obs)
+        self.assertEqual(name, 'R:2,2 S:1,1')
+
     def test_chip_name_from_pupil_coords(self):
         """
         Test that chipNameFromPupilCoordsLSST returns the same
