@@ -106,22 +106,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("chipNameFromRaDecLSST", context.exception.message)
+        self.assertIn("chipNameFromRaDecLSST", context.exception.args[0])
 
     def test_chip_name_from_ra_dec_degrees(self):
         """
@@ -154,22 +154,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("chipNameFromRaDecLSST", context.exception.message)
+        self.assertIn("chipNameFromRaDecLSST", context.exception.args[0])
 
     def test_pixel_coords_from_ra_dec_radians(self):
         """
@@ -220,22 +220,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.message)
+        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
 
     def test_pixel_coords_from_ra_dec_degrees(self):
         """
@@ -286,22 +286,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.message)
+        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
 
 
 class MotionTestCase(unittest.TestCase):

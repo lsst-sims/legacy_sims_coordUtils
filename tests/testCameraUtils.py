@@ -108,17 +108,17 @@ class ChipNameTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpList, ypList)
         self.assertEqual('No camera defined.  Cannot run chipName.',
-                         context.exception.message)
+                         context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
         self.assertEqual('No camera defined.  Cannot run chipName.',
-                         context.exception.message)
+                         context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, obs_metadata=obs, epoch=2000.0)
         self.assertEqual('No camera defined.  Cannot run chipName.',
-                         context.exception.message)
+                         context.exception.args[0])
 
         # verify that an exception is raised if you do not pass in a numpy array
         with self.assertRaises(RuntimeError) as context:
@@ -150,7 +150,7 @@ class ChipNameTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "The arrays input to chipNameFromPupilCoords all need "
                          "to have the same length")
 
@@ -158,14 +158,14 @@ class ChipNameTest(unittest.TestCase):
             chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                               camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "The arrays input to chipNameFromRaDec all need to have the same length")
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpDummy, ypList, obs_metadata=obs, epoch=2000.0,
                                camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "The arrays input to chipNameFromRaDec all need to have the same length")
 
         # verify that an exception is raised if you call chipNameFromRaDec
@@ -173,13 +173,13 @@ class ChipNameTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData into chipName')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, epoch=2000.0, camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData into chipName')
 
         # verify that an exception is raised if you call chipNameFromRaDec
@@ -191,14 +191,14 @@ class ChipNameTest(unittest.TestCase):
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                               camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData with an mjd into chipName')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData with an mjd into chipName')
 
         # verify that an exception is raised if you all chipNameFromRaDec
@@ -210,14 +210,14 @@ class ChipNameTest(unittest.TestCase):
             chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                               camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData with a rotSkyPos into chipName')
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDec(xpList, ypList, epoch=2000.0, obs_metadata=obsDummy,
                                camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData with a rotSkyPos into chipName')
 
     def testNaNbecomesNone(self):
@@ -533,14 +533,14 @@ class PixelCoordTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromPupilCoords(xpList, ypList)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'Camera not specified.  Cannot calculate pixel coordinates.')
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDec(raList, decList, obs_metadata=obs,
                                  epoch=2000.0)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'Camera not specified.  Cannot calculate pixel coordinates.')
 
         with self.assertRaises(RuntimeError) as context:
@@ -549,7 +549,7 @@ class PixelCoordTest(unittest.TestCase):
                                   obs_metadata=obs,
                                   epoch=2000.0)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'Camera not specified.  Cannot calculate pixel coordinates.')
 
         # test that an exception is raised when you pass in something
@@ -653,7 +653,7 @@ class PixelCoordTest(unittest.TestCase):
             pixelCoordsFromRaDec(raList, decList,
                                  camera=self.camera, epoch=2000.0)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData into '
                          'pixelCoordsFromRaDec')
 
@@ -661,7 +661,7 @@ class PixelCoordTest(unittest.TestCase):
             _pixelCoordsFromRaDec(raList, decList,
                                   camera=self.camera, epoch=2000.0)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData into '
                          'pixelCoordsFromRaDec')
 
@@ -677,7 +677,7 @@ class PixelCoordTest(unittest.TestCase):
                                  epoch=2000.0,
                                  obs_metadata=obsDummy)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData '
                          'with an mjd into pixelCoordsFromRaDec')
 
@@ -687,7 +687,7 @@ class PixelCoordTest(unittest.TestCase):
                                   epoch=2000.0,
                                   obs_metadata=obsDummy)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData '
                          'with an mjd into pixelCoordsFromRaDec')
 
@@ -703,7 +703,7 @@ class PixelCoordTest(unittest.TestCase):
                                  epoch=2000.0,
                                  obs_metadata=obsDummy)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData '
                          'with a rotSkyPos into pixelCoordsFromRaDec')
 
@@ -716,7 +716,7 @@ class PixelCoordTest(unittest.TestCase):
                                   epoch=2000.0,
                                   obs_metadata=obsDummy)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          'You need to pass an ObservationMetaData '
                          'with a rotSkyPos into pixelCoordsFromRaDec')
 
@@ -1163,7 +1163,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
         # in a camera
         with self.assertRaises(RuntimeError) as context:
             xf, yf = focalPlaneCoordsFromPupilCoords(xPupList, yPupList)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot calculate focal plane coordinates "
                          "without specifying a camera")
 
@@ -1172,7 +1172,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                obs_metadata=obs,
                                                epoch=2000.0)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot calculate focal plane coordinates "
                          "without specifying a camera")
 
@@ -1181,7 +1181,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                 obs_metadata=obs,
                                                 epoch=2000.0)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot calculate focal plane coordinates "
                          "without specifying a camera")
 
@@ -1251,7 +1251,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                epoch=2000.0,
                                                camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You have to specify an ObservationMetaData to run "
                          "focalPlaneCoordsFromRaDec")
 
@@ -1259,7 +1259,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
             xf, yf = _focalPlaneCoordsFromRaDec(raList, decList,
                                                 epoch=2000.0,
                                                 camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You have to specify an ObservationMetaData to run "
                          "focalPlaneCoordsFromRaDec")
 
@@ -1272,7 +1272,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                obs_metadata=obsDummy,
                                                epoch=2000.0,
                                                camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You need to pass an ObservationMetaData with an "
                          "mjd into focalPlaneCoordsFromRaDec")
 
@@ -1282,7 +1282,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                 epoch=2000.0,
                                                 camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You need to pass an ObservationMetaData with an "
                          "mjd into focalPlaneCoordsFromRaDec")
 
@@ -1296,7 +1296,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                epoch=2000.0,
                                                camera=self.camera)
 
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You need to pass an ObservationMetaData with a "
                          "rotSkyPos into focalPlaneCoordsFromRaDec")
 
@@ -1305,7 +1305,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                                 obs_metadata=obsDummy,
                                                 epoch=2000.0,
                                                 camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You need to pass an ObservationMetaData with a "
                          "rotSkyPos into focalPlaneCoordsFromRaDec")
 
@@ -1410,7 +1410,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         xPix, yPix = pixelCoordsFromPupilCoords(xPupList, yPupList, camera=self.camera)
         with self.assertRaises(RuntimeError) as context:
             xPupTest, yPupTest = pupilCoordsFromPixelCoords(xPix, yPix, chipNameList)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot call pupilCoordsFromPixelCoords without specifying "
                          "a camera")
 
@@ -1487,27 +1487,27 @@ class ConversionFromPixelTest(unittest.TestCase):
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                            obs_metadata=obs, epoch=2000.0)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot call raDecFromPixelCoords without specifying a camera")
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                             obs_metadata=obs, epoch=2000.0)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot call raDecFromPixelCoords without specifying a camera")
 
         # test that an error is raised if you do not pass in an ObservationMetaData
         with self.assertRaises(RuntimeError) as context:
             ra, dec = raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                            epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot call raDecFromPixelCoords without an ObservationMetaData")
 
         # test that an error is raised if you do not pass in an ObservationMetaData
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                             epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "You cannot call raDecFromPixelCoords without an ObservationMetaData")
 
         # test that an error is raised if you pass in an ObservationMetaData
@@ -1517,14 +1517,14 @@ class ConversionFromPixelTest(unittest.TestCase):
             ra, dec = raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                            obs_metadata=obsDummy,
                                            epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "The ObservationMetaData in raDecFromPixelCoords must have an mjd")
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                             obs_metadata=obsDummy,
                                             epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "The ObservationMetaData in raDecFromPixelCoords must have an mjd")
 
         # test that an error is raised if you pass in an ObservationMetaData
@@ -1534,14 +1534,14 @@ class ConversionFromPixelTest(unittest.TestCase):
             ra, dec = raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                            obs_metadata=obsDummy,
                                            epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
 
         with self.assertRaises(RuntimeError) as context:
             ra, dec = _raDecFromPixelCoords(xPixList, yPixList, chipNameList,
                                             obs_metadata=obsDummy,
                                             epoch=2000.0, camera=self.camera)
-        self.assertEqual(context.exception.message,
+        self.assertEqual(context.exception.args[0],
                          "The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
 
         # test that an error is raised if you pass in lists of pixel coordinates,
