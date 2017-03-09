@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import str
 import numpy as np
 import warnings
 import lsst.afw.geom as afwGeom

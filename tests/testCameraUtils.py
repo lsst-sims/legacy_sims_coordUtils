@@ -1,4 +1,6 @@
 from __future__ import with_statement
+from builtins import zip
+from builtins import range
 import os
 import numpy as np
 import unittest
@@ -1478,7 +1480,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0
 
         chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
-        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
+        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         # test that an error is raised if you do not pass in a camera
         with self.assertRaises(RuntimeError) as context:
@@ -1610,7 +1613,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0
 
         chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
-        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
+        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
 
@@ -1673,7 +1677,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
         chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
-        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
+        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
 
@@ -1721,7 +1726,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
         chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
-        chipNameList = [self.camera[self.camera._nameDetectorDict.keys()[ii]].getName() for ii in chipDexList]
+        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         xu, yu = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=self.camera,
                                             includeDistortion=False)

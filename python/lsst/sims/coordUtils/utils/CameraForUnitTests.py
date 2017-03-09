@@ -7,6 +7,7 @@ repository of camera data
 """
 
 from __future__ import absolute_import, division
+from builtins import range
 import argparse
 import os
 import re
@@ -242,7 +243,7 @@ def ReturnCamera(baseDir):
 
     #Build the camera config.
     camConfig = CameraConfig()
-    camConfig.detectorList = dict([(i,detectorConfigList[i]) for i in xrange(len(detectorConfigList))])
+    camConfig.detectorList = dict([(i,detectorConfigList[i]) for i in range(len(detectorConfigList))])
     camConfig.name = 'LSST'
     camConfig.plateScale = 2.0 #arcsec per mm
     pScaleRad = afwGeom.arcsecToRad(camConfig.plateScale)

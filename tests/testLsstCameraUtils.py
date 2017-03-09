@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from builtins import zip
 import unittest
 import numpy as np
 import lsst.utils.tests
