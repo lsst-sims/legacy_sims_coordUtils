@@ -45,6 +45,32 @@ class ChipNameTestCase(unittest.TestCase):
         name = chipNameFromRaDecLSST(ra, dec, obs_metadata=obs)
         self.assertEqual(name, 'R:2,2 S:1,1')
 
+    def test_one_by_one(self):
+        """
+        test that running RA, Dec pairs in one at a time gives the same
+        results as running them in in batches
+        """
+
+        ra = 145.0
+        dec = -25.0
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  mjd=59580.0, rotSkyPos=113.0)
+        rng = np.random.RandomState(100)
+        theta = rng.random_sample(100)*2.0*np.pi
+        rr = rng.random_sample(len(theta))*2.0
+        ra_list = ra + rr*np.cos(theta)
+        dec_list = dec + rr*np.sin(theta)
+        name_control = chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        is_none = 0
+        for ra, dec, name in zip(ra_list, dec_list, name_control):
+            test_name = chipNameFromRaDecLSST(ra, dec, obs_metadata=obs)
+            self.assertEqual(test_name, name)
+            if test_name is None:
+                is_none += 1
+
+        self.assertGreater(is_none, 0)
+        self.assertLess(is_none, (3*len(ra_list))//4)
+
     def test_chip_name_from_pupil_coords(self):
         """
         Test that chipNameFromPupilCoordsLSST returns the same
