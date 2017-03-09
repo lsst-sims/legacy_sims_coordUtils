@@ -316,6 +316,32 @@ class ChipNameTest(unittest.TestCase):
 
         self.assertGreater(n_not_none, 50)
 
+    def test_one_by_one(self):
+        """
+        Test that runing chipNameFromRaDec one at a time gives
+        the same results as running in batch mode
+        """
+        ra = 145.0
+        dec = -25.0
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  mjd=59580.0, rotSkyPos=113.0)
+        rng = np.random.RandomState(100)
+        theta = rng.random_sample(100)*2.0*np.pi
+        rr = rng.random_sample(len(theta))*0.1
+        ra_list = ra + rr*np.cos(theta)
+        dec_list = dec + rr*np.sin(theta)
+        name_control = chipNameFromRaDec(ra_list, dec_list, obs_metadata=obs,
+                                         camera=self.camera)
+        is_none = 0
+        for ra, dec, name in zip(ra_list, dec_list, name_control):
+            test_name = chipNameFromRaDec(ra, dec, obs_metadata=obs,
+                                          camera=self.camera)
+            self.assertEqual(test_name, name)
+            if test_name is None:
+                is_none += 1
+        self.assertGreater(is_none, 0)
+        self.assertLess(is_none, len(ra_list))
+
 
 class PixelCoordTest(unittest.TestCase):
 
