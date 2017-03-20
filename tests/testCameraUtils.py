@@ -314,7 +314,10 @@ class ChipNameTest(unittest.TestCase):
             self.assertIsInstance(yp, np.float)
             self.assertEqual(chipNameList[ix], test_name)
             if test_name is not None:
-                self.assertIsInstance(test_name, str)
+                try:
+                    self.assertIsInstance(test_name, str)
+                except:
+                    self.assertIsInstance(test_name, unicode)
                 n_not_none += 1
 
         self.assertGreater(n_not_none, 50)
