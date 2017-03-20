@@ -1,4 +1,7 @@
 from __future__ import division
+from builtins import zip
+from builtins import str
+from builtins import range
 import numpy as np
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import PUPIL, PIXELS, WAVEFRONT
@@ -282,10 +285,11 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
     chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
 
-    @param [out] a numpy array of chip names
+    @param [out] the name(s) of the chips on which ra, dec fall (will be a numpy
+    array if more than one)
     """
 
-    _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDecLSST")
+    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDecLSST")
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into chipName")
@@ -299,12 +303,20 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
 
+    if not are_arrays:
+        ra = np.array([ra])
+        dec = np.array([dec])
+
     xp, yp = _pupilCoordsFromRaDec(ra, dec,
                                    pm_ra=pm_ra, pm_dec=pm_dec,
                                    parallax=parallax, v_rad=v_rad,
                                    obs_metadata=obs_metadata, epoch=epoch)
 
-    return chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips)
+    ans = chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips)
+
+    if not are_arrays:
+        return ans[0]
+    return ans
 
 
 def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
@@ -342,7 +354,8 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
     chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
 
-    @param [out] a numpy array of chip names
+    @param [out] the name(s) of the chips on which ra, dec fall (will be a numpy
+    array if more than one)
     """
     if pm_ra is not None:
         pm_ra_out = radiansFromArcsec(pm_ra)

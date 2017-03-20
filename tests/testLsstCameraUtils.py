@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from builtins import zip
 import unittest
 import numpy as np
 import lsst.utils.tests
@@ -29,6 +30,46 @@ class ChipNameTestCase(unittest.TestCase):
     def tearDownClass(cls):
         del cls.camera
         del lsst_camera._lsst_camera
+
+    def test_chip_center(self):
+        """
+        Test that, if we ask for the chip at the bore site,
+        we get back 'R:2,2 S:1,1'
+        """
+
+        ra = 145.0
+        dec = -25.0
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  mjd=59580.0, rotSkyPos=113.0)
+
+        name = chipNameFromRaDecLSST(ra, dec, obs_metadata=obs)
+        self.assertEqual(name, 'R:2,2 S:1,1')
+
+    def test_one_by_one(self):
+        """
+        test that running RA, Dec pairs in one at a time gives the same
+        results as running them in in batches
+        """
+
+        ra = 145.0
+        dec = -25.0
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  mjd=59580.0, rotSkyPos=113.0)
+        rng = np.random.RandomState(100)
+        theta = rng.random_sample(100)*2.0*np.pi
+        rr = rng.random_sample(len(theta))*2.0
+        ra_list = ra + rr*np.cos(theta)
+        dec_list = dec + rr*np.sin(theta)
+        name_control = chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        is_none = 0
+        for ra, dec, name in zip(ra_list, dec_list, name_control):
+            test_name = chipNameFromRaDecLSST(ra, dec, obs_metadata=obs)
+            self.assertEqual(test_name, name)
+            if test_name is None:
+                is_none += 1
+
+        self.assertGreater(is_none, 0)
+        self.assertLess(is_none, (3*len(ra_list))//4)
 
     def test_chip_name_from_pupil_coords(self):
         """
@@ -91,22 +132,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             _chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("chipNameFromRaDecLSST", context.exception.message)
+        self.assertIn("chipNameFromRaDecLSST", context.exception.args[0])
 
     def test_chip_name_from_ra_dec_degrees(self):
         """
@@ -139,22 +180,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             chipNameFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("chipNameFromRaDecLSST", context.exception.message)
+        self.assertIn("chipNameFromRaDecLSST", context.exception.args[0])
 
     def test_pixel_coords_from_ra_dec_radians(self):
         """
@@ -205,22 +246,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.message)
+        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
 
     def test_pixel_coords_from_ra_dec_degrees(self):
         """
@@ -271,22 +312,22 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("rotSkyPos", context.exception.message)
+        self.assertIn("rotSkyPos", context.exception.args[0])
 
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=35.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        self.assertIn("mjd", context.exception.message)
+        self.assertIn("mjd", context.exception.args[0])
 
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list)
-        self.assertIn("ObservationMetaData", context.exception.message)
+        self.assertIn("ObservationMetaData", context.exception.args[0])
 
         # check that exceptions are raised when ra_list, dec_list are of the wrong shape
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.message)
+        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
 
 
 class MotionTestCase(unittest.TestCase):
@@ -373,7 +414,7 @@ class MotionTestCase(unittest.TestCase):
 
             np.testing.assert_array_equal(name_control, name_test)
             np.testing.assert_array_equal(name_control, name_radians)
-            self.assertGreater(len(np.unique(name_control)), 4)
+            self.assertGreater(len(np.unique(name_control.astype(str))), 4)
             self.assertLess(len(np.where(np.equal(name_control, None))[0]), len(name_control)/4)
 
     def test_pixel_coords(self):

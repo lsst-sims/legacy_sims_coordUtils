@@ -1,3 +1,5 @@
+from builtins import zip
+from builtins import str
 import numpy as np
 import warnings
 import lsst.afw.geom as afwGeom
@@ -293,10 +295,11 @@ def _chipNameFromRaDec(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=No
     and an object falls on more than one chip, it will still only return the first chip in the
     list of chips returned. THIS BEHAVIOR SHOULD BE FIXED IN A FUTURE TICKET.
 
-    @param [out] a numpy array of chip names
+    @param [out] the name(s) of the chips on which ra, dec fall (will be a numpy
+    array if more than one)
     """
 
-    _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDec")
+    are_arrays = _validate_inputs([ra, dec], ['ra', 'dec'], "chipNameFromRaDec")
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into chipName")
@@ -310,12 +313,19 @@ def _chipNameFromRaDec(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=No
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
 
+    if not are_arrays:
+        ra = np.array([ra])
+        dec = np.array([dec])
+
     xp, yp = _pupilCoordsFromRaDec(ra, dec,
                                    pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax, v_rad=v_rad,
                                    obs_metadata=obs_metadata, epoch=epoch)
 
-    return chipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
+    ans = chipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
 
+    if not are_arrays:
+        return ans[0]
+    return ans
 
 def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):
     """
