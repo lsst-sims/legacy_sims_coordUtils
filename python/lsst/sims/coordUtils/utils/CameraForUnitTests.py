@@ -175,7 +175,7 @@ def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
     * deal with the extra orientation angles (not that they really matter)
     """
     detectorConfigs = []
-    detType = SCIENCE
+    detType = int(SCIENCE)
     #We know we need to rotate 3 times and also apply the yaw perturbation
     nQuarter = 1
     with open(detectorLayoutFile) as fh:
