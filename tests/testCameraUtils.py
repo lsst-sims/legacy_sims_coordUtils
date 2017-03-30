@@ -298,7 +298,7 @@ class ChipNameTest(unittest.TestCase):
             if test_name is not None:
                 try:
                     self.assertIsInstance(test_name, str)
-                except:
+                except AssertionError:
                     self.assertIsInstance(test_name, unicode)
                 n_not_none += 1
 
@@ -316,7 +316,7 @@ class ChipNameTest(unittest.TestCase):
             if test_name is not None:
                 try:
                     self.assertIsInstance(test_name, str)
-                except:
+                except AssertionError:
                     self.assertIsInstance(test_name, unicode)
                 n_not_none += 1
 
