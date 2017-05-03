@@ -145,7 +145,7 @@ class ChipNameTest(unittest.TestCase):
 
         # verify that an exception is raised if the two coordinate arrays contain
         # different numbers of elements
-        xpDummy = self.rng.random_sample(nStars/2)
+        xpDummy = self.rng.random_sample(nStars//2)
 
         with self.assertRaises(RuntimeError) as context:
             chipNameFromPupilCoords(xpDummy, ypList, camera=self.camera)
