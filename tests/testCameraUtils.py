@@ -490,7 +490,7 @@ class PixelCoordTest(unittest.TestCase):
                                   mjd=52350.0, rotSkyPos=27.0)
 
         nStars = 100
-        raList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        raList = ra0 - (self.rng.random_sample(nStars)-0.5)*500.0/3600.0
         decList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
