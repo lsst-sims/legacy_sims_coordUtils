@@ -228,7 +228,8 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
     if not are_arrays:
-        raise RuntimeError("Pupil coordinates passed to chipNameFromPupilCoordsLSST must be in numpy arrays")
+        xPupil = np.array([xPupil])
+        yPupil = np.array([yPupil])
 
     cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
 
