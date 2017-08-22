@@ -254,7 +254,7 @@ def ReturnCamera(baseDir):
     #camConfig.boresiteOffset_y = 0.
     tConfig = afwGeom.TransformConfig()
     tConfig.transform.name = 'inverted'
-    radialClass = afwGeom.xyTransformRegistry['radial']
+    radialClass = afwGeom.transformRegistry['radial']
     tConfig.transform.active.transform.retarget(radialClass)
     # According to Dave M. the simulated LSST transform is well approximated (1/3 pix)
     # by a scale and a pincusion.
