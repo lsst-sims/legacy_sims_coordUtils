@@ -3,7 +3,7 @@ from builtins import str
 import numpy as np
 import warnings
 import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import PUPIL, PIXELS, TAN_PIXELS, FOCAL_PLANE
+from lsst.afw.cameraGeom import FIELD_ANGLE, PIXELS, TAN_PIXELS, FOCAL_PLANE
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import _pupilCoordsFromRaDec, _raDecFromPupilCoords
 from lsst.sims.utils import radiansFromArcsec
@@ -362,7 +362,7 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     else:
         cameraPointList = [afwGeom.Point2D(xPupil, yPupil)]
 
-    detList = camera.findDetectorsList(cameraPointList, PUPIL)
+    detList = camera.findDetectorsList(cameraPointList, FIELD_ANGLE)
 
     for pt, det in zip(cameraPointList, detList):
         if len(det) == 0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
@@ -612,7 +612,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
                 xPix.append(np.nan)
                 yPix.append(np.nan)
                 continue
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), FIELD_ANGLE)
             if name not in det_sys_dict:
                 det = camera[name]
                 cs = det.makeCameraSys(pixelType)
@@ -625,7 +625,7 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
         if chipNameList[0] is None:
             return np.array([np.NaN, np.NaN])
 
-        cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)
+        cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), FIELD_ANGLE)
         det = camera[chipNameList[0]]
         cs = det.makeCameraSys(pixelType)
         detPoint = camera.transform(cp, cs)
@@ -680,7 +680,7 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     for name in chipNameList:
         if name not in pixelSystemDict and name is not None and name != 'None':
                 pixelSystemDict[name] = camera[name].makeCameraSys(pixelType)
-                pupilSystemDict[name] = camera[name].makeCameraSys(PUPIL)
+                pupilSystemDict[name] = camera[name].makeCameraSys(FIELD_ANGLE)
 
     if are_arrays:
         xPupilList = []
@@ -972,7 +972,7 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
         xPix = []
         yPix = []
         for x, y in zip(xPupil, yPupil):
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), PUPIL)
+            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), FIELD_ANGLE)
             fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
             xPix.append(fpPoint.getX())
             yPix.append(fpPoint.getY())
@@ -980,6 +980,6 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
         return np.array([xPix, yPix])
 
     # if not are_arrays
-    cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), PUPIL)
+    cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), FIELD_ANGLE)
     fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
     return np.array([fpPoint.getX(), fpPoint.getY()])

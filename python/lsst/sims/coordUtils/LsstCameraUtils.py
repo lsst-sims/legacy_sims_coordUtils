@@ -4,7 +4,7 @@ from builtins import str
 from builtins import range
 import numpy as np
 import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import PUPIL, PIXELS, WAVEFRONT
+from lsst.afw.cameraGeom import FIELD_ANGLE, PIXELS, WAVEFRONT
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
@@ -106,7 +106,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
        - it will stop looping through detectors one it has found one that is correct (the LSST
          camera does not allow an object to fall on more than one detector)
 
-    @param[in] cameraPointList  a list of cameraPoints in PUPIL coordinates
+    @param[in] cameraPointList  a list of cameraPoints in PUPIL/FIELD_ANGLE coordinates
 
     @param[in] detecorList is a list of lists.  Each row contains the detectors that should be searched
     for the correspdonding cameraPoint
@@ -121,7 +121,7 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
     """
 
     # transform the points to the native coordinate system
-    nativePointList = lsst_camera()._transformSingleSysArray(cameraPointList, PUPIL,
+    nativePointList = lsst_camera()._transformSingleSysArray(cameraPointList, FIELD_ANGLE,
                                                              lsst_camera()._nativeCameraSys)
 
     # initialize output and some caching lists

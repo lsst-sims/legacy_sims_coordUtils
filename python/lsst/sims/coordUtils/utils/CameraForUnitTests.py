@@ -17,7 +17,7 @@ import lsst.afw.geom as afwGeom
 import lsst.afw.table as afwTable
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.afw.cameraGeom import (DetectorConfig, CameraConfig, makeCameraFromCatalogs,
-                                 PUPIL, FOCAL_PLANE, PIXELS)
+                                 FIELD_ANGLE, FOCAL_PLANE, PIXELS)
 
 __all__ = ["ReturnCamera"]
 
@@ -266,7 +266,7 @@ def ReturnCamera(baseDir):
     #tConfig.transform.active.boresiteOffset_y = camConfig.boresiteOffset_y
     tmc = afwGeom.TransformMapConfig()
     tmc.nativeSys = FOCAL_PLANE.getSysName()
-    tmc.transforms = {PUPIL.getSysName():tConfig}
+    tmc.transforms = {FIELD_ANGLE.getSysName():tConfig}
     camConfig.transformDict = tmc
 
     myCamera = makeCameraFromCatalogs(camConfig, ampTableDict)
