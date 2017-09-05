@@ -14,10 +14,11 @@ import re
 import shutil
 
 import lsst.afw.geom as afwGeom
+import lsst.afw.cameraGeom as afwCameraGeom
 import lsst.afw.table as afwTable
 from lsst.afw.cameraGeom import SCIENCE
 from lsst.afw.cameraGeom import (DetectorConfig, CameraConfig, makeCameraFromCatalogs,
-                                 PUPIL, FOCAL_PLANE, PIXELS)
+                                 FIELD_ANGLE, FOCAL_PLANE, PIXELS)
 
 __all__ = ["ReturnCamera"]
 
@@ -253,7 +254,7 @@ def ReturnCamera(baseDir):
     #camConfig.boresiteOffset_y = 0.
     tConfig = afwGeom.TransformConfig()
     tConfig.transform.name = 'inverted'
-    radialClass = afwGeom.xyTransformRegistry['radial']
+    radialClass = afwGeom.transformRegistry['radial']
     tConfig.transform.active.transform.retarget(radialClass)
     # According to Dave M. the simulated LSST transform is well approximated (1/3 pix)
     # by a scale and a pincusion.
@@ -264,9 +265,9 @@ def ReturnCamera(baseDir):
 
     #tConfig.transform.active.boresiteOffset_x = camConfig.boresiteOffset_x
     #tConfig.transform.active.boresiteOffset_y = camConfig.boresiteOffset_y
-    tmc = afwGeom.TransformMapConfig()
+    tmc = afwCameraGeom.transformConfig.TransformMapConfig()
     tmc.nativeSys = FOCAL_PLANE.getSysName()
-    tmc.transforms = {PUPIL.getSysName():tConfig}
+    tmc.transforms = {FIELD_ANGLE.getSysName():tConfig}
     camConfig.transformDict = tmc
 
     myCamera = makeCameraFromCatalogs(camConfig, ampTableDict)
