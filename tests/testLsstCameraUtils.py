@@ -99,7 +99,7 @@ class ChipNameTestCase(unittest.TestCase):
 
             # make sure we didn't accidentally get a lot of positions that don't land on chips
             self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None') >= 0)[0]),
-                                 n_obj/10)
+                                 n_obj/5)
 
     def test_chip_name_from_ra_dec_radians(self):
         """

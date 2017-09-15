@@ -351,6 +351,8 @@ class ChipNameTest(unittest.TestCase):
 
 class PixelCoordTest(unittest.TestCase):
 
+    longMessage = True
+
     @classmethod
     def setUpClass(cls):
         cameraDir = getPackageDir('sims_coordUtils')
@@ -488,7 +490,7 @@ class PixelCoordTest(unittest.TestCase):
                                   mjd=52350.0, rotSkyPos=27.0)
 
         nStars = 100
-        raList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + ra0
+        raList = ra0 - (self.rng.random_sample(nStars)-0.5)*500.0/3600.0
         decList = (self.rng.random_sample(nStars)-0.5)*500.0/3600.0 + dec0
 
         xpList, ypList = pupilCoordsFromRaDec(raList, decList, obs_metadata=obs, epoch=2000.0)
@@ -498,7 +500,7 @@ class PixelCoordTest(unittest.TestCase):
 
         chosen_chip = 'Det40'
         valid_pts = np.where(chipNameList == chosen_chip)[0]
-        self.assertGreater(len(valid_pts), 1)
+        self.assertGreater(len(valid_pts), 1, msg='list_of_chips: %s' % str(chipNameList[valid_pts]))
         xPixControl, yPixControl = pixelCoordsFromRaDec(raList[valid_pts], decList[valid_pts],
                                                         obs_metadata=obs,
                                                         includeDistortion=True,
