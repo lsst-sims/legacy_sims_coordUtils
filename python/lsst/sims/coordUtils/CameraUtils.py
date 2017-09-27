@@ -358,13 +358,13 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     chipNames = []
 
     if are_arrays:
-        cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
+        pupilPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
     else:
-        cameraPointList = [afwGeom.Point2D(xPupil, yPupil)]
+        pupilPointList = [afwGeom.Point2D(xPupil, yPupil)]
 
-    detList = camera.findDetectorsList(cameraPointList, FIELD_ANGLE)
+    detList = camera.findDetectorsList(pupilPointList, FIELD_ANGLE)
 
-    for pt, det in zip(cameraPointList, detList):
+    for pt, det in zip(pupilPointList, detList):
         if len(det) == 0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
             chipNames.append(None)
         else:
