@@ -603,8 +603,10 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
         if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
             chipNameList = [chipNameList]
 
+    fieldToFocal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
+
     if are_arrays:
-        det_sys_dict = {}
+        transform_dict = {}
         xPix = []
         yPix = []
         for name, x, y in zip(chipNameList, xPupil, yPupil):
@@ -612,14 +614,18 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
                 xPix.append(np.nan)
                 yPix.append(np.nan)
                 continue
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), FIELD_ANGLE)
-            if name not in det_sys_dict:
-                det = camera[name]
-                cs = det.makeCameraSys(pixelType)
-                det_sys_dict[name] = cs
-            detPoint = camera.transform(cp, det_sys_dict[name])
-            xPix.append(detPoint.getPoint().getX())
-            yPix.append(detPoint.getPoint().getY())
+
+            if name not in transform_dict:
+                transform_dict[name] = camera[name].getTransform(FOCAL_PLANE, pixelType)
+
+            focalToPixels = transform_dict[name]
+
+            focalPoint = fieldToFocal.applyForward(afwGeom.Point2D(x, y))
+            pixPoint = focalToPixels.applyForward(focalPoint)
+
+            xPix.append(pixPoint.getX())
+            yPix.append(pixPoint.getY())
+
         return np.array([xPix, yPix])
     else:
         if chipNameList[0] is None:
@@ -627,9 +633,10 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
 
         cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), FIELD_ANGLE)
         det = camera[chipNameList[0]]
-        cs = det.makeCameraSys(pixelType)
-        detPoint = camera.transform(cp, cs)
-        return np.array([detPoint.getPoint().getX(), detPoint.getPoint().getY()])
+        focalToPixels = det.getTransform(FOCAL_PLANE, pixelType)
+        focalPoint = fieldToFocal.applyForward(afwGeom.Point2D(xPupil, yPupil))
+        pixPoint = focalToPixels.applyForward(focalPoint)
+        return np.array([pixPoint.getX(), pixPoint.getY()])
 
 
 def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
