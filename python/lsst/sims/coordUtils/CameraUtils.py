@@ -631,7 +631,6 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
         if chipNameList[0] is None:
             return np.array([np.NaN, np.NaN])
 
-        cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), FIELD_ANGLE)
         det = camera[chipNameList[0]]
         focalToPixels = det.getTransform(FOCAL_PLANE, pixelType)
         focalPoint = fieldToFocal.applyForward(afwGeom.Point2D(xPupil, yPupil))
