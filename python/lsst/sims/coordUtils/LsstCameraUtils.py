@@ -93,7 +93,7 @@ def _build_lsst_pupil_coord_map():
     _lsst_pupil_coord_map['dp'] = extent
 
 
-def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=False):
+def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=False):
     """!Find the detectors that cover a list of points specified by x and y coordinates in any system
 
     This is based one afw.camerGeom.camera.findDetectorsList.  It has been optimized for the LSST
@@ -106,10 +106,10 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
        - it will stop looping through detectors one it has found one that is correct (the LSST
          camera does not allow an object to fall on more than one detector)
 
-    @param[in] cameraPointList  a list of cameraPoints in PUPIL/FIELD_ANGLE coordinates
+    @param[in] pupilPointList  a list of points in PUPIL/FIELD_ANGLE coordinates
 
     @param[in] detecorList is a list of lists.  Each row contains the detectors that should be searched
-    for the correspdonding cameraPoint
+    for the correspdonding pupilPoint
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
@@ -121,12 +121,12 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
     """
 
     # transform the points to the native coordinate system
-    nativePointList = lsst_camera()._transformSingleSysArray(cameraPointList, FIELD_ANGLE,
+    nativePointList = lsst_camera()._transformSingleSysArray(pupilPointList, FIELD_ANGLE,
                                                              lsst_camera()._nativeCameraSys)
 
     # initialize output and some caching lists
-    outputNameList = [None]*len(cameraPointList)
-    chip_has_found = np.array([-1]*len(cameraPointList))
+    outputNameList = [None]*len(pupilPointList)
+    chip_has_found = np.array([-1]*len(pupilPointList))
     checked_detectors = []
 
     # Figure out if any of these (RA, Dec) pairs could be
@@ -136,9 +136,9 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
     # See figure 2 of arXiv:1506.04839v2
     # (This might actually be a bug in obs_lsstSim
     # I opened DM-8075 on 25 October 2016 to investigate)
-    could_be_multiple = [False]*len(cameraPointList)
+    could_be_multiple = [False]*len(pupilPointList)
     if allow_multiple_chips:
-        for ipt in range(len(cameraPointList)):
+        for ipt in range(len(pupilPointList)):
             for det in detectorList[ipt]:
                 if det.getType() == WAVEFRONT:
                     could_be_multiple[ipt] = True
@@ -230,7 +230,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         xPupil = np.array([xPupil])
         yPupil = np.array([yPupil])
 
-    cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
+    pupilPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
 
     # Loop through every point being considered.  For each point, assemble a list of detectors
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
@@ -244,7 +244,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         local_valid = [lsst_camera()[_lsst_pupil_coord_map['name'][ii]] for ii in possible_dexes[0]]
         valid_detectors.append(local_valid)
 
-    nameList = _findDetectorsListLSST(cameraPointList, valid_detectors,
+    nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
                                       allow_multiple_chips=allow_multiple_chips)
 
     return nameList
