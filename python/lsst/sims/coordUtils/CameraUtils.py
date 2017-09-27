@@ -682,12 +682,11 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     else:
         pixelType = TAN_PIXELS
 
-    pixelSystemDict = {}
-    pupilSystemDict = {}
+    pixel_to_focal_dict = {}
+    focal_to_field = camera.getTransformMap().getTransform(FOCAL_PLANE, FIELD_ANGLE)
     for name in chipNameList:
-        if name not in pixelSystemDict and name is not None and name != 'None':
-                pixelSystemDict[name] = camera[name].makeCameraSys(pixelType)
-                pupilSystemDict[name] = camera[name].makeCameraSys(FIELD_ANGLE)
+        if name not in pixel_to_focal_dict and name is not None and name != 'None':
+            pixel_to_focal_dict[name] = camera[name].getTransform(pixelType, FOCAL_PLANE)
 
     if are_arrays:
         xPupilList = []
@@ -698,8 +697,8 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
                 xPupilList.append(np.NaN)
                 yPupilList.append(np.NaN)
             else:
-                pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xx, yy), pixelSystemDict[name])
-                pupilPoint = camera.transform(pixPoint, pupilSystemDict[name]).getPoint()
+                focalPoint = pixel_to_focal_dict[name].applyForward(afwGeom.Point2D(xx, yy))
+                pupilPoint = focal_to_field.applyForward(focalPoint)
                 xPupilList.append(pupilPoint.getX())
                 yPupilList.append(pupilPoint.getY())
 
@@ -712,8 +711,8 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     if chipNameList[0] is None or chipNameList[0] == 'None':
         return np.array([np.NaN, np.NaN])
 
-    pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xPix, yPix), pixelSystemDict[chipNameList[0]])
-    pupilPoint = camera.transform(pixPoint, pupilSystemDict[chipNameList[0]]).getPoint()
+    focalPoint = pixel_to_focal_dict[chipNameList[0]].applyForward(afwGeom.Point2D(xPix, yPix))
+    pupilPoint = focal_to_field.applyForward(focalPoint)
     return np.array([pupilPoint.getX(), pupilPoint.getY()])
 
 
