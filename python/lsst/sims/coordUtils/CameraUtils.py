@@ -974,18 +974,18 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     if camera is None:
         raise RuntimeError("You cannot calculate focal plane coordinates without specifying a camera")
 
+    field_to_focal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
+
     if are_arrays:
         xPix = []
         yPix = []
         for x, y in zip(xPupil, yPupil):
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), FIELD_ANGLE)
-            fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
+            fpPoint = field_to_focal.applyForward(afwGeom.Point2D(x, y))
             xPix.append(fpPoint.getX())
             yPix.append(fpPoint.getY())
 
         return np.array([xPix, yPix])
 
     # if not are_arrays
-    cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), FIELD_ANGLE)
-    fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
+    fpPoint = field_to_focal.applyForward(afwGeom.Point2D(xPupil, yPupil))
     return np.array([fpPoint.getX(), fpPoint.getY()])
