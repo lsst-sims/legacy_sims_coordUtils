@@ -166,10 +166,9 @@ def _findDetectorsListLSST(cameraPointList, detectorList, allow_multiple_chips=F
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
                     if len(valid_pt_dexes) > 0:
                         valid_pt_list = [nativePointList[ii] for ii in valid_pt_dexes]
-                        coordMap = detector.getTransformMap()
-                        cameraSys = detector.makeCameraSys(PIXELS)
-                        detectorPointList = coordMap.transform(valid_pt_list, lsst_camera()._nativeCameraSys,
-                                                               cameraSys)
+                        transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
+                        detectorPointList = transform.applyForward(valid_pt_list)
+
                         box = afwGeom.Box2D(detector.getBBox())
                         for ix, pt in zip(valid_pt_dexes, detectorPointList):
                             if box.contains(pt):
