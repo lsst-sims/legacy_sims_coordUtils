@@ -358,13 +358,13 @@ def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=Fa
     chipNames = []
 
     if are_arrays:
-        cameraPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
+        pupilPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
     else:
-        cameraPointList = [afwGeom.Point2D(xPupil, yPupil)]
+        pupilPointList = [afwGeom.Point2D(xPupil, yPupil)]
 
-    detList = camera.findDetectorsList(cameraPointList, FIELD_ANGLE)
+    detList = camera.findDetectorsList(pupilPointList, FIELD_ANGLE)
 
-    for pt, det in zip(cameraPointList, detList):
+    for pt, det in zip(pupilPointList, detList):
         if len(det) == 0 or np.isnan(pt.getX()) or np.isnan(pt.getY()):
             chipNames.append(None)
         else:
@@ -603,8 +603,10 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
         if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
             chipNameList = [chipNameList]
 
+    fieldToFocal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
+
     if are_arrays:
-        det_sys_dict = {}
+        transform_dict = {}
         xPix = []
         yPix = []
         for name, x, y in zip(chipNameList, xPupil, yPupil):
@@ -612,24 +614,28 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
                 xPix.append(np.nan)
                 yPix.append(np.nan)
                 continue
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), FIELD_ANGLE)
-            if name not in det_sys_dict:
-                det = camera[name]
-                cs = det.makeCameraSys(pixelType)
-                det_sys_dict[name] = cs
-            detPoint = camera.transform(cp, det_sys_dict[name])
-            xPix.append(detPoint.getPoint().getX())
-            yPix.append(detPoint.getPoint().getY())
+
+            if name not in transform_dict:
+                transform_dict[name] = camera[name].getTransform(FOCAL_PLANE, pixelType)
+
+            focalToPixels = transform_dict[name]
+
+            focalPoint = fieldToFocal.applyForward(afwGeom.Point2D(x, y))
+            pixPoint = focalToPixels.applyForward(focalPoint)
+
+            xPix.append(pixPoint.getX())
+            yPix.append(pixPoint.getY())
+
         return np.array([xPix, yPix])
     else:
         if chipNameList[0] is None:
             return np.array([np.NaN, np.NaN])
 
-        cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), FIELD_ANGLE)
         det = camera[chipNameList[0]]
-        cs = det.makeCameraSys(pixelType)
-        detPoint = camera.transform(cp, cs)
-        return np.array([detPoint.getPoint().getX(), detPoint.getPoint().getY()])
+        focalToPixels = det.getTransform(FOCAL_PLANE, pixelType)
+        focalPoint = fieldToFocal.applyForward(afwGeom.Point2D(xPupil, yPupil))
+        pixPoint = focalToPixels.applyForward(focalPoint)
+        return np.array([pixPoint.getX(), pixPoint.getY()])
 
 
 def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
@@ -675,12 +681,11 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     else:
         pixelType = TAN_PIXELS
 
-    pixelSystemDict = {}
-    pupilSystemDict = {}
+    pixel_to_focal_dict = {}
+    focal_to_field = camera.getTransformMap().getTransform(FOCAL_PLANE, FIELD_ANGLE)
     for name in chipNameList:
-        if name not in pixelSystemDict and name is not None and name != 'None':
-                pixelSystemDict[name] = camera[name].makeCameraSys(pixelType)
-                pupilSystemDict[name] = camera[name].makeCameraSys(FIELD_ANGLE)
+        if name not in pixel_to_focal_dict and name is not None and name != 'None':
+            pixel_to_focal_dict[name] = camera[name].getTransform(pixelType, FOCAL_PLANE)
 
     if are_arrays:
         xPupilList = []
@@ -691,8 +696,8 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
                 xPupilList.append(np.NaN)
                 yPupilList.append(np.NaN)
             else:
-                pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xx, yy), pixelSystemDict[name])
-                pupilPoint = camera.transform(pixPoint, pupilSystemDict[name]).getPoint()
+                focalPoint = pixel_to_focal_dict[name].applyForward(afwGeom.Point2D(xx, yy))
+                pupilPoint = focal_to_field.applyForward(focalPoint)
                 xPupilList.append(pupilPoint.getX())
                 yPupilList.append(pupilPoint.getY())
 
@@ -705,8 +710,8 @@ def pupilCoordsFromPixelCoords(xPix, yPix, chipName, camera=None,
     if chipNameList[0] is None or chipNameList[0] == 'None':
         return np.array([np.NaN, np.NaN])
 
-    pixPoint = camera.makeCameraPoint(afwGeom.Point2D(xPix, yPix), pixelSystemDict[chipNameList[0]])
-    pupilPoint = camera.transform(pixPoint, pupilSystemDict[chipNameList[0]]).getPoint()
+    focalPoint = pixel_to_focal_dict[chipNameList[0]].applyForward(afwGeom.Point2D(xPix, yPix))
+    pupilPoint = focal_to_field.applyForward(focalPoint)
     return np.array([pupilPoint.getX(), pupilPoint.getY()])
 
 
@@ -968,18 +973,18 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     if camera is None:
         raise RuntimeError("You cannot calculate focal plane coordinates without specifying a camera")
 
+    field_to_focal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
+
     if are_arrays:
         xPix = []
         yPix = []
         for x, y in zip(xPupil, yPupil):
-            cp = camera.makeCameraPoint(afwGeom.Point2D(x, y), FIELD_ANGLE)
-            fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
+            fpPoint = field_to_focal.applyForward(afwGeom.Point2D(x, y))
             xPix.append(fpPoint.getX())
             yPix.append(fpPoint.getY())
 
         return np.array([xPix, yPix])
 
     # if not are_arrays
-    cp = camera.makeCameraPoint(afwGeom.Point2D(xPupil, yPupil), FIELD_ANGLE)
-    fpPoint = camera.transform(cp, FOCAL_PLANE).getPoint()
+    fpPoint = field_to_focal.applyForward(afwGeom.Point2D(xPupil, yPupil))
     return np.array([fpPoint.getX(), fpPoint.getY()])
