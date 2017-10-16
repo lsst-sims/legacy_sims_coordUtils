@@ -3,6 +3,7 @@ from builtins import zip
 from builtins import str
 from builtins import range
 import numpy as np
+from scipy.spatial import KDTree
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import FIELD_ANGLE, PIXELS, WAVEFRONT
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
@@ -12,6 +13,7 @@ from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
+import time
 
 __all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
@@ -216,8 +218,18 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     """
 
-    if not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map'):
-        chipNameFromPupilCoordsLSST._pupil_map = _build_lsst_pupil_coord_map()
+    t_start = time.time()
+    t_before_init = t_start
+
+    if not hasattr(chipNameFromPupilCoordsLSST, '_pupil_tree'):
+        pupil_map = _build_lsst_pupil_coord_map()
+        name_arr = []
+        tree_params = np.array([pupil_map['xx'], pupil_map['yy']]).transpose()
+        for name in pupil_map['name']:
+            name_arr.append(name)
+        chipNameFromPupilCoordsLSST.name_arr = np.array(name_arr)
+        chipNameFromPupilCoordsLSST._pupil_tree = KDTree(tree_params, leafsize=1)
+        chipNameFromPupilCoordsLSST._chip_radii = pupil_map['dp']
 
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
@@ -226,22 +238,30 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         yPupil = np.array([yPupil])
 
     pupilPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
+    t_init = time.time()-t_before_init
 
     # Loop through every point being considered.  For each point, assemble a list of detectors
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
     # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
     # which will be passed to _findDetectorsListLSST()
-    valid_detectors = []
-    for xx, yy in zip(xPupil, yPupil):
-        possible_dexes = np.where(np.sqrt(np.power(xx-chipNameFromPupilCoordsLSST._pupil_map['xx'], 2) +
-                                          np.power(yy-chipNameFromPupilCoordsLSST._pupil_map['yy'], 2))/
-                                          chipNameFromPupilCoordsLSST._pupil_map['dp'] < 1.1)
 
-        local_valid = [lsst_camera()[chipNameFromPupilCoordsLSST._pupil_map['name'][ii]] for ii in possible_dexes[0]]
-        valid_detectors.append(local_valid)
+    t_before_guess = time.time()
+    query_params = np.array([xPupil, yPupil]).transpose()
+    closest_dist, closest_dex = chipNameFromPupilCoordsLSST._pupil_tree.query(query_params, k=3)
+    valid_detectors = []
+    for i_pt in range(len(xPupil)):
+        if closest_dist[i_pt][0] < 1.1*chipNameFromPupilCoordsLSST._chip_radii[closest_dex[i_pt][0]]:
+            valid_detectors.append([lsst_camera()[chipNameFromPupilCoordsLSST.name_arr[ii]] for ii in closest_dex[i_pt]])
+        else:
+            valid_detectors.append([])
+
+    t_guess = time.time() - t_before_guess
 
     nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
                                       allow_multiple_chips=allow_multiple_chips)
+
+    print('chipNameFromPupil took %.2e percapita %.2e\nt_init %.2e\nt_guess %.2e' %
+    (time.time()-t_start,(time.time()-t_start)/float(len(xPupil)),t_init,t_guess))
 
     return nameList
 
