@@ -17,8 +17,6 @@ __all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
 
-_lsst_pupil_coord_map = None
-
 
 def lsst_camera():
     """
@@ -32,16 +30,13 @@ def lsst_camera():
 
 def _build_lsst_pupil_coord_map():
     """
-    This method populates the global variable _lsst_pupil_coord_map
+    Build a map of pupil coordinates on the LSST focal plane.
+    Returns _lsst_pupil_coord_map, which is a dict.
     _lsst_pupil_coord_map['name'] contains a list of the names of each chip in the lsst camera
     _lsst_pupil_coord_map['xx'] contains the x pupil coordinate of the center of each chip
     _lsst_pupil_coord_map['yy'] contains the y pupil coordinate of the center of each chip
     _lsst_pupil_coord_map['dp'] contains the radius (in pupil coordinates) of the circle containing each chip
     """
-    global _lsst_pupil_coord_map
-    if _lsst_pupil_coord_map is not None:
-        raise RuntimeError("Calling _build_pupil_coord_map(), "
-                           "but it is already built.")
 
     name_list = []
     x_pix_list = []
@@ -86,11 +81,12 @@ def _build_lsst_pupil_coord_map():
 
     final_name = np.array(final_name)
 
-    _lsst_pupil_coord_map = {}
-    _lsst_pupil_coord_map['name'] = final_name
-    _lsst_pupil_coord_map['xx'] = center_x
-    _lsst_pupil_coord_map['yy'] = center_y
-    _lsst_pupil_coord_map['dp'] = extent
+    lsst_pupil_coord_map = {}
+    lsst_pupil_coord_map['name'] = final_name
+    lsst_pupil_coord_map['xx'] = center_x
+    lsst_pupil_coord_map['yy'] = center_y
+    lsst_pupil_coord_map['dp'] = extent
+    return lsst_pupil_coord_map
 
 
 def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=False):
@@ -220,9 +216,8 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     """
 
-    global _lsst_pupil_coord_map
-    if _lsst_pupil_coord_map is None:
-        _build_lsst_pupil_coord_map()
+    if not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map'):
+        chipNameFromPupilCoordsLSST._pupil_map = _build_lsst_pupil_coord_map()
 
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
@@ -238,10 +233,11 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # which will be passed to _findDetectorsListLSST()
     valid_detectors = []
     for xx, yy in zip(xPupil, yPupil):
-        possible_dexes = np.where(np.sqrt(np.power(xx-_lsst_pupil_coord_map['xx'], 2) +
-                                          np.power(yy-_lsst_pupil_coord_map['yy'], 2))/_lsst_pupil_coord_map['dp'] < 1.1)
+        possible_dexes = np.where(np.sqrt(np.power(xx-chipNameFromPupilCoordsLSST._pupil_map['xx'], 2) +
+                                          np.power(yy-chipNameFromPupilCoordsLSST._pupil_map['yy'], 2))/
+                                          chipNameFromPupilCoordsLSST._pupil_map['dp'] < 1.1)
 
-        local_valid = [lsst_camera()[_lsst_pupil_coord_map['name'][ii]] for ii in possible_dexes[0]]
+        local_valid = [lsst_camera()[chipNameFromPupilCoordsLSST._pupil_map['name'][ii]] for ii in possible_dexes[0]]
         valid_detectors.append(local_valid)
 
     nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
