@@ -148,6 +148,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
                 if det.getType() == WAVEFRONT:
                     could_be_multiple[ipt] = True
 
+    update_unfound = True
+
     # loop over (RA, Dec) pairs
     for ipt, nativePoint in enumerate(nativePointList):
         if chip_has_found[ipt] < 0:  # i.e. if we have not yet found this (RA, Dec) pair
@@ -160,7 +162,10 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
                     # in order to avoid constantly re-instantiating the same afwCameraGeom detector,
                     # we will now find all of the (RA, Dec) pairs that could be on the present
                     # chip and test them.
-                    unfound_pts = np.where(chip_has_found < 0)[0]
+                    if update_unfound:
+                        unfound_pts = np.where(chip_has_found < 0)[0]
+                        update_unfound = False
+
                     if len(unfound_pts) == 0:
                         # we have already found all of the (RA, Dec) pairs
                         for ix, name in enumerate(outputNameList):
@@ -184,6 +189,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
                                     # You can set chip_has_found[ix] to unity.
                                     outputNameList[ix] = detector.getName()
                                     chip_has_found[ix] = 1
+                                    update_unfound = True
                                 else:
                                     # Since this (RA, Dec) pair has been makred could_be_multiple,
                                     # finding this (RA, Dec) pair on the chip does not remove the
