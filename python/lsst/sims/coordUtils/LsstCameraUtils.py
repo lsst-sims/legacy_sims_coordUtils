@@ -246,13 +246,11 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     valid_detectors = []
     x_cam = chipNameFromPupilCoordsLSST._pupil_map['xx']
     y_cam = chipNameFromPupilCoordsLSST._pupil_map['yy']
-    rr_cam = chipNameFromPupilCoordsLSST._pupil_map['dp']
+    rrsq_cam = np.power(chipNameFromPupilCoordsLSST._pupil_map['dp'],2)
+    limit = 1.1**2
     for xx, yy in zip(xPupil, yPupil):
         t_before_where = time.time()
-        possible_dexes = np.where(np.logical_and(np.abs(xx-x_cam)<1.1*rr_cam,
-                                  np.logical_and(np.abs(yy-y_cam)<1.1*rr_cam,
-                                                 np.sqrt(np.power(xx-x_cam, 2) +
-                                                 np.power(yy-y_cam, 2))/rr_cam < 1.1)))
+        possible_dexes = np.where((np.power(xx-x_cam, 2) + np.power(yy-y_cam, 2))/rrsq_cam < limit)
         t_where += time.time()-t_before_where
 
         local_valid = chipNameFromPupilCoordsLSST._detector_arr[possible_dexes]
