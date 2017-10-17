@@ -4,7 +4,8 @@ from builtins import str
 from builtins import range
 import numpy as np
 import lsst.afw.geom as afwGeom
-from lsst.afw.cameraGeom import FIELD_ANGLE, PIXELS, WAVEFRONT
+from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
+from lsst.afw.geom import Box2D
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
@@ -253,6 +254,16 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
         chipNameFromPupilCoordsLSST._detector_arr = detector_arr
 
+        # build a Box2D that contains all of the detectors in the camera
+        focal_to_field = camera.getTransformMap().getTransform(FOCAL_PLANE, FIELD_ANGLE)
+        focal_bbox = camera.getFpBBox()
+        focal_corners = focal_bbox.getCorners()
+        pupil_corners = focal_to_field.applyForward(focal_corners)
+        camera_bbox = Box2D()
+        for cc in pupil_corners:
+            camera_bbox.include(cc)
+        chipNameFromPupilCoordsLSST._camera_bbox = camera_bbox
+
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
     if not are_arrays:
@@ -260,6 +271,13 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         yPupil = np.array([yPupil])
 
     pupilPointList = [afwGeom.Point2D(x, y) for x, y in zip(xPupil, yPupil)]
+
+    # filter out those points that are not inside the
+    # camera-containing Box2D
+    is_okay = np.array([False]*len(pupilPointList))
+    for i_pp, pp in enumerate(pupilPointList):
+        if chipNameFromPupilCoordsLSST._camera_bbox.contains(pp):
+            is_okay[i_pp] = True
 
     # Loop through every point being considered.  For each point, assemble a list of detectors
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
@@ -271,7 +289,11 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     x_cam = chipNameFromPupilCoordsLSST._pupil_map['xx']
     y_cam = chipNameFromPupilCoordsLSST._pupil_map['yy']
     rrsq_lim = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
-    for xx, yy in zip(xPupil, yPupil):
+    for i_pp, (xx, yy) in enumerate(zip(xPupil, yPupil)):
+        if not is_okay[i_pp]:
+            valid_detectors.append([])
+            continue
+
         t_before_where = time.time()
         possible_dexes = np.where(((xx-x_cam)**2 + (yy-y_cam)**2) < rrsq_lim)
         t_where += time.time()-t_before_where
