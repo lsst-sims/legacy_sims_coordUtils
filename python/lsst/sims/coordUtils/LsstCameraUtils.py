@@ -150,6 +150,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
 
     update_unfound = True
 
+    t_assemble_list = 0.0
+
     # loop over (RA, Dec) pairs
     for ipt, nativePoint in enumerate(nativePointList):
         if chip_has_found[ipt] < 0:  # i.e. if we have not yet found this (RA, Dec) pair
@@ -173,7 +175,9 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
                                 outputNameList[ix] = str(name)
                         return np.array(outputNameList)
 
+                    t_before_assemble = time.time()
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
+                    t_assemble_list += time.time()-t_before_assemble
                     if len(valid_pt_dexes) > 0:
                         valid_pt_list = nativePointList[valid_pt_dexes]
                         transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
@@ -206,6 +210,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
     for ix, name in enumerate(outputNameList):
         if isinstance(name, list):
             outputNameList[ix] = str(name)
+
+    print('t_assemble %.2e' % t_assemble_list)
 
     return np.array(outputNameList)
 
