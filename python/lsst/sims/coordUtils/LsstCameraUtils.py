@@ -250,7 +250,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     limit = 1.1**2
     for xx, yy in zip(xPupil, yPupil):
         t_before_where = time.time()
-        possible_dexes = np.where((np.power(xx-x_cam, 2) + np.power(yy-y_cam, 2))/rrsq_cam < limit)
+        possible_dexes = np.where(((xx-x_cam)**2 + (yy-y_cam)**2)/rrsq_cam < limit)
         t_where += time.time()-t_before_where
 
         local_valid = chipNameFromPupilCoordsLSST._detector_arr[possible_dexes]
