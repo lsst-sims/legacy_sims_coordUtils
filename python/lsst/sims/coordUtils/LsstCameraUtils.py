@@ -216,7 +216,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
         if isinstance(name, list):
             outputNameList[ix] = str(name)
 
-    print('t_assemble %.2e' % t_assemble_list)
+    # print('t_assemble %.2e' % t_assemble_list)
 
     return np.array(outputNameList)
 
@@ -305,11 +305,11 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
                                       allow_multiple_chips=allow_multiple_chips)
     t_find = time.time()-t_before_find
 
-    print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
-    print('t_guess %.2e' % t_guess)
-    print('t_where %.2e' % t_where)
-    print('t_find %.2e' % t_find)
-    print('\n')
+    # print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
+    # print('t_guess %.2e' % t_guess)
+    # print('t_where %.2e' % t_where)
+    # print('t_find %.2e' % t_find)
+    # print('\n')
     return nameList
 
 
