@@ -158,8 +158,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
             for detector in detectorList[ipt]:
 
                 # check that we have not already considered this detector
-                if detector.getName() not in checked_detectors:
-                    checked_detectors.append(detector.getName())
+                if detector not in checked_detectors:
+                    checked_detectors.append(detector)
 
                     # in order to avoid constantly re-instantiating the same afwCameraGeom detector,
                     # we will now find all of the (RA, Dec) pairs that could be on the present
