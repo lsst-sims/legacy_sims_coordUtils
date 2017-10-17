@@ -90,7 +90,7 @@ def _build_lsst_pupil_coord_map():
     return lsst_pupil_coord_map
 
 
-def _findDetectorsListLSST(pupilPointList, detectorList, detector_id_list, allow_multiple_chips=False):
+def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=False):
     """!Find the detectors that cover a list of points specified by x and y coordinates in any system
 
     This is based one afw.camerGeom.camera.findDetectorsList.  It has been optimized for the LSST
@@ -155,7 +155,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, detector_id_list, allow
     # loop over (RA, Dec) pairs
     for ipt, nativePoint in enumerate(nativePointList):
         if chip_has_found[ipt] < 0:  # i.e. if we have not yet found this (RA, Dec) pair
-            for detector, d_id in zip(detectorList[ipt], detector_id_list[ipt]):
+            for detector in detectorList[ipt]:
 
                 # check that we have not already considered this detector
                 if detector.getName() not in checked_detectors:
@@ -176,7 +176,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, detector_id_list, allow
                         return np.array(outputNameList)
 
                     t_before_assemble = time.time()
-                    valid_pt_dexes = np.array([ii for ii in unfound_pts if d_id in detector_id_list[ii]])
+                    valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
                     t_assemble_list += time.time()-t_before_assemble
                     if len(valid_pt_dexes) > 0:
                         valid_pt_list = nativePointList[valid_pt_dexes]
@@ -244,13 +244,10 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         chipNameFromPupilCoordsLSST._pupil_map = pupil_map
         camera = lsst_camera()
         detector_arr = np.zeros(len(pupil_map['name']), dtype=object)
-        detector_id_arr = np.zeros(len(pupil_map['name']), dtype=long)
         for ii in range(len(pupil_map['name'])):
             detector_arr[ii] = camera[pupil_map['name'][ii]]
-            detector_id_arr[ii] = detector_arr[ii].getId()
 
         chipNameFromPupilCoordsLSST._detector_arr = detector_arr
-        chipNameFromPupilCoordsLSST._detector_id_arr = detector_id_arr
 
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
@@ -267,7 +264,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     t_before_guess = time.time()
     t_where = 0.0
     valid_detectors = []
-    valid_detector_id = []
     x_cam = chipNameFromPupilCoordsLSST._pupil_map['xx']
     y_cam = chipNameFromPupilCoordsLSST._pupil_map['yy']
     rrsq_lim = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
@@ -278,14 +274,10 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
         local_valid = chipNameFromPupilCoordsLSST._detector_arr[possible_dexes]
         valid_detectors.append(list(local_valid))
-
-        local_valid_id = chipNameFromPupilCoordsLSST._detector_id_arr[possible_dexes]
-        valid_detector_id.append(local_valid_id)
-
     t_guess = time.time()-t_before_guess
 
     t_before_find = time.time()
-    nameList = _findDetectorsListLSST(pupilPointList, valid_detectors, valid_detector_id,
+    nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
                                       allow_multiple_chips=allow_multiple_chips)
     t_find = time.time()-t_before_find
 
