@@ -242,7 +242,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
     # which will be passed to _findDetectorsListLSST()
     valid_detectors = []
-    camera = lsst_camera()
     for xx, yy in zip(xPupil, yPupil):
         possible_dexes = np.where(np.sqrt(np.power(xx-chipNameFromPupilCoordsLSST._pupil_map['xx'], 2) +
                                           np.power(yy-chipNameFromPupilCoordsLSST._pupil_map['yy'], 2))/
