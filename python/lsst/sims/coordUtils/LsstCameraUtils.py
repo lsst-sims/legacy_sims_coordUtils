@@ -256,12 +256,15 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         valid_detectors.append(list(local_valid))
     t_guess = time.time()-t_before_guess
 
+    t_before_find = time.time()
     nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
                                       allow_multiple_chips=allow_multiple_chips)
+    t_find = time.time()-t_before_find
 
     print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
     print('t_guess %.2e' % t_guess)
     print('t_where %.2e' % t_where)
+    print('t_find %.2e' % t_find)
     print('\n')
     return nameList
 
