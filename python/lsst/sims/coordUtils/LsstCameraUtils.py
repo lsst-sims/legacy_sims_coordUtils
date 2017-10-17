@@ -274,10 +274,10 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     # filter out those points that are not inside the
     # camera-containing Box2D
-    is_okay = np.array([False]*len(pupilPointList))
+    is_on_camera = np.array([False]*len(pupilPointList))
     for i_pp, pp in enumerate(pupilPointList):
         if chipNameFromPupilCoordsLSST._camera_bbox.contains(pp):
-            is_okay[i_pp] = True
+            is_on_camera[i_pp] = True
 
     # Loop through every point being considered.  For each point, assemble a list of detectors
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
@@ -290,7 +290,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     y_cam = chipNameFromPupilCoordsLSST._pupil_map['yy']
     rrsq_lim = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
     for i_pp, (xx, yy) in enumerate(zip(xPupil, yPupil)):
-        if not is_okay[i_pp]:
+        if not is_on_camera[i_pp]:
             valid_detectors.append([])
             continue
 
