@@ -976,14 +976,12 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     field_to_focal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
 
     if are_arrays:
-        xPix = []
-        yPix = []
-        for x, y in zip(xPupil, yPupil):
-            fpPoint = field_to_focal.applyForward(afwGeom.Point2D(x, y))
-            xPix.append(fpPoint.getX())
-            yPix.append(fpPoint.getY())
+        pupil_point_list = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
+        focal_point_list = field_to_focal.applyForward(pupil_point_list)
+        xFocal = np.array([pp.getX() for pp in focal_point_list])
+        yFocal = np.array([pp.getY() for pp in focal_point_list])
 
-        return np.array([xPix, yPix])
+        return np.array([xFocal, yFocal])
 
     # if not are_arrays
     fpPoint = field_to_focal.applyForward(afwGeom.Point2D(xPupil, yPupil))
