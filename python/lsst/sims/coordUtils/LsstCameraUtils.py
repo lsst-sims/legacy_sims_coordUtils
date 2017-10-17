@@ -241,19 +241,27 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
     # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
     # which will be passed to _findDetectorsListLSST()
+    t_before_guess = time.time()
+    t_where = 0.0
     valid_detectors = []
     for xx, yy in zip(xPupil, yPupil):
+        t_before_where = time.time()
         possible_dexes = np.where(np.sqrt(np.power(xx-chipNameFromPupilCoordsLSST._pupil_map['xx'], 2) +
                                           np.power(yy-chipNameFromPupilCoordsLSST._pupil_map['yy'], 2))/
                                           chipNameFromPupilCoordsLSST._pupil_map['dp'] < 1.1)
+        t_where += time.time()-t_before_where
 
         local_valid = chipNameFromPupilCoordsLSST._detector_arr[possible_dexes]
         valid_detectors.append(list(local_valid))
+    t_guess = time.time()-t_before_guess
 
     nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
                                       allow_multiple_chips=allow_multiple_chips)
 
-    print('chipNameFromPupil %.2e percapita %.2e\n' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
+    print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
+    print('t_guess %.2e' % t_guess)
+    print('t_where %.2e' % t_where)
+    print('\n')
     return nameList
 
 
