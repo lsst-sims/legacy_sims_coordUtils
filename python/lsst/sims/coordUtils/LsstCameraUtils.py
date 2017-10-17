@@ -132,6 +132,10 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
     # initialize output and some caching lists
     outputNameList = [None]*len(pupilPointList)
     chip_has_found = np.array([-1]*len(pupilPointList))
+    for i_pt, det_list in enumerate(detectorList):
+        if len(det_list) == 0:
+            chip_has_found[i_pt] = 1  # no need to search chips with no candidates
+
     checked_detectors = []
 
     # Figure out if any of these (RA, Dec) pairs could be
