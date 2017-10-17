@@ -118,8 +118,16 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
     """
 
     # transform the points to the native coordinate system
-    nativePointList = lsst_camera()._transformSingleSysArray(pupilPointList, FIELD_ANGLE,
-                                                             lsst_camera()._nativeCameraSys)
+    #
+    # The conversion to a numpy array looks a little clunky.
+    # The problem, if you do the naive thing (nativePointList = np.array(lsst_camera().....),
+    # the conversion to a numpy array gets passed down to the contents of nativePointList
+    # and they end up in a form that the afwCameraGeom code does not know how to handle
+    nativePointList = np.zeros(len(pupilPointList), dtype=object)
+    nativePointList_raw = lsst_camera()._transformSingleSysArray(pupilPointList, FIELD_ANGLE,
+                                                                 lsst_camera()._nativeCameraSys)
+    for i_nn in range(len(nativePointList_raw)):
+        nativePointList[i_nn] = nativePointList_raw[i_nn]
 
     # initialize output and some caching lists
     outputNameList = [None]*len(pupilPointList)
@@ -162,7 +170,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
 
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
                     if len(valid_pt_dexes) > 0:
-                        valid_pt_list = [nativePointList[ii] for ii in valid_pt_dexes]
+                        valid_pt_list = nativePointList[valid_pt_dexes]
                         transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
                         detectorPointList = transform.applyForward(valid_pt_list)
 
