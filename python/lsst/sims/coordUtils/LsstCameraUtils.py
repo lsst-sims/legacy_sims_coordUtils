@@ -241,19 +241,34 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
     # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
     # which will be passed to _findDetectorsListLSST()
+    t_before_guess = time.time()
     valid_detectors = []
-    for xx, yy in zip(xPupil, yPupil):
-        possible_dexes = np.where(np.sqrt(np.power(xx-chipNameFromPupilCoordsLSST._pupil_map['xx'], 2) +
-                                          np.power(yy-chipNameFromPupilCoordsLSST._pupil_map['yy'], 2))/
-                                          chipNameFromPupilCoordsLSST._pupil_map['dp'] < 1.1)
+    x_cam = chipNameFromPupilCoordsLSST._pupil_map['xx']
+    y_cam = chipNameFromPupilCoordsLSST._pupil_map['yy']
+    rrsq = np.power(chipNameFromPupilCoordsLSST._pupil_map['dp'],2)
+    distance_arr = np.sqrt([(np.power(x_in-x_cam,2)+np.power(y_in-y_cam,2))/rrsq
+                            for (x_in, y_in) in zip(xPupil, yPupil)])
 
-        local_valid = chipNameFromPupilCoordsLSST._detector_arr[possible_dexes]
-        valid_detectors.append(list(local_valid))
+    possible_dexes = np.where(distance_arr<1.1)
+    t_where = time.time()-t_before_guess
+    pt_dexes = possible_dexes[0]
+    chip_dexes = possible_dexes[1]
+    for i_pt in range(len(xPupil)):
+        if i_pt not in pt_dexes:
+            valid_detectors.append([])
+        else:
+            valid_dexes = np.where(pt_dexes==i_pt)
+            local_valid = chipNameFromPupilCoordsLSST._detector_arr[chip_dexes[valid_dexes]]
+            valid_detectors.append(list(local_valid))
+    t_guess = time.time()-t_before_guess
 
     nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
                                       allow_multiple_chips=allow_multiple_chips)
 
-    print('chipNameFromPupil %.2e percapita %.2e\n' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
+    print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
+    print('t_guess %.2e' % t_guess)
+    print('t_where %.2e' % t_where)
+    print('\n')
     return nameList
 
 
