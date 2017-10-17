@@ -217,7 +217,9 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     """
     t_start = time.time()
-    if not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map'):
+    if (not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map') or
+    not hasattr(chipNameFromPupilCoordsLSST, '_detector_arr') or
+    len(chipNameFromPupilCoordsLSST._detector_arr) == 0):
         pupil_map = _build_lsst_pupil_coord_map()
         chipNameFromPupilCoordsLSST._pupil_map = pupil_map
         camera = lsst_camera()
