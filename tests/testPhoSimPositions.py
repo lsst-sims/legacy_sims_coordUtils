@@ -13,6 +13,7 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
+from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.coordUtils import getCornerPixels
 from lsst.sims.utils import observedFromICRS
 from lsst.sims.utils import arcsecFromRadians, angularSeparation
@@ -42,6 +43,8 @@ class PhoSim_position_test_case(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
+            del chipNameFromPupilCoordsLSST._detector_arr
         del lsst_camera._lsst_camera
 
     def test_chipName(self):
