@@ -112,7 +112,7 @@ class PhoSim_position_test_case(unittest.TestCase):
             d_y_phosim = y_center_dm - self.data['xpix'][ix]
             d_x_phosim = self.data['ypix'][ix] - x_center_dm
 
-            # displacement form center of DM coordinates as calculated
+            # displacement from center of DM coordinates as calculated
             # by DM
             d_x_dm = xpix - x_center_dm
             d_y_dm = ypix - y_center_dm
