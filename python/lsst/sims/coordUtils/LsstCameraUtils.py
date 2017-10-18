@@ -91,7 +91,8 @@ def _build_lsst_pupil_coord_map():
     return lsst_pupil_coord_map
 
 
-def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=False):
+def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, impossible_points,
+                           allow_multiple_chips=False):
     """!Find the detectors that cover a list of points specified by x and y coordinates in any system
 
     This is based one afw.camerGeom.camera.findDetectorsList.  It has been optimized for the LSST
@@ -133,11 +134,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
     # initialize output and some caching lists
     outputNameList = [None]*len(pupilPointList)
     chip_has_found = np.array([-1]*len(pupilPointList))
-    for i_pt, det_list in enumerate(detectorList):
-        if len(det_list) == 0:
-            chip_has_found[i_pt] = 1  # no need to search chips with no candidates
-
-    checked_detectors = []
+    chip_has_found[impossible_points] = 1 # no need to search chips with no candidates
 
     # Figure out if any of these (RA, Dec) pairs could be
     # on more than one chip.  This is possible on the
@@ -156,59 +153,54 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
     update_unfound = True
 
     # t_assemble_list = 0.0
-
     # loop over (RA, Dec) pairs
-    for ipt, nativePoint in enumerate(nativePointList):
-        if chip_has_found[ipt] < 0:  # i.e. if we have not yet found this (RA, Dec) pair
-            for detector in detectorList[ipt]:
+    for i_detector, detector in enumerate(detectorList):
+        if len(possible_points[i_detector]) == 0:
+            continue
 
-                # check that we have not already considered this detector
-                if detector not in checked_detectors:
-                    checked_detectors.append(detector)
+        # in order to avoid constantly re-instantiating the same afwCameraGeom detector,
+        # we will now find all of the (RA, Dec) pairs that could be on the present
+        # chip and test them.
+        if update_unfound:
+            unfound_pts = np.where(chip_has_found < 0)[0]
+            update_unfound = False
 
-                    # in order to avoid constantly re-instantiating the same afwCameraGeom detector,
-                    # we will now find all of the (RA, Dec) pairs that could be on the present
-                    # chip and test them.
-                    if update_unfound:
-                        unfound_pts = np.where(chip_has_found < 0)[0]
-                        update_unfound = False
+        if len(unfound_pts) == 0:
+            # we have already found all of the (RA, Dec) pairs
+            for ix, name in enumerate(outputNameList):
+                if isinstance(name, list):
+                    outputNameList[ix] = str(name)
+            return np.array(outputNameList)
 
-                    if len(unfound_pts) == 0:
-                        # we have already found all of the (RA, Dec) pairs
-                        for ix, name in enumerate(outputNameList):
-                            if isinstance(name, list):
-                                outputNameList[ix] = str(name)
-                        return np.array(outputNameList)
+        # t_before_assemble = time.time()
+        valid_pt_dexes = possible_points[i_detector][np.where(chip_has_found[possible_points[i_detector]]<0)]
+        # t_assemble_list += time.time()-t_before_assemble
+        if len(valid_pt_dexes) > 0:
+            valid_pt_list = nativePointList[valid_pt_dexes]
+            transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
+            detectorPointList = transform.applyForward(valid_pt_list)
 
-                    # t_before_assemble = time.time()
-                    valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
-                    # t_assemble_list += time.time()-t_before_assemble
-                    if len(valid_pt_dexes) > 0:
-                        valid_pt_list = nativePointList[valid_pt_dexes]
-                        transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
-                        detectorPointList = transform.applyForward(valid_pt_list)
-
-                        box = afwGeom.Box2D(detector.getBBox())
-                        for ix, pt in zip(valid_pt_dexes, detectorPointList):
-                            if box.contains(pt):
-                                if not could_be_multiple[ix]:
-                                    # because this (RA, Dec) pair is not marked as could_be_multiple,
-                                    # the fact that this (RA, Dec) pair is on the current chip
-                                    # means this (RA, Dec) pair no longer needs to be considered.
-                                    # You can set chip_has_found[ix] to unity.
-                                    outputNameList[ix] = detector.getName()
-                                    chip_has_found[ix] = 1
-                                    update_unfound = True
-                                else:
-                                    # Since this (RA, Dec) pair has been makred could_be_multiple,
-                                    # finding this (RA, Dec) pair on the chip does not remove the
-                                    # (RA, Dec) pair from contention.
-                                    if outputNameList[ix] is None:
-                                        outputNameList[ix] = detector.getName()
-                                    elif isinstance(outputNameList[ix], list):
-                                        outputNameList[ix].append(detector.getName())
-                                    else:
-                                        outputNameList[ix] = [outputNameList[ix], detector.getName()]
+            box = afwGeom.Box2D(detector.getBBox())
+            for ix, pt in zip(valid_pt_dexes, detectorPointList):
+                if box.contains(pt):
+                    if not could_be_multiple[ix]:
+                        # because this (RA, Dec) pair is not marked as could_be_multiple,
+                        # the fact that this (RA, Dec) pair is on the current chip
+                        # means this (RA, Dec) pair no longer needs to be considered.
+                        # You can set chip_has_found[ix] to unity.
+                        outputNameList[ix] = detector.getName()
+                        chip_has_found[ix] = 1
+                        update_unfound = True
+                    else:
+                        # Since this (RA, Dec) pair has been makred could_be_multiple,
+                        # finding this (RA, Dec) pair on the chip does not remove the
+                        # (RA, Dec) pair from contention.
+                        if outputNameList[ix] is None:
+                            outputNameList[ix] = detector.getName()
+                        elif isinstance(outputNameList[ix], list):
+                            outputNameList[ix].append(detector.getName())
+                        else:
+                            outputNameList[ix] = [outputNameList[ix], detector.getName()]
 
     # convert entries corresponding to multiple chips into strings
     # (i.e. [R:2,2 S:0,0, R:2,2 S:0,1] becomes `[R:2,2 S:0,0, R:2,2 S:0,1]`)
@@ -277,38 +269,42 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     is_on_camera = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pp)
                     for pp in pupilPointList]
 
+
+    all_points = np.arange(len(xPupil), dtype=int)
+    points_to_consider = all_points[np.where(is_on_camera)]
+    not_to_consider = all_points[np.where(np.logical_not(is_on_camera))]
+    print("valid %d of total %d" % (len(points_to_consider), len(xPupil)))
+
     # Loop through every point being considered.  For each point, assemble a list of detectors
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
     # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
     # which will be passed to _findDetectorsListLSST()
-    # t_before_guess = time.time()
+    t_before_guess = time.time()
     # t_where = 0.0
-    valid_detectors = []
-    x_cam = chipNameFromPupilCoordsLSST._pupil_map['xx']
-    y_cam = chipNameFromPupilCoordsLSST._pupil_map['yy']
-    rrsq_lim = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
-    for i_pp, (xx, yy) in enumerate(zip(xPupil, yPupil)):
-        if not is_on_camera[i_pp]:
-            valid_detectors.append([])
-            continue
+    x_cam_list = chipNameFromPupilCoordsLSST._pupil_map['xx']
+    y_cam_list = chipNameFromPupilCoordsLSST._pupil_map['yy']
+    rrsq_lim_list = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
 
-        # t_before_where = time.time()
-        possible_dexes = np.where(((xx-x_cam)**2 + (yy-y_cam)**2) < rrsq_lim)
-        # t_where += time.time()-t_before_where
+    possible_points = []
+    for i_chip, (x_cam, y_cam, rrsq_lim) in \
+    enumerate(zip(x_cam_list, y_cam_list, rrsq_lim_list)):
 
-        local_valid = chipNameFromPupilCoordsLSST._detector_arr[possible_dexes]
-        valid_detectors.append(list(local_valid))
-    # t_guess = time.time()-t_before_guess
+        local_possible_pts = points_to_consider[np.where(((xPupil[points_to_consider] - x_cam)**2 +
+                                                         (yPupil[points_to_consider] - y_cam)**2) < rrsq_lim)]
 
-    # t_before_find = time.time()
-    nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
+        possible_points.append(local_possible_pts)
+    t_guess = time.time()-t_before_guess
+    t_before_find = time.time()
+    nameList = _findDetectorsListLSST(pupilPointList,
+                                      chipNameFromPupilCoordsLSST._detector_arr,
+                                      possible_points, not_to_consider,
                                       allow_multiple_chips=allow_multiple_chips)
-    # t_find = time.time()-t_before_find
+    t_find = time.time()-t_before_find
 
     print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
-    # print('t_guess %.2e' % t_guess)
+    print('t_guess %.2e' % t_guess)
     # print('t_where %.2e' % t_where)
-    # print('t_find %.2e' % t_find)
+    print('t_find %.2e' % t_find)
     # print('\n')
     return nameList
 
