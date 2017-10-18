@@ -140,6 +140,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
     outputNameList = [None]*len(pupilPointList)
     chip_has_found = np.array([-1]*len(pupilPointList))
     chip_has_found[impossible_points] = 1 # no need to search chips with no candidates
+    unfound_pts = len(chip_has_found)-len(impossible_points)
 
     # Figure out if any of these (RA, Dec) pairs could be
     # on more than one chip.  This is possible on the
@@ -155,19 +156,13 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
                 if det.getType() == WAVEFRONT:
                     could_be_multiple[ipt] = True
 
-    update_unfound = True
-
     # t_assemble_list = 0.0
     # loop over detectors
     for i_detector, detector in enumerate(detectorList):
         if len(possible_points[i_detector]) == 0:
             continue
 
-        if update_unfound:
-            unfound_pts = np.where(chip_has_found < 0)[0]
-            update_unfound = False
-
-        if len(unfound_pts) == 0:
+        if unfound_pts <= 0:
             # we have already found all of the (RA, Dec) pairs
             for ix, name in enumerate(outputNameList):
                 if isinstance(name, list):
@@ -194,7 +189,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
                         # You can set chip_has_found[ix] to unity.
                         outputNameList[ix] = detector.getName()
                         chip_has_found[ix] = 1
-                        update_unfound = True
+                        unfound_pts -= 1
                     else:
                         # Since this (RA, Dec) pair has been makred could_be_multiple,
                         # finding this (RA, Dec) pair on the chip does not remove the
