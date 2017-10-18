@@ -107,8 +107,13 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
 
     @param[in] pupilPointList  a list of points in PUPIL/FIELD_ANGLE coordinates
 
-    @param[in] detecorList is a list of lists.  Each row contains the detectors that should be searched
-    for the correspdonding pupilPoint
+    @param[in] detecorList is a list of the afwCameraGeom detector objects being considered
+
+    @param[in] possible_points is a list of lists.  possible_points[ii] is a list of integers
+    corresponding to the pupil points that may be on detectorList[ii].
+
+    @param[in] impossible_points is a list of integers corresponding to the pupil points
+    that are not on any detectors
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
@@ -153,14 +158,11 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
     update_unfound = True
 
     # t_assemble_list = 0.0
-    # loop over (RA, Dec) pairs
+    # loop over detectors
     for i_detector, detector in enumerate(detectorList):
         if len(possible_points[i_detector]) == 0:
             continue
 
-        # in order to avoid constantly re-instantiating the same afwCameraGeom detector,
-        # we will now find all of the (RA, Dec) pairs that could be on the present
-        # chip and test them.
         if update_unfound:
             unfound_pts = np.where(chip_has_found < 0)[0]
             update_unfound = False
@@ -173,6 +175,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
             return np.array(outputNameList)
 
         # t_before_assemble = time.time()
+
+        # find all of the pupil points that could be on this detector
         valid_pt_dexes = possible_points[i_detector][np.where(chip_has_found[possible_points[i_detector]]<0)]
         # t_assemble_list += time.time()-t_before_assemble
         if len(valid_pt_dexes) > 0:
@@ -275,10 +279,8 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     not_to_consider = all_points[np.where(np.logical_not(is_on_camera))]
     print("valid %d of total %d" % (len(points_to_consider), len(xPupil)))
 
-    # Loop through every point being considered.  For each point, assemble a list of detectors
-    # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
-    # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
-    # which will be passed to _findDetectorsListLSST()
+    # Loop through every detector on the camera.  For each detector, assemble a list of points
+    # whose centers are within 1.1 detector radii of the center of the detector.
     t_before_guess = time.time()
     # t_where = 0.0
     x_cam_list = chipNameFromPupilCoordsLSST._pupil_map['xx']
