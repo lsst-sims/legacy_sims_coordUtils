@@ -13,7 +13,7 @@ from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
-import time
+# import time
 
 __all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
@@ -232,7 +232,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     @param [out] a numpy array of chip names
 
     """
-    t_start = time.time()
+    # t_start = time.time()
     if (not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map') or
     not hasattr(chipNameFromPupilCoordsLSST, '_detector_arr') or
     len(chipNameFromPupilCoordsLSST._detector_arr) == 0):
@@ -272,11 +272,10 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     all_points = np.arange(len(xPupil), dtype=int)
     points_to_consider = all_points[np.where(is_on_camera)]
     not_to_consider = all_points[np.where(np.logical_not(is_on_camera))]
-    print("valid %d of total %d" % (len(points_to_consider), len(xPupil)))
 
     # Loop through every detector on the camera.  For each detector, assemble a list of points
     # whose centers are within 1.1 detector radii of the center of the detector.
-    t_before_guess = time.time()
+    # t_before_guess = time.time()
     # t_where = 0.0
     x_cam_list = chipNameFromPupilCoordsLSST._pupil_map['xx']
     y_cam_list = chipNameFromPupilCoordsLSST._pupil_map['yy']
@@ -290,18 +289,18 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
                                                          (yPupil[points_to_consider] - y_cam)**2) < rrsq_lim)]
 
         possible_points.append(local_possible_pts)
-    t_guess = time.time()-t_before_guess
-    t_before_find = time.time()
+    # t_guess = time.time()-t_before_guess
+    # t_before_find = time.time()
     nameList = _findDetectorsListLSST(pupilPointList,
                                       chipNameFromPupilCoordsLSST._detector_arr,
                                       possible_points, not_to_consider,
                                       allow_multiple_chips=allow_multiple_chips)
-    t_find = time.time()-t_before_find
+    # t_find = time.time()-t_before_find
 
-    print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
-    print('t_guess %.2e' % t_guess)
+    # print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
+    # print('t_guess %.2e' % t_guess)
     # print('t_where %.2e' % t_where)
-    print('t_find %.2e' % t_find)
+    # print('t_find %.2e' % t_find)
     # print('\n')
     return nameList
 
