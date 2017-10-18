@@ -13,7 +13,7 @@ from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
-import time
+# import time
 
 __all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
@@ -155,7 +155,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
 
     update_unfound = True
 
-    t_assemble_list = 0.0
+    # t_assemble_list = 0.0
 
     # loop over (RA, Dec) pairs
     for ipt, nativePoint in enumerate(nativePointList):
@@ -180,9 +180,9 @@ def _findDetectorsListLSST(pupilPointList, detectorList, allow_multiple_chips=Fa
                                 outputNameList[ix] = str(name)
                         return np.array(outputNameList)
 
-                    t_before_assemble = time.time()
+                    # t_before_assemble = time.time()
                     valid_pt_dexes = np.array([ii for ii in unfound_pts if detector in detectorList[ii]])
-                    t_assemble_list += time.time()-t_before_assemble
+                    # t_assemble_list += time.time()-t_before_assemble
                     if len(valid_pt_dexes) > 0:
                         valid_pt_list = nativePointList[valid_pt_dexes]
                         transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
@@ -241,7 +241,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     @param [out] a numpy array of chip names
 
     """
-    t_start = time.time()
+    # t_start = time.time()
     if (not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map') or
     not hasattr(chipNameFromPupilCoordsLSST, '_detector_arr') or
     len(chipNameFromPupilCoordsLSST._detector_arr) == 0):
@@ -281,8 +281,8 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # whose centers are within 1.1 detector radii of the point.  These are the detectors on which
     # the point could be located.  Store that list of possible detectors as a row in valid_detctors,
     # which will be passed to _findDetectorsListLSST()
-    t_before_guess = time.time()
-    t_where = 0.0
+    # t_before_guess = time.time()
+    # t_where = 0.0
     valid_detectors = []
     x_cam = chipNameFromPupilCoordsLSST._pupil_map['xx']
     y_cam = chipNameFromPupilCoordsLSST._pupil_map['yy']
@@ -292,18 +292,18 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
             valid_detectors.append([])
             continue
 
-        t_before_where = time.time()
+        # t_before_where = time.time()
         possible_dexes = np.where(((xx-x_cam)**2 + (yy-y_cam)**2) < rrsq_lim)
-        t_where += time.time()-t_before_where
+        # t_where += time.time()-t_before_where
 
         local_valid = chipNameFromPupilCoordsLSST._detector_arr[possible_dexes]
         valid_detectors.append(list(local_valid))
-    t_guess = time.time()-t_before_guess
+    # t_guess = time.time()-t_before_guess
 
-    t_before_find = time.time()
+    # t_before_find = time.time()
     nameList = _findDetectorsListLSST(pupilPointList, valid_detectors,
                                       allow_multiple_chips=allow_multiple_chips)
-    t_find = time.time()-t_before_find
+    # t_find = time.time()-t_before_find
 
     # print('chipNameFromPupil %.2e percapita %.2e' % ((time.time()-t_start), (time.time()-t_start)/float(len(xPupil))))
     # print('t_guess %.2e' % t_guess)
