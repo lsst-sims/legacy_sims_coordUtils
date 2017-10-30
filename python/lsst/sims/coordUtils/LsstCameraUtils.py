@@ -358,10 +358,6 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
 
-    if not are_arrays:
-        ra = np.array([ra])
-        dec = np.array([dec])
-
     xp, yp = _pupilCoordsFromRaDec(ra, dec,
                                    pm_ra=pm_ra, pm_dec=pm_dec,
                                    parallax=parallax, v_rad=v_rad,
