@@ -606,10 +606,13 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
     fieldToFocal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
 
     if are_arrays:
+        field_point_list = list([afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)])
+        focal_point_list = fieldToFocal.applyForward(field_point_list)
+
         transform_dict = {}
         xPix = []
         yPix = []
-        for name, x, y in zip(chipNameList, xPupil, yPupil):
+        for name, focalPoint in zip(chipNameList, focal_point_list):
             if name is None:
                 xPix.append(np.nan)
                 yPix.append(np.nan)
@@ -620,7 +623,6 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
 
             focalToPixels = transform_dict[name]
 
-            focalPoint = fieldToFocal.applyForward(afwGeom.Point2D(x, y))
             pixPoint = focalToPixels.applyForward(focalPoint)
 
             xPix.append(pixPoint.getX())
