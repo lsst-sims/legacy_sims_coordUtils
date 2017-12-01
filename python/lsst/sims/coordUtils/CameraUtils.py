@@ -610,23 +610,30 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
         focal_point_list = fieldToFocal.applyForward(field_point_list)
 
         transform_dict = {}
-        xPix = []
-        yPix = []
-        for name, focalPoint in zip(chipNameList, focal_point_list):
-            if name is None:
-                xPix.append(np.nan)
-                yPix.append(np.nan)
+        xPix = np.nan*np.ones(len(chipNameList), dtype=float)
+        yPix = np.nan*np.ones(len(chipNameList), dtype=float)
+
+        if not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array(chipNameList)
+        chipNameList = chipNameList.astype(str)
+
+        for name in np.unique(chipNameList):
+            if name == 'None':
                 continue
+
+            valid_points = np.where(np.char.find(chipNameList, name)==0)
+            local_focal_point_list = list([focal_point_list[dex] for dex in valid_points[0]])
 
             if name not in transform_dict:
                 transform_dict[name] = camera[name].getTransform(FOCAL_PLANE, pixelType)
 
             focalToPixels = transform_dict[name]
+            pixPoint_list = focalToPixels.applyForward(local_focal_point_list)
 
-            pixPoint = focalToPixels.applyForward(focalPoint)
-
-            xPix.append(pixPoint.getX())
-            yPix.append(pixPoint.getY())
+            for i_fp, v_dex in enumerate(valid_points[0]):
+                pixPoint= pixPoint_list[i_fp]
+                xPix[v_dex] = pixPoint.getX()
+                yPix[v_dex] = pixPoint.getY()
 
         return np.array([xPix, yPix])
     else:
