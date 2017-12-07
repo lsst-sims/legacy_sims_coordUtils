@@ -107,7 +107,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
 
     @param[in] pupilPointList  a list of points in PUPIL/FIELD_ANGLE coordinates
 
-    @param[in] detecorList is a list of the afwCameraGeom detector objects being considered
+    @param[in] detectorList is a list of the afwCameraGeom detector objects being considered
 
     @param[in] possible_points is a list of lists.  possible_points[ii] is a list of integers
     corresponding to the pupil points that may be on detectorList[ii].
