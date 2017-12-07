@@ -163,6 +163,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
             continue
 
         if unfound_pts <= 0:
+            if unfound_pts<0:
+                raise RuntimeError("Somehow, unfound_pts = %d in _findDetectorsListLSST" % unfound_pts)
             # we have already found all of the (RA, Dec) pairs
             for ix, name in enumerate(outputNameList):
                 if isinstance(name, list):
