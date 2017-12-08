@@ -606,25 +606,36 @@ def pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=None,
     fieldToFocal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
 
     if are_arrays:
+        if len(xPupil) == 0:
+            return np.array([[],[]])
+        field_point_list = list([afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)])
+        focal_point_list = fieldToFocal.applyForward(field_point_list)
+
         transform_dict = {}
-        xPix = []
-        yPix = []
-        for name, x, y in zip(chipNameList, xPupil, yPupil):
-            if name is None:
-                xPix.append(np.nan)
-                yPix.append(np.nan)
+        xPix = np.nan*np.ones(len(chipNameList), dtype=float)
+        yPix = np.nan*np.ones(len(chipNameList), dtype=float)
+
+        if not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array(chipNameList)
+        chipNameList = chipNameList.astype(str)
+
+        for name in np.unique(chipNameList):
+            if name == 'None':
                 continue
+
+            valid_points = np.where(np.char.find(chipNameList, name)==0)
+            local_focal_point_list = list([focal_point_list[dex] for dex in valid_points[0]])
 
             if name not in transform_dict:
                 transform_dict[name] = camera[name].getTransform(FOCAL_PLANE, pixelType)
 
             focalToPixels = transform_dict[name]
+            pixPoint_list = focalToPixels.applyForward(local_focal_point_list)
 
-            focalPoint = fieldToFocal.applyForward(afwGeom.Point2D(x, y))
-            pixPoint = focalToPixels.applyForward(focalPoint)
-
-            xPix.append(pixPoint.getX())
-            yPix.append(pixPoint.getY())
+            for i_fp, v_dex in enumerate(valid_points[0]):
+                pixPoint= pixPoint_list[i_fp]
+                xPix[v_dex] = pixPoint.getX()
+                yPix[v_dex] = pixPoint.getY()
 
         return np.array([xPix, yPix])
     else:
@@ -976,14 +987,12 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     field_to_focal = camera.getTransformMap().getTransform(FIELD_ANGLE, FOCAL_PLANE)
 
     if are_arrays:
-        xPix = []
-        yPix = []
-        for x, y in zip(xPupil, yPupil):
-            fpPoint = field_to_focal.applyForward(afwGeom.Point2D(x, y))
-            xPix.append(fpPoint.getX())
-            yPix.append(fpPoint.getY())
+        pupil_point_list = [afwGeom.Point2D(x,y) for x,y in zip(xPupil, yPupil)]
+        focal_point_list = field_to_focal.applyForward(pupil_point_list)
+        xFocal = np.array([pp.getX() for pp in focal_point_list])
+        yFocal = np.array([pp.getY() for pp in focal_point_list])
 
-        return np.array([xPix, yPix])
+        return np.array([xFocal, yFocal])
 
     # if not are_arrays
     fpPoint = field_to_focal.applyForward(afwGeom.Point2D(xPupil, yPupil))

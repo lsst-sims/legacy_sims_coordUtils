@@ -28,6 +28,8 @@ class ChipNameTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
+            del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
         del lsst_camera._lsst_camera
 
@@ -341,6 +343,8 @@ class MotionTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
+            del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
         del lsst_camera._lsst_camera
 
