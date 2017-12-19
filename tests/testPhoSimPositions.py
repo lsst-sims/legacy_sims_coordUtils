@@ -45,7 +45,8 @@ class PhoSim_position_test_case(unittest.TestCase):
     def tearDownClass(cls):
         if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
             del chipNameFromPupilCoordsLSST._detector_arr
-        del lsst_camera._lsst_camera
+        if hasattr(lsst_camera, '_lsst_camera'):
+            del lsst_camera._lsst_camera
 
     def test_chipName(self):
         """

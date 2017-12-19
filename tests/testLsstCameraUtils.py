@@ -31,7 +31,9 @@ class ChipNameTestCase(unittest.TestCase):
         if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
             del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
-        del lsst_camera._lsst_camera
+
+        if hasattr(lsst_camera, '_lsst_camera'):
+            del lsst_camera._lsst_camera
 
     def test_chip_center(self):
         """
@@ -346,7 +348,9 @@ class MotionTestCase(unittest.TestCase):
         if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
             del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
-        del lsst_camera._lsst_camera
+
+        if hasattr(lsst_camera, '_lsst_camera'):
+            del lsst_camera._lsst_camera
 
     def set_data(self, seed):
         """
