@@ -292,27 +292,30 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     radius_list = np.sqrt((xPupil-chipNameFromPupilCoordsLSST._x_pup_center)**2 +
                           (yPupil-chipNameFromPupilCoordsLSST._y_pup_center)**2)
 
-    dummy_pt = afwGeom.Point2D(-1000.0, -1000.0)
-
     good_radii = np.where(radius_list<chipNameFromPupilCoordsLSST._camera_pup_radius)
-    pupilPointList = [dummy_pt]*len(xPupil)
     t_before = time.time()
-    for i_pt in good_radii[0]:
-        pupilPointList[i_pt] = afwGeom.Point2D(xPupil[i_pt], yPupil[i_pt])
-    t_work += time.time()-t_before
+
+    xPupil_good = xPupil[good_radii]
+    yPupil_good = yPupil[good_radii]
+
+    ############################################################
+    # in the code below, we will only consider those points which
+    # passed the 'good_radii' test above; the other points will
+    # be added in with chipName == None at the end
+    #
+    pupilPointList = [afwGeom.Point2D(xPupil[i_pt], yPupil[i_pt])
+                      for i_pt in good_radii[0]]
 
     # filter out those points that are not inside the
     # camera-containing Box2D
-    is_on_camera = np.array([False]*len(xPupil))
-    t_before = time.time()
-    is_on_camera[good_radii] = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
-                                for i_pt in good_radii[0]]
+    is_on_camera = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
+                    for i_pt in range(len(pupilPointList))]
 
     t_work +=time.time()-t_before
 
-    all_points = np.arange(len(xPupil), dtype=int)
-    points_to_consider = all_points[np.where(is_on_camera)]
-    not_to_consider = all_points[np.where(np.logical_not(is_on_camera))]
+    all_good_points = np.arange(len(is_on_camera), dtype=int)
+    points_to_consider = all_good_points[np.where(is_on_camera)]
+    not_to_consider = all_good_points[np.where(np.logical_not(is_on_camera))]
 
     # Loop through every detector on the camera.  For each detector, assemble a list of points
     # whose centers are within 1.1 detector radii of the center of the detector.
@@ -326,18 +329,26 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     for i_chip, (x_cam, y_cam, rrsq_lim) in \
     enumerate(zip(x_cam_list, y_cam_list, rrsq_lim_list)):
 
-        local_possible_pts = points_to_consider[np.where(((xPupil[points_to_consider] - x_cam)**2 +
-                                                         (yPupil[points_to_consider] - y_cam)**2) < rrsq_lim)]
+        local_possible_pts = points_to_consider[np.where(((xPupil_good[points_to_consider] - x_cam)**2 +
+                                                          (yPupil_good[points_to_consider] - y_cam)**2) < rrsq_lim)]
 
         possible_points.append(local_possible_pts)
 
     t_prelim = time.time()-t_before
 
     t_before = time.time()
-    nameList = _findDetectorsListLSST(pupilPointList,
-                                      chipNameFromPupilCoordsLSST._detector_arr,
-                                      possible_points, not_to_consider,
-                                      allow_multiple_chips=allow_multiple_chips)
+    nameList_good = _findDetectorsListLSST(pupilPointList,
+                                           chipNameFromPupilCoordsLSST._detector_arr,
+                                           possible_points, not_to_consider,
+                                           allow_multiple_chips=allow_multiple_chips)
+
+    ####################################################################
+    # initialize output as an array of Nones, effectively adding back in
+    # the points which failed the initial radius cut
+    nameList = np.array([None]*len(xPupil))
+
+    nameList[good_radii] = nameList_good
+
     t_find = time.time()-t_before
     t_total = time.time()-t_start
     print('tot %.2e work %.2e first %2e find %.2e' %
