@@ -12,7 +12,6 @@ from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
-import time
 
 __all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
@@ -281,8 +280,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
         chipNameFromPupilCoordsLSST._camera_pup_radius = radius_max*1.1
 
-    t_start =time.time()
-    t_work = 0.0
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
     if not are_arrays:
@@ -293,7 +290,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
                           (yPupil-chipNameFromPupilCoordsLSST._y_pup_center)**2)
 
     good_radii = np.where(radius_list<chipNameFromPupilCoordsLSST._camera_pup_radius)
-    t_before = time.time()
 
     xPupil_good = xPupil[good_radii]
     yPupil_good = yPupil[good_radii]
@@ -311,8 +307,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     is_on_camera = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
                     for i_pt in range(len(pupilPointList))]
 
-    t_work +=time.time()-t_before
-
     all_good_points = np.arange(len(is_on_camera), dtype=int)
     points_to_consider = all_good_points[np.where(is_on_camera)]
     not_to_consider = all_good_points[np.where(np.logical_not(is_on_camera))]
@@ -320,7 +314,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # Loop through every detector on the camera.  For each detector, assemble a list of points
     # whose centers are within 1.1 detector radii of the center of the detector.
 
-    t_before = time.time()
     x_cam_list = chipNameFromPupilCoordsLSST._pupil_map['xx']
     y_cam_list = chipNameFromPupilCoordsLSST._pupil_map['yy']
     rrsq_lim_list = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
@@ -334,9 +327,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
         possible_points.append(local_possible_pts)
 
-    t_prelim = time.time()-t_before
-
-    t_before = time.time()
     nameList_good = _findDetectorsListLSST(pupilPointList,
                                            chipNameFromPupilCoordsLSST._detector_arr,
                                            possible_points, not_to_consider,
@@ -349,10 +339,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     nameList[good_radii] = nameList_good
 
-    t_find = time.time()-t_before
-    t_total = time.time()-t_start
-    print('tot %.2e work %.2e first %2e find %.2e' %
-    (t_total,t_work,t_prelim,t_find))
     return nameList
 
 
