@@ -275,7 +275,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
             yy = cc.getY()
             radius = np.sqrt((xx-chipNameFromPupilCoordsLSST._x_pup_center)**2 +
                              (yy-chipNameFromPupilCoordsLSST._y_pup_center)**2)
-            if radius_min is None or radius > radius_max:
+            if radius_max is None or radius > radius_max:
                 radius_max = radius
 
         chipNameFromPupilCoordsLSST._camera_pup_radius = radius_max*1.1
