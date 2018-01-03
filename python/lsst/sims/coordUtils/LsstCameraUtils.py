@@ -303,6 +303,8 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
                     else False
                     for i_pt in range(len(pupilPointList))]
 
+    print('bad radii %d' % len(np.where(radius_list>=chipNameFromPupilCoordsLSST._camera_pup_radius)[0]))
+
     all_points = np.arange(len(xPupil), dtype=int)
     points_to_consider = all_points[np.where(is_on_camera)]
     not_to_consider = all_points[np.where(np.logical_not(is_on_camera))]
