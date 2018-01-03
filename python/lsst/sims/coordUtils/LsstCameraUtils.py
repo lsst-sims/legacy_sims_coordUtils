@@ -291,6 +291,9 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     good_radii = np.where(radius_list<chipNameFromPupilCoordsLSST._camera_pup_radius)
 
+    if len(good_radii[0]) == 0:
+        return np.array([None]*len(xPupil))
+
     xPupil_good = xPupil[good_radii]
     yPupil_good = yPupil[good_radii]
 
