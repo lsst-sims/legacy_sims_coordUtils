@@ -269,16 +269,16 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         chipNameFromPupilCoordsLSST._x_pup_center = 0.5*(x_pup_max+x_pup_min)
         chipNameFromPupilCoordsLSST._y_pup_center = 0.5*(y_pup_max+y_pup_min)
 
-        radius_min = None
+        radius_max = None
         for cc in pupil_corners:
             xx = cc.getX()
             yy = cc.getY()
             radius = np.sqrt((xx-chipNameFromPupilCoordsLSST._x_pup_center)**2 +
                              (yy-chipNameFromPupilCoordsLSST._y_pup_center)**2)
-            if radius_min is None or radius < radius_min:
-                radius_min = radius
+            if radius_min is None or radius > radius_max:
+                radius_max = radius
 
-        chipNameFromPupilCoordsLSST._camera_pup_radius = radius_min
+        chipNameFromPupilCoordsLSST._camera_pup_radius = radius_max*1.1
 
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
