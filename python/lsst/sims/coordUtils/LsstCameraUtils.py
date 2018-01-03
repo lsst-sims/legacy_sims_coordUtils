@@ -308,6 +308,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     is_on_camera[good_radii] = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
                                 for i_pt in good_radii[0]]
 
+    t_work +=time.time()-t_before
 
     all_points = np.arange(len(xPupil), dtype=int)
     points_to_consider = all_points[np.where(is_on_camera)]
