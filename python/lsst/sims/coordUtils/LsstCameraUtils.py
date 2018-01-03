@@ -12,6 +12,7 @@ from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
+import time
 
 __all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
@@ -280,6 +281,8 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
         chipNameFromPupilCoordsLSST._camera_pup_radius = radius_max*1.1
 
+    t_start =time.time()
+    t_work = 0.0
     are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
 
     if not are_arrays:
@@ -293,8 +296,10 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     good_radii = np.where(radius_list<chipNameFromPupilCoordsLSST._camera_pup_radius)
     pupilPointList = [dummy_pt]*len(xPupil)
+    t_before = time.time()
     for i_pt in good_radii[0]:
         pupilPointList[i_pt] = afwGeom.Point2D(xPupil[i_pt], yPupil[i_pt])
+    t_work += time.time()-t_before
 
     # filter out those points that are not inside the
     # camera-containing Box2D
@@ -309,6 +314,7 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     # Loop through every detector on the camera.  For each detector, assemble a list of points
     # whose centers are within 1.1 detector radii of the center of the detector.
 
+    t_before = time.time()
     x_cam_list = chipNameFromPupilCoordsLSST._pupil_map['xx']
     y_cam_list = chipNameFromPupilCoordsLSST._pupil_map['yy']
     rrsq_lim_list = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
@@ -322,11 +328,17 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
         possible_points.append(local_possible_pts)
 
+    t_prelim = time.time()-t_before
+
+    t_before = time.time()
     nameList = _findDetectorsListLSST(pupilPointList,
                                       chipNameFromPupilCoordsLSST._detector_arr,
                                       possible_points, not_to_consider,
                                       allow_multiple_chips=allow_multiple_chips)
-
+    t_find = time.time()-t_before
+    t_total = time.time()-t_start
+    print('tot %.2e work %.2e first %2e find %.2e' %
+    (t_total,t_work,t_prelim,t_find))
     return nameList
 
 
