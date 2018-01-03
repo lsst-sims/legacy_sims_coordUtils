@@ -303,9 +303,11 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     # filter out those points that are not inside the
     # camera-containing Box2D
-    is_on_camera = [False]*len(xPupil)
-    for i_pt in good_radii[0]:
-        is_on_camera[i_pt] = chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
+    is_on_camera = np.array([False]*len(xPupil))
+    t_before = time.time()
+    is_on_camera[good_radii] = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
+                                for i_pt in good_radii[0]]
+
 
     all_points = np.arange(len(xPupil), dtype=int)
     points_to_consider = all_points[np.where(is_on_camera)]
