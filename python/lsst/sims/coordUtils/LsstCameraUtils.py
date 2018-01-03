@@ -291,17 +291,16 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
 
     dummy_pt = afwGeom.Point2D(-1000.0, -1000.0)
 
-    pupilPointList = [afwGeom.Point2D(xPupil[i_pt], yPupil[i_pt])
-                      if radius_list[i_pt] < chipNameFromPupilCoordsLSST._camera_pup_radius
-                      else dummy_pt
-                      for i_pt in range(len(xPupil))]
+    good_radii = np.where(radius_list<chipNameFromPupilCoordsLSST._camera_pup_radius)
+    pupilPointList = [dummy_pt]*len(xPupil)
+    for i_pt in good_radii[0]:
+        pupilPointList[i_pt] = afwGeom.Point2D(xPupil[i_pt], yPupil[i_pt])
 
     # filter out those points that are not inside the
     # camera-containing Box2D
-    is_on_camera = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
-                    if radius_list[i_pt] < chipNameFromPupilCoordsLSST._camera_pup_radius
-                    else False
-                    for i_pt in range(len(pupilPointList))]
+    is_on_camera = [False]*len(xPupil)
+    for i_pt in good_radii[0]:
+        is_on_camera[i_pt] = chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
 
     all_points = np.arange(len(xPupil), dtype=int)
     points_to_consider = all_points[np.where(is_on_camera)]
