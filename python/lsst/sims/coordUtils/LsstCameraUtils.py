@@ -89,7 +89,7 @@ def _build_lsst_pupil_coord_map():
     return lsst_pupil_coord_map
 
 
-def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, impossible_points,
+def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
                            allow_multiple_chips=False):
     """!Find the detectors that cover a list of points specified by x and y coordinates in any system
 
@@ -109,9 +109,6 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
 
     @param[in] possible_points is a list of lists.  possible_points[ii] is a list of integers
     corresponding to the indices in pupilPointList of the pupilPoints that may be on detectorList[ii].
-
-    @param[in] impossible_points is a list of integers corresponding to the pupil points
-    that are not on any detectors
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
@@ -137,8 +134,7 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points, imposs
     # initialize output and some caching lists
     outputNameList = [None]*len(pupilPointList)
     chip_has_found = np.array([-1]*len(pupilPointList))
-    chip_has_found[impossible_points] = 1 # no need to search chips with no candidates
-    unfound_pts = len(chip_has_found)-len(impossible_points)
+    unfound_pts = len(chip_has_found)
 
     # Figure out if any of these (RA, Dec) pairs could be
     # on more than one chip.  This is possible on the
@@ -253,7 +249,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         y_pup_max = None
         y_pup_min = None
         for cc in pupil_corners:
-            camera_bbox.include(cc)
             xx = cc.getX()
             yy = cc.getY()
             if x_pup_max is None or xx > x_pup_max:
@@ -265,7 +260,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
             if y_pup_min is None or yy < y_pup_min:
                 y_pup_min = yy
 
-        chipNameFromPupilCoordsLSST._camera_bbox = camera_bbox
         chipNameFromPupilCoordsLSST._x_pup_center = 0.5*(x_pup_max+x_pup_min)
         chipNameFromPupilCoordsLSST._y_pup_center = 0.5*(y_pup_max+y_pup_min)
 
@@ -305,15 +299,6 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     pupilPointList = [afwGeom.Point2D(xPupil[i_pt], yPupil[i_pt])
                       for i_pt in good_radii[0]]
 
-    # filter out those points that are not inside the
-    # camera-containing Box2D
-    is_on_camera = [chipNameFromPupilCoordsLSST._camera_bbox.contains(pupilPointList[i_pt])
-                    for i_pt in range(len(pupilPointList))]
-
-    all_good_points = np.arange(len(is_on_camera), dtype=int)
-    points_to_consider = all_good_points[np.where(is_on_camera)]
-    not_to_consider = all_good_points[np.where(np.logical_not(is_on_camera))]
-
     # Loop through every detector on the camera.  For each detector, assemble a list of points
     # whose centers are within 1.1 detector radii of the center of the detector.
 
@@ -325,14 +310,14 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     for i_chip, (x_cam, y_cam, rrsq_lim) in \
     enumerate(zip(x_cam_list, y_cam_list, rrsq_lim_list)):
 
-        local_possible_pts = points_to_consider[np.where(((xPupil_good[points_to_consider] - x_cam)**2 +
-                                                          (yPupil_good[points_to_consider] - y_cam)**2) < rrsq_lim)]
+        local_possible_pts = np.where(((xPupil_good - x_cam)**2 +
+                                       (yPupil_good - y_cam)**2) < rrsq_lim)[0]
 
         possible_points.append(local_possible_pts)
 
     nameList_good = _findDetectorsListLSST(pupilPointList,
                                            chipNameFromPupilCoordsLSST._detector_arr,
-                                           possible_points, not_to_consider,
+                                           possible_points,
                                            allow_multiple_chips=allow_multiple_chips)
 
     ####################################################################
