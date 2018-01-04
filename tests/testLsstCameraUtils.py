@@ -82,35 +82,33 @@ class ChipNameTestCase(unittest.TestCase):
         Test that chipNameFromPupilCoordsLSST returns the same
         results as chipNameFromPupilCoords
         """
-        n_pointings = 3
-        n_obj = 1000
-        rng = np.random.RandomState(8831)
-        ra_pointing_list = rng.random_sample(n_pointings)*360.0
-        dec_pointing_list = rng.random_sample(n_pointings)*180.0-90.0
-        rot_list = rng.random_sample(n_pointings)*360.0
-        mjd_list = rng.random_sample(n_pointings)*3653+59580.0
-        for ra, dec, rot, mjd in zip(ra_pointing_list, dec_pointing_list, rot_list, mjd_list):
-            obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
-                                      rotSkyPos=rot, mjd=mjd)
-            rr_list = rng.random_sample(n_obj)*3.0
-            theta_list = rng.random_sample(n_obj)*2.0*np.pi
-            ra_list = ra + rr_list*np.cos(theta_list)
-            dec_list = dec + rr_list*np.sin(theta_list)
-            x_pup, y_pup = pupilCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs,
-                                                epoch=2000.0)
 
-            control_name_list = chipNameFromPupilCoords(x_pup, y_pup, camera=self.camera)
-            test_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup)
-            for i_pt, (control_name, test_name) in enumerate(zip(control_name_list, test_name_list)):
-                rrsq = ((chipNameFromPupilCoordsLSST._x_pup_center-x_pup[i_pt])**2 +
-                        (chipNameFromPupilCoordsLSST._y_pup_center-y_pup[i_pt])**2)
-                self.assertEqual(control_name, test_name, msg='rrsq is %e\n%d' % (rrsq,i_pt))
+        dummy_name_list = chipNameFromPupilCoordsLSST(0,0)
+        radius = np.sqrt(chipNameFromPupilCoordsLSST._camera_pup_radius_sq)
+        x_center = chipNameFromPupilCoordsLSST._x_pup_center
+        y_center = chipNameFromPupilCoordsLSST._y_pup_center
+        rr, theta = np.meshgrid(np.arange(-1.5*radius, 1.5*radius, 0.005*radius),
+                                np.arange(0.0, 2.0*np.pi, 0.01*np.pi))
 
-            # make sure we didn't accidentally get a lot of positions that don't land on chips
-            # (or a lot positions, none of which result in chipName == None)
-            chips_on_none = np.where(np.char.find(test_name_list.astype(str), 'None') == 0)[0]
-            self.assertLessEqual(len(chips_on_none), n_obj/2)
-            self.assertGreater(len(chips_on_none), 10)
+        rr = rr.flatten()
+        theta = theta.flatten()
+        x_pup = x_center + rr*np.cos(theta)
+        y_pup = y_center + rr*np.sin(theta)
+
+        n_obj = len(x_pup)
+
+        control_name_list = chipNameFromPupilCoords(x_pup, y_pup, camera=self.camera)
+        test_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup)
+        for i_pt, (control_name, test_name) in enumerate(zip(control_name_list, test_name_list)):
+            rrsq = ((chipNameFromPupilCoordsLSST._x_pup_center-x_pup[i_pt])**2 +
+                    (chipNameFromPupilCoordsLSST._y_pup_center-y_pup[i_pt])**2)
+            self.assertEqual(control_name, test_name, msg='rrsq is %e\n%d' % (rrsq,i_pt))
+
+        # make sure we didn't accidentally get a lot of positions that don't land on chips
+        # (or a lot positions, none of which result in chipName == None)
+        chips_on_none = np.where(np.char.find(test_name_list.astype(str), 'None') == 0)[0]
+        self.assertLessEqual(len(chips_on_none), 0.6*n_obj)
+        self.assertGreater(len(chips_on_none), n_obj/4)
 
     def test_chip_name_from_ra_dec_radians(self):
         """
