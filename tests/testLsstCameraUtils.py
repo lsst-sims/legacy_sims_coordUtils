@@ -22,6 +22,8 @@ def setup_module(module):
 
 class ChipNameTestCase(unittest.TestCase):
 
+    longMessage = True
+
     @classmethod
     def setUpClass(cls):
         cls.camera = LsstSimMapper().camera
@@ -90,7 +92,7 @@ class ChipNameTestCase(unittest.TestCase):
         for ra, dec, rot, mjd in zip(ra_pointing_list, dec_pointing_list, rot_list, mjd_list):
             obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
                                       rotSkyPos=rot, mjd=mjd)
-            rr_list = rng.random_sample(n_obj)*1.75
+            rr_list = rng.random_sample(n_obj)*3.0
             theta_list = rng.random_sample(n_obj)*2.0*np.pi
             ra_list = ra + rr_list*np.cos(theta_list)
             dec_list = dec + rr_list*np.sin(theta_list)
@@ -99,11 +101,16 @@ class ChipNameTestCase(unittest.TestCase):
 
             control_name_list = chipNameFromPupilCoords(x_pup, y_pup, camera=self.camera)
             test_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup)
-            np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
+            for i_pt, (control_name, test_name) in enumerate(zip(control_name_list, test_name_list)):
+                rrsq = ((chipNameFromPupilCoordsLSST._x_pup_center-x_pup[i_pt])**2 +
+                        (chipNameFromPupilCoordsLSST._y_pup_center-y_pup[i_pt])**2)
+                self.assertEqual(control_name, test_name, msg='rrsq is %e\n%d' % (rrsq,i_pt))
 
             # make sure we didn't accidentally get a lot of positions that don't land on chips
-            self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None') >= 0)[0]),
-                                 n_obj/5)
+            # (or a lot positions, none of which result in chipName == None)
+            chips_on_none = np.where(np.char.find(test_name_list.astype(str), 'None') == 0)[0]
+            self.assertLessEqual(len(chips_on_none), n_obj/2)
+            self.assertGreater(len(chips_on_none), 10)
 
     def test_chip_name_from_ra_dec_radians(self):
         """
