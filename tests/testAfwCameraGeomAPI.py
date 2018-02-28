@@ -33,6 +33,22 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.camera = lsst_camera()
+        data_dir = os.path.join(getPackageDir('sims_coordUtils'),
+                                'tests', 'lsstCameraData')
+
+        pix_dtype = np.dtype([('ra', float), ('dec', float),
+                              ('name', str, 15),
+                              ('focal_x', float), ('focal_y', float),
+                              ('pixel_x', float), ('pixel_y', float)])
+
+        cls.pix_data = np.genfromtxt(os.path.join(data_dir,
+                                                  'lsst_pixel_data.txt'),
+                                     delimiter=';', dtype=pix_dtype)
+
+        ra = 25.0
+        dec = -62.0
+        cls.obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                      rotSkyPos=57.2, mjd=59586.2)
 
     @classmethod
     def tearDownClass(cls):
@@ -42,24 +58,6 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
         del cls.camera
         if hasattr(lsst_camera, '_lsst_camera'):
             del lsst_camera._lsst_camera
-
-    def setUp(self):
-        data_dir = os.path.join(getPackageDir('sims_coordUtils'),
-                                'tests', 'lsstCameraData')
-
-        pix_dtype = np.dtype([('ra', float), ('dec', float),
-                              ('name', str, 15),
-                              ('focal_x', float), ('focal_y', float),
-                              ('pixel_x', float), ('pixel_y', float)])
-
-        self.pix_data = np.genfromtxt(os.path.join(data_dir,
-                                                   'lsst_pixel_data.txt'),
-                                 delimiter=';', dtype=pix_dtype)
-
-        ra = 25.0
-        dec = -62.0
-        self.obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
-                                       rotSkyPos=57.2, mjd=59586.2)
 
     def test_chipName(self):
         """
