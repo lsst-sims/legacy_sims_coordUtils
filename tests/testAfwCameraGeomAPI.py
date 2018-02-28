@@ -83,6 +83,20 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
                                              decimal=5)
 
 
+    def test_focalCoords(self):
+        """
+        Verify that focalPlaneCoordsFromRaDec has not changed
+        """
+        foc_x, foc_y = focalPlaneCoordsFromRaDec(self.pix_data['ra'],
+                                                 self.pix_data['dec'],
+                                                 camera=self.camera,
+                                                 obs_metadata=self.obs)
+
+        np.testing.assert_array_almost_equal(foc_x, self.pix_data['focal_x'],
+                                             decimal=5)
+        np.testing.assert_array_almost_equal(foc_y, self.pix_data['focal_y'],
+                                             decimal=5)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
