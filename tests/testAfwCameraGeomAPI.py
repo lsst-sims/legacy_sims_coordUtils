@@ -7,7 +7,7 @@ import os
 
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils import lsst_camera
-from lsst.sims.coordUtils import getCornerPixels
+from lsst.sims.coordUtils import getCornerRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromRaDec
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
@@ -33,15 +33,15 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.camera = lsst_camera()
-        data_dir = os.path.join(getPackageDir('sims_coordUtils'),
-                                'tests', 'lsstCameraData')
+        cls.data_dir = os.path.join(getPackageDir('sims_coordUtils'),
+                                   'tests', 'lsstCameraData')
 
         pix_dtype = np.dtype([('ra', float), ('dec', float),
                               ('name', str, 15),
                               ('focal_x', float), ('focal_y', float),
                               ('pixel_x', float), ('pixel_y', float)])
 
-        cls.pix_data = np.genfromtxt(os.path.join(data_dir,
+        cls.pix_data = np.genfromtxt(os.path.join(cls.data_dir,
                                                   'lsst_pixel_data.txt'),
                                      delimiter=';', dtype=pix_dtype)
 
@@ -96,6 +96,51 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
                                              decimal=5)
         np.testing.assert_array_almost_equal(foc_y, self.pix_data['focal_y'],
                                              decimal=5)
+
+    def test_cornerRaDec(self):
+        """
+        Verify that getCornerRaDec has not changed
+        """
+        dtype = np.dtype([('name', str, 15),
+                          ('x0', float), ('y0', float),
+                          ('x1', float), ('y1', float),
+                          ('x2', float), ('y2', float),
+                          ('x3', float), ('y3', float)])
+
+        data = np.genfromtxt(os.path.join(self.data_dir, 'lsst_camera_corners.txt'),
+                             dtype=dtype, delimiter=';')
+
+        detector_name_list = [dd.getName() for dd in self.camera]
+        detector_name_list.sort()
+        x0 = np.zeros(len(detector_name_list), dtype=float)
+        x1 = np.zeros(len(detector_name_list), dtype=float)
+        x2 = np.zeros(len(detector_name_list), dtype=float)
+        x3 = np.zeros(len(detector_name_list), dtype=float)
+        y0 = np.zeros(len(detector_name_list), dtype=float)
+        y1 = np.zeros(len(detector_name_list), dtype=float)
+        y2 = np.zeros(len(detector_name_list), dtype=float)
+        y3 = np.zeros(len(detector_name_list), dtype=float)
+
+        for i_chip in range(len(detector_name_list)):
+            name = detector_name_list[i_chip]
+            corners = getCornerRaDec(name, self.camera, self.obs)
+            x0[i_chip] = corners[0][0]
+            x1[i_chip] = corners[1][0]
+            x2[i_chip] = corners[2][0]
+            x3[i_chip] = corners[3][0]
+            y0[i_chip] = corners[0][1]
+            y1[i_chip] = corners[1][1]
+            y2[i_chip] = corners[2][1]
+            y3[i_chip] = corners[3][1]
+
+        np.testing.assert_array_almost_equal(x0, data['x0'], decimal=4)
+        np.testing.assert_array_almost_equal(x1, data['x1'], decimal=4)
+        np.testing.assert_array_almost_equal(x2, data['x2'], decimal=4)
+        np.testing.assert_array_almost_equal(x3, data['x3'], decimal=4)
+        np.testing.assert_array_almost_equal(y0, data['y0'], decimal=4)
+        np.testing.assert_array_almost_equal(y1, data['y1'], decimal=4)
+        np.testing.assert_array_almost_equal(y2, data['y2'], decimal=4)
+        np.testing.assert_array_almost_equal(y3, data['y3'], decimal=4)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
