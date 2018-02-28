@@ -27,7 +27,7 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
     tests will break, but hopefully we will be aware that that happened and
     we will be able to regenerate the underlying test data with
 
-    $SIM_COORDUTILS_DIR/workspace/dm_12447/make_test_catalog.py
+    $SIM_COORDUTILS_DIR/tests/lsstCameraData/make_test_catalog.py
     """
 
     @classmethod
