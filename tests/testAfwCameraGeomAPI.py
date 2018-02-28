@@ -69,6 +69,20 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
 
         np.testing.assert_array_equal(chip_name_arr, self.pix_data['name'])
 
+    def test_pixelCoords(self):
+        """
+        Verify that pixelCoordsFromRaDecLSST has not changed
+        """
+        pix_x, pix_y = pixelCoordsFromRaDecLSST(self.pix_data['ra'],
+                                                self.pix_data['dec'],
+                                                obs_metadata=self.obs)
+
+        np.testing.assert_array_almost_equal(pix_x, self.pix_data['pixel_x'],
+                                             decimal=4)
+        np.testing.assert_array_almost_equal(pix_y, self.pix_data['pixel_y'],
+                                             decimal=4)
+
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
