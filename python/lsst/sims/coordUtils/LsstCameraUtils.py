@@ -128,8 +128,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
     # the conversion to a numpy array gets passed down to the contents of nativePointList
     # and they end up in a form that the afwCameraGeom code does not know how to handle
     nativePointList = np.zeros(len(pupilPointList), dtype=object)
-    nativePointList_raw = lsst_camera()._transformSingleSysArray(pupilPointList, FIELD_ANGLE,
-                                                                 lsst_camera()._nativeCameraSys)
+    nativePointList_raw = lsst_camera().transform(pupilPointList, FIELD_ANGLE,
+                                                  lsst_camera()._nativeCameraSys)
     for i_nn in range(len(nativePointList_raw)):
         nativePointList[i_nn] = nativePointList_raw[i_nn]
 
