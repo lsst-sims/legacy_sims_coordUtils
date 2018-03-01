@@ -2,6 +2,7 @@ from __future__ import division
 from builtins import zip
 from builtins import range
 import numpy as np
+import lsst.log as lsstLog
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
 from lsst.afw.geom import Box2D
@@ -23,6 +24,7 @@ def lsst_camera():
     Return a copy of the LSST Camera model as stored in obs_lsstSim.
     """
     if not hasattr(lsst_camera, '_lsst_camera'):
+        lsstLog.setLevel('CameraMapper', lsstLog.WARN)
         lsst_camera._lsst_camera = LsstSimMapper().camera
 
     return lsst_camera._lsst_camera
