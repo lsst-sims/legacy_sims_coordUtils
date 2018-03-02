@@ -2,6 +2,7 @@ from __future__ import division
 from builtins import zip
 from builtins import range
 import numpy as np
+import lsst.log as lsstLog
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
 from lsst.afw.geom import Box2D
@@ -23,6 +24,7 @@ def lsst_camera():
     Return a copy of the LSST Camera model as stored in obs_lsstSim.
     """
     if not hasattr(lsst_camera, '_lsst_camera'):
+        lsstLog.setLevel('CameraMapper', lsstLog.WARN)
         lsst_camera._lsst_camera = LsstSimMapper().camera
 
     return lsst_camera._lsst_camera
@@ -126,8 +128,8 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
     # the conversion to a numpy array gets passed down to the contents of nativePointList
     # and they end up in a form that the afwCameraGeom code does not know how to handle
     nativePointList = np.zeros(len(pupilPointList), dtype=object)
-    nativePointList_raw = lsst_camera()._transformSingleSysArray(pupilPointList, FIELD_ANGLE,
-                                                                 lsst_camera()._nativeCameraSys)
+    nativePointList_raw = lsst_camera().transform(pupilPointList, FIELD_ANGLE,
+                                                  lsst_camera()._nativeCameraSys)
     for i_nn in range(len(nativePointList_raw)):
         nativePointList[i_nn] = nativePointList_raw[i_nn]
 
