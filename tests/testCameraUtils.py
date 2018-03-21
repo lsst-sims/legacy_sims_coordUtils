@@ -1445,7 +1445,22 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                              arcsecFromRadians(y_p_test),
                                              decimal=6)
 
+        # test that it works on scalars, too
+        for ii in range(len(x_pup)):
+            (x_p_test,
+             y_p_test) = pupilCoordsFromFocalPlaneCoords(x_f[ii], y_f[ii],
+                                                         camera=lsst_camera())
+
+            self.assertAlmostEqual(arcsecFromRadians(x_pup[ii]),
+                                   arcsecFromRadians(x_p_test),
+                                   6)
+
+            self.assertAlmostEqual(arcsecFromRadians(y_pup[ii]),
+                                   arcsecFromRadians(y_p_test),
+                                   6)
+
         del lsst_camera._lsst_camera
+
 
 class ConversionFromPixelTest(unittest.TestCase):
 
