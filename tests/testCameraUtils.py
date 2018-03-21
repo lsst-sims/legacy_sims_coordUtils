@@ -1543,7 +1543,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         xPixList = self.rng.random_sample(nStars)*4000.0
         yPixList = self.rng.random_sample(nStars)*4000.0
 
-        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.randint(0, len(self.camera), nStars)
         camera_detector_keys = list(self.camera._nameDetectorDict.keys())
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
@@ -1676,7 +1676,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         xPixList = self.rng.random_sample(nStars)*4000.0
         yPixList = self.rng.random_sample(nStars)*4000.0
 
-        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.randint(0, len(self.camera), nStars)
         camera_detector_keys = list(self.camera._nameDetectorDict.keys())
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
@@ -1740,7 +1740,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         xPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
         yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
-        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.randint(0, len(self.camera), nStars)
         camera_detector_keys = list(self.camera._nameDetectorDict.keys())
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
@@ -1789,7 +1789,7 @@ class ConversionFromPixelTest(unittest.TestCase):
         xPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
         yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
-        chipDexList = self.rng.random_integers(0, len(self.camera)-1, nStars)
+        chipDexList = self.rng.randint(0, len(self.camera), nStars)
         camera_detector_keys = list(self.camera._nameDetectorDict.keys())
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
