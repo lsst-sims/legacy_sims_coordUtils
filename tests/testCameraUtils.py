@@ -27,6 +27,11 @@ from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
 from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDec
 
+from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoords
+from lsst.sims.coordUtils import lsst_camera
+
+from lsst.afw.geom import Point2D
+from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -1416,6 +1421,31 @@ class FocalPlaneCoordTest(unittest.TestCase):
         np.testing.assert_array_almost_equal(xFocalTest, xFocalControl, 3)
         np.testing.assert_array_almost_equal(yFocalTest, yFocalControl, 3)
 
+    def test_pupilCoordsFromFocalPlaneCoords(self):
+        """
+        Test that pupilCoordsFromFocalPlaneCoords inverts
+        focalPlaneCoordsFromPupilCoords
+        """
+        rng = np.random.RandomState(88123)
+        n_pts = 20
+        x_pup = rng.random_sample(n_pts)*0.05-0.025
+        y_pup = rng.random_sample(n_pts)*0.05-0.025
+
+        x_f, y_f = focalPlaneCoordsFromPupilCoords(x_pup, y_pup,
+                                                   camera=lsst_camera())
+
+        x_p_test, y_p_test = pupilCoordsFromFocalPlaneCoords(x_f, y_f,
+                                                             camera=lsst_camera())
+
+        np.testing.assert_array_almost_equal(arcsecFromRadians(x_pup),
+                                             arcsecFromRadians(x_p_test),
+                                             decimal=6)
+
+        np.testing.assert_array_almost_equal(arcsecFromRadians(y_pup),
+                                             arcsecFromRadians(y_p_test),
+                                             decimal=6)
+
+        del lsst_camera._lsst_camera
 
 class ConversionFromPixelTest(unittest.TestCase):
 

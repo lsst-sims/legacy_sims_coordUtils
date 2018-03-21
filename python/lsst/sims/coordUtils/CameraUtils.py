@@ -11,7 +11,7 @@ __all__ = ["MultipleChipWarning", "getCornerPixels", "_getCornerRaDec", "getCorn
            "chipNameFromPupilCoords", "chipNameFromRaDec", "_chipNameFromRaDec",
            "pixelCoordsFromPupilCoords", "pixelCoordsFromRaDec", "_pixelCoordsFromRaDec",
            "focalPlaneCoordsFromPupilCoords", "focalPlaneCoordsFromRaDec", "_focalPlaneCoordsFromRaDec",
-           "pupilCoordsFromPixelCoords",
+           "pupilCoordsFromPixelCoords", "pupilCoordsFromFocalPlaneCoords",
            "raDecFromPixelCoords", "_raDecFromPixelCoords",
            "_validate_inputs_and_chipname"]
 
@@ -996,3 +996,43 @@ def focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=None):
     # if not are_arrays
     fpPoint = field_to_focal.applyForward(afwGeom.Point2D(xPupil, yPupil))
     return np.array([fpPoint.getX(), fpPoint.getY()])
+
+
+def pupilCoordsFromFocalPlaneCoords(xFocal, yFocal, camera=None):
+    """
+    Get the pupil coordinates in radians from the focal plane
+    coordinates in millimeters
+
+    @param [in] xFocal the x focal plane coordinates in millimeters.
+    Can be a float or a numpy array.
+
+    @param [in] yFocal the y focal plane coordinates in millimeters.
+    Can be a float or a numpy array.
+
+    @param [in] camera is an afw.cameraGeom camera object
+
+    @param [out] a 2-D numpy array in which the first row is the x
+    pupil coordinate and the second row is the y pupil
+    coordinate (both in radians)
+    """
+
+    are_arrays = _validate_inputs([xFocal, yFocal],
+                                  ['xFocal', 'yFocal'],
+                                  'pupilCoordsFromFocalPlaneCoords')
+
+    if camera is None:
+        raise RuntimeError("You cannot calculate pupil coordinates without specifying a camera")
+
+    focal_to_field = camera.getTransformMap().getTransform(FOCAL_PLANE, FIELD_ANGLE)
+
+    if are_arrays:
+        focal_point_list = [afwGeom.Point2D(x,y) for x,y in zip(xFocal, yFocal)]
+        pupil_point_list = focal_to_field.applyForward(focal_point_list)
+        xPupil = np.array([pp.getX() for pp in pupil_point_list])
+        yPupil = np.array([pp.getY() for pp in pupil_point_list])
+
+        return np.array([xPupil, yPupil])
+
+    # if not are_arrays
+    pupPoint = focal_to_field.applyForward(afwGeom.Point2D(xFocal, yFocal))
+    return np.array([pupPoint.getX(), pupPoint.getY()])
