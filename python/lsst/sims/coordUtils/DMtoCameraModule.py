@@ -46,29 +46,6 @@ class DMtoCameraPixelTransformer(object):
 
          return self._center_pixel_cache[detector_name]
 
-    def getTanPixelBounds(self, detector_name):
-        """
-        Return the min and max pixel values of a detector, assuming
-        all radial distortions are set to zero (i.e. using the afwCameraGeom
-        TAN_PIXELS coordinate system)
-
-        Parameters
-        ----------
-        detector_name is a string denoting the name of the detector
-
-        Returns
-        -------
-        xmin, xmax, ymin, ymax pixel values
-        """
-        if not hasattr(self, '_tan_pixel_bounds_cache'):
-            self._tan_pixel_bounds_cache = {}
-
-        if detector_name not in self._tan_pixel_bounds_cache:
-            dm_xmin, dm_xmax, dm_ymin, dm_ymax = GalSimCameraWrapper.getTanPixelBounds(self, detector_name)
-            self._tan_pixel_bounds_cache[detector_name] = (dm_ymin, dm_ymax, dm_xmin, dm_xmax)
-
-        return self._tan_pixel_bounds_cache[detector_name]
-
     def cameraPixFromDMPix(self, dm_xPix, dm_yPix, chipName):
         """
         Convert DM pixel coordinates into camera pixel coordinates
