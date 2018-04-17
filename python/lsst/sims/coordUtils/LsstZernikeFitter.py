@@ -1,16 +1,86 @@
 import numpy as np
 import os
 import numbers
+import palpy
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ZernikePolynomialGenerator
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
-from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, SCIENCE
+from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, FIELD_ANGLE, SCIENCE
 import lsst.afw.geom as afwGeom
+from lsst.sims.utils.CodeUtilities import _validate_inputs
 
 
 __all__ = ["LsstZernikeFitter"]
+
+
+def _rawPupilCoordsFromObserved(ra_obs, dec_obs, ra0, dec0, rotSkyPos):
+    """
+    Convert Observed RA, Dec into pupil coordinates
+
+    Parameters
+    ----------
+    ra_obs is the observed RA in radians
+
+    dec_obs is the observed Dec in radians
+
+    ra0 is the RA of the boresite in radians
+
+    dec0 is the Dec of the boresite in radians
+
+    rotSkyPos is in radians
+
+    Returns
+    --------
+    A numpy array whose first row is the x coordinate on the pupil in
+    radians and whose second row is the y coordinate in radians
+    """
+
+    are_arrays = _validate_inputs([ra_obs, dec_obs], ['ra_obs', 'dec_obs'],
+                                  "pupilCoordsFromObserved")
+
+    theta = -1.0*rotSkyPos
+
+    ra_pointing = ra0
+    dec_pointing = dec0
+
+    # palpy.ds2tp performs the gnomonic projection on ra_in and dec_in
+    # with a tangent point at (pointingRA, pointingDec)
+    #
+    if not are_arrays:
+        try:
+            x, y = palpy.ds2tp(ra_obs, dec_obs, ra_pointing, dec_pointing)
+        except:
+            x = np.NaN
+            y = np.NaN
+    else:
+        try:
+            x, y = palpy.ds2tpVector(ra_obs, dec_obs, ra_pointing, dec_pointing)
+        except:
+            # apparently, one of your ra/dec values was improper; we will have to do this
+            # element-wise, putting NaN in the place of the bad values
+            x = []
+            y = []
+            for rr, dd in zip(ra_obs, dec_obs):
+                try:
+                    xx, yy = palpy.ds2tp(rr, dd, ra_pointing, dec_pointing)
+                except:
+                    xx = np.NaN
+                    yy = np.NaN
+                x.append(xx)
+                y.append(yy)
+            x = np.array(x)
+            y = np.array(y)
+
+    # rotate the result by rotskypos (rotskypos being "the angle of the sky relative to
+    # camera coordinates" according to phoSim documentation) to account for
+    # the rotation of the focal plane about the telescope pointing
+
+    x_out = x*np.cos(theta) - y*np.sin(theta)
+    y_out = x*np.sin(theta) + y*np.cos(theta)
+
+    return np.array([x_out, y_out])
 
 
 class LsstZernikeFitter(object):
@@ -55,7 +125,14 @@ class LsstZernikeFitter(object):
 
         catsim_catalog = os.path.join(catsim_dir,'predicted_positions.txt')
 
-        catsim_dtype = np.dtype([('id', int), ('xmm', float), ('ymm', float),
+        with open(catsim_catalog, 'r') as input_file:
+            header = input_file.readline()
+        params = header.strip().split()
+        ra0 = np.radians(float(params[2]))
+        dec0 = np.radians(float(params[4]))
+        rotSkyPos = np.radians(float(params[6]))
+
+        catsim_dtype = np.dtype([('id', int), ('xmm_old', float), ('ymm_old', float),
                                  ('xpup', float), ('ypup', float),
                                  ('raObs', float), ('decObs', float)])
 
@@ -64,11 +141,23 @@ class LsstZernikeFitter(object):
         sorted_dex = np.argsort(catsim_data['id'])
         catsim_data=catsim_data[sorted_dex]
 
-        catsim_radius = np.sqrt(catsim_data['xmm']**2 + catsim_data['ymm']**2)
+        x_field, y_field = _rawPupilCoordsFromObserved(np.radians(catsim_data['raObs']),
+                                                       np.radians(catsim_data['decObs']),
+                                                       ra0, dec0, rotSkyPos)
+
+        field_to_focal = self._camera.getTransform(FIELD_ANGLE, FOCAL_PLANE)
+        catsim_xmm = np.zeros(len(x_field), dtype=float)
+        catsim_ymm = np.zeros(len(y_field), dtype=float)
+        for ii, (xx, yy) in enumerate(zip(x_field, y_field)):
+            focal_pt = field_to_focal.applyForward(afwGeom.Point2D(xx, yy))
+            catsim_xmm[ii] = focal_pt.getX()
+            catsim_ymm[ii] = focal_pt.getY()
+
+        catsim_radius = np.sqrt(catsim_xmm**2 + catsim_ymm**2)
         self._rr = catsim_radius.max()
 
-        catsim_x = catsim_data['xmm']/self._rr
-        catsim_y = catsim_data['ymm']/self._rr
+        catsim_x = catsim_xmm/self._rr
+        catsim_y = catsim_ymm/self._rr
 
         polynomials ={}
         for n, m in zip(self._n_grid, self._m_grid):
@@ -108,8 +197,8 @@ class LsstZernikeFitter(object):
                     focal_pt = pixels_to_focal.applyForward(afwGeom.Point2D(xpix[ii], ypix[ii]))
                     xmm[ii] = focal_pt.getX()
                     ymm[ii] = focal_pt.getY()
-                dx[phosim_data['id']-1] = xmm - catsim_data['xmm'][phosim_data['id']-1]
-                dy[phosim_data['id']-1] = ymm - catsim_data['ymm'][phosim_data['id']-1]
+                dx[phosim_data['id']-1] = xmm - catsim_xmm[phosim_data['id']-1]
+                dy[phosim_data['id']-1] = ymm - catsim_ymm[phosim_data['id']-1]
                 phosim_xmm[phosim_data['id']-1] = xmm
                 phosim_ymm[phosim_data['id']-1] = ymm
 
