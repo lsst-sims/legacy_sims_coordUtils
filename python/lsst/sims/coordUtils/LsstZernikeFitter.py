@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import numbers
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ZernikePolynomialGenerator
@@ -131,3 +132,36 @@ class LsstZernikeFitter(object):
             self._transformations[self._int_to_band[i_filter]]['y'] = {}
             for ii, kk in enumerate(poly_keys):
                 self._transformations[self._int_to_band[i_filter]]['y'][kk] = alpha_y[ii]
+
+    def dxdy(self, xmm, ymm, band):
+        """
+        Parameters
+        ----------
+        xmm -- the naive x focal plane position in mm
+
+        ymm -- the naive y focal plane position in mm
+
+        band -- the filter in which we are operating
+
+        Returns
+        -------
+        dx -- the offset in the x focal plane position in mm
+
+        dy -- the offset in the y focal plane position in mm
+        """
+        if isinstance(band, int):
+            band = self._int_to_band[band]
+
+        if isinstance(xmm, numbers.Number):
+            dx = 0.0
+            dy = 0.0
+        else:
+            dx = np.zeros(len(xmm), dtype=float)
+            dy = np.zeros(len(ymm), dtype=float)
+
+        for kk in self._transformations[band]['x']:
+            values = self._z_gen.evaluate_xy(xmm/self._rr, ymm/self._rr, kk[0], kk[1])
+            dx += self._transformations[band]['x'][kk]*values
+            dy += self._transformations[band]['y'][kk]*values
+
+        return dx, dy
