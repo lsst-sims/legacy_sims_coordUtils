@@ -2,32 +2,20 @@ from __future__ import division
 from builtins import zip
 from builtins import range
 import numpy as np
-import lsst.log as lsstLog
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
 from lsst.afw.geom import Box2D
+from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
 from lsst.sims.utils.CodeUtilities import _validate_inputs
-from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
 
-__all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
+__all__ = ["chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
-
-
-def lsst_camera():
-    """
-    Return a copy of the LSST Camera model as stored in obs_lsstSim.
-    """
-    if not hasattr(lsst_camera, '_lsst_camera'):
-        lsstLog.setLevel('CameraMapper', lsstLog.WARN)
-        lsst_camera._lsst_camera = LsstSimMapper().camera
-
-    return lsst_camera._lsst_camera
 
 
 def _build_lsst_pupil_coord_map():
