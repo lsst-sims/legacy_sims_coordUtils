@@ -169,7 +169,6 @@ class LsstZernikeFitter(object):
         phosim_dtype = np.dtype([('id', int), ('phot', float),
                                  ('xpix', float), ('ypix', float)])
 
-
         self._transformations = {}
 
         for i_filter in range(6):
