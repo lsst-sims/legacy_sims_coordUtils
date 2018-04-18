@@ -6,6 +6,8 @@ import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
 from lsst.afw.geom import Box2D
 from lsst.sims.coordUtils import lsst_camera
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
+from lsst.sims.coordUtils import LsstZernikeFitter
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
@@ -13,9 +15,40 @@ from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import radiansFromArcsec
 
 
-__all__ = ["chipNameFromPupilCoordsLSST",
+__all__ = ["focalPlaneCoordsFromPupilCoordsLSST",
+           "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
+
+
+def focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band='r'):
+    """
+    Get the focal plane coordinates for all objects in the catalog.
+
+    Parameters
+    ----------
+    xPupil -- the x pupil coordinates in radians.
+    Can be a float or a numpy array.
+
+    yPupil -- the y pupil coordinates in radians.
+    Can be a float or a numpy array.
+
+    band -- the filter being simulated (default='r')
+
+    Returns
+    --------
+    a 2-D numpy array in which the first row is the x
+    focal plane coordinate and the second row is the y focal plane
+    coordinate (both in millimeters)
+    """
+
+    if not hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
+        focalPlaneCoordsFromPupilCoordsLSST._z_fitter = LsstZernikeFitter()
+
+    z_fitter = focalPlaneCoordsFromPupilCoordsLSST._z_fitter
+    x_f0, y_f0 = focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=lsst_camera())
+    dx, dy = z_fitter.dxdy(x_f0, y_f0, band)
+    return np.array([x_f0+dx, y_f0+dy])
 
 
 def _build_lsst_pupil_coord_map():
