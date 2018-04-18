@@ -9,9 +9,9 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import getCornerRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromRaDec
-from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
-from lsst.sims.coordUtils import chipNameFromRaDecLSST
-from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
+from lsst.sims.coordUtils import pixelCoordsFromRaDec
+from lsst.sims.coordUtils import chipNameFromRaDec
+from lsst.sims.coordUtils import chipNameFromPupilCoords
 
 
 def setup_module(module):
@@ -52,9 +52,6 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
-            del chipNameFromPupilCoordsLSST._detector_arr
-
         del cls.camera
         if hasattr(lsst_camera, '_lsst_camera'):
             del lsst_camera._lsst_camera
@@ -63,9 +60,10 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
         """
         Verify that chipNameFromRaDecLSST has not changed.
         """
-        chip_name_arr = chipNameFromRaDecLSST(self.pix_data['ra'],
-                                              self.pix_data['dec'],
-                                              obs_metadata=self.obs)
+        chip_name_arr = chipNameFromRaDec(self.pix_data['ra'],
+                                          self.pix_data['dec'],
+                                          obs_metadata=self.obs,
+                                          camera=self.camera)
 
         np.testing.assert_array_equal(chip_name_arr, self.pix_data['name'])
 
@@ -73,9 +71,10 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
         """
         Verify that pixelCoordsFromRaDecLSST has not changed
         """
-        pix_x, pix_y = pixelCoordsFromRaDecLSST(self.pix_data['ra'],
-                                                self.pix_data['dec'],
-                                                obs_metadata=self.obs)
+        pix_x, pix_y = pixelCoordsFromRaDec(self.pix_data['ra'],
+                                            self.pix_data['dec'],
+                                            obs_metadata=self.obs,
+                                            camera=self.camera)
 
         np.testing.assert_array_almost_equal(pix_x, self.pix_data['pixel_x'],
                                              decimal=3)

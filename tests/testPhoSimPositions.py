@@ -18,6 +18,7 @@ from lsst.sims.coordUtils import getCornerPixels
 from lsst.sims.utils import observedFromICRS
 from lsst.sims.utils import arcsecFromRadians, angularSeparation
 from lsst.sims.coordUtils import lsst_camera
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -43,6 +44,8 @@ class PhoSim_position_test_case(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        if hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
+            del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
         if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
             del chipNameFromPupilCoordsLSST._detector_arr
         if hasattr(lsst_camera, '_lsst_camera'):

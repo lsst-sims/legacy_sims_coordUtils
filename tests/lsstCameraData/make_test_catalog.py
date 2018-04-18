@@ -14,8 +14,8 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import getCornerRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromRaDec
-from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
-from lsst.sims.coordUtils import chipNameFromRaDecLSST
+from lsst.sims.coordUtils import pixelCoordsFromRaDec
+from lsst.sims.coordUtils import chipNameFromRaDec
 
 if __name__ == "__main__":
 
@@ -40,8 +40,8 @@ if __name__ == "__main__":
     ra_grid = ra_grid.flatten()
     dec_grid = dec_grid.flatten()
 
-    chip_name_grid = chipNameFromRaDecLSST(ra_grid, dec_grid,
-                                           obs_metadata=obs)
+    chip_name_grid = chipNameFromRaDec(ra_grid, dec_grid,
+                                       obs_metadata=obs, camera=camera)
 
     valid = np.where(np.char.find(chip_name_grid.astype(str), 'None')<0)
 
@@ -53,9 +53,10 @@ if __name__ == "__main__":
                                                  obs_metadata=obs,
                                                  camera=camera)
 
-    pix_x, pix_y = pixelCoordsFromRaDecLSST(ra_grid, dec_grid,
-                                            chipName=chip_name_grid,
-                                            obs_metadata=obs)
+    pix_x, pix_y = pixelCoordsFromRaDec(ra_grid, dec_grid,
+                                        chipName=chip_name_grid,
+                                        obs_metadata=obs,
+                                        camera=camera)
 
     with open('lsst_pixel_data.txt', 'w') as out_file:
         out_file.write(header_msg)
