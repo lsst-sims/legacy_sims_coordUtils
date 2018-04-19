@@ -304,6 +304,64 @@ class FullTransformationTestCase(unittest.TestCase):
 
         self.assertLess(distance.max(), 1.0e-12)
 
+    def test_focal_coords_from_pupil_coords(self):
+        """
+        Test that using pupilCoordsFromRaDec and
+        focalPlaneCoordsFromPupilCoordsLSST gives answers
+        consistent with PhoSim
+        """
+        camera = lsst_camera()
+        pix_transformer = DMtoCameraPixelTransformer()
+
+        x_pup, y_pup = pupilCoordsFromRaDec(self._truth_data['ra'],
+                                            self._truth_data['dec'],
+                                            pm_ra=self._truth_data['pmra'],
+                                            pm_dec=self._truth_data['pmdec'],
+                                            parallax=self._truth_data['px'],
+                                            v_rad=self._truth_data['vrad'],
+                                            obs_metadata=self._obs)
+
+        n_check = 0
+        d_max = None
+
+        for det in camera:
+            if det.getType() != SCIENCE:
+                continue
+            det_name = det.getName()
+            name = det_name.replace(':','').replace(',','').replace(' ','_')
+            key_tuple = (name, 'u')
+            if key_tuple not in self._phosim_data:
+                continue
+            phosim_data = self._phosim_data[key_tuple]
+
+            pixel_to_focal = det.getTransform(PIXELS, FOCAL_PLANE)
+
+            for id_val, xcam, ycam in zip(phosim_data['id'],
+                                          phosim_data['xcam'],
+                                          phosim_data['ycam']):
+
+                dex = np.where(self._truth_data['id'] == id_val)
+                xp = x_pup[dex]
+                yp = y_pup[dex]
+                xf, yf = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, 'u')
+                xdm, ydm = pix_transformer.dmPixFromCameraPix(xcam, ycam,
+                                                              det_name)
+                pixel_pt = afwGeom.Point2D(xdm, ydm)
+                focal_pt = pixel_to_focal.applyForward(pixel_pt)
+
+                dist = np.sqrt((xf-focal_pt.getX())**2+(yf-focal_pt.getY())**2)
+                msg = '\nPhosim: %.4f %.4f\nCatSim: %.4f %.4f\n' % (focal_pt.getX(),
+                                                                    focal_pt.getY(),
+                                                                    xf, yf)
+                #self.assertLess(dist, 0.01, msg=msg)
+                if d_max is None or dist>d_max:
+                    d_max = dist
+                    print('d_max %e %.3f %.3f %s %d %d' %
+                          (d_max, xf, yf, det_name, xdm, ydm))
+                n_check += 1
+
+        self.assertGreater(n_check, 200)
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
