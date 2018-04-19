@@ -233,7 +233,7 @@ def _findDetectorsListLSST(focalPointList, detectorList, possible_points,
     return np.array(outputNameList)
 
 
-def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False):
+def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False, band='r'):
     """
     Return the names of LSST detectors that see the object specified by
     either (xPupil, yPupil).
@@ -249,6 +249,8 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
     and an object appears on more than one chip, only the first chip will appear in the list of
     chipNames and warning will be emitted.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
+
+    @param[in] band is the bandpass being simulated (default='r')
 
     @param [out] a numpy array of chip names
 
@@ -307,7 +309,7 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
         xPupil_in = np.array([xPupil_in])
         yPupil_in = np.array([yPupil_in])
 
-    xFocal, yFocal = focalPlaneCoordsFromPupilCoordsLSST(xPupil_in, yPupil_in)
+    xFocal, yFocal = focalPlaneCoordsFromPupilCoordsLSST(xPupil_in, yPupil_in, band=band)
 
     radius_sq_list = ((xFocal-chipNameFromPupilCoordsLSST._x_focal_center)**2 +
                       (yFocal-chipNameFromPupilCoordsLSST._y_focal_center)**2)

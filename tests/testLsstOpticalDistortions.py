@@ -9,7 +9,9 @@ import lsst.afw.geom as afwGeom
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
-
+from lsst.sims.utils import ObservationMetaData
+from lsst.sims.utils import pupilCoordsFromRaDec
+from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -111,6 +113,129 @@ class FocalPlaneTestCase(unittest.TestCase):
 
             self.assertLess(distance.max(), 0.01)
             print(band,distance.max()/0.01)
+
+
+class FullTransformationTestCase(unittest.TestCase):
+    """
+    Test that we can go from astrophysical coordinates (RA, Dec)
+    to pixel coordinates
+    """
+
+    longMessage = True
+
+    @classmethod
+    def setUpClass(cls):
+        cls._data_dir = os.path.join(getPackageDir('sims_data'),
+                                     'FocalPlaneData',
+                                     'UnitTestData',
+                                     'FullUnitTest')
+
+        truth_name = os.path.join(cls._data_dir, 'truth_catalog.txt')
+        with open(truth_name, 'r') as in_file:
+            header = in_file.readline()
+        params = header.strip().split()
+        ra = float(params[2])
+        dec = float(params[4])
+        rotSkyPos = float(params[6])
+        mjd = float(params[8])
+        cls._obs = ObservationMetaData(pointingRA=ra,
+                                       pointingDec=dec,
+                                       rotSkyPos=rotSkyPos,
+                                       mjd=mjd)
+
+        cls._obs.site._humidity = 0.0
+        cls._obs.site._pressure = 0.0
+        assert cls._obs.site.humidity == 0.0
+        assert cls._obs.site.pressure == 0.0
+
+        truth_dtype = np.dtype([('id', int), ('ra', float), ('dec', float),
+                                ('pmra', float), ('pmdec', float),
+                                ('px', float), ('vrad', float)])
+
+        cls._truth_data = np.genfromtxt(truth_name, dtype=truth_dtype,
+                                        delimiter=', ')
+
+        phosim_dtype = np.dtype([('id', int), ('phot', int),
+                                 ('xcam', float), ('ycam', float)])
+
+        list_of_files = os.listdir(cls._data_dir)
+
+        cls._phosim_data = {}
+
+        for file_name in list_of_files:
+            if 'centroid' not in file_name:
+                continue
+            full_name = os.path.join(cls._data_dir, file_name)
+            data = np.genfromtxt(full_name, dtype=phosim_dtype,
+                                 skip_header=1)
+
+            if len(data.shape)>0:
+                valid = np.where(data['phot']>0)
+                if len(valid[0]) == 0:
+                    continue
+                data = data[valid]
+            else:
+                if data['phot'] == 0:
+                    continue
+
+            params = file_name.split('_')
+            chip_name = params[5]+'_'+params[6]
+            filter_name = int(params[4][1])
+            cls._phosim_data[(chip_name, 'ugrizy'[filter_name])] = data
+
+    @classmethod
+    def tearDownClass(cls):
+        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
+            del chipNameFromPupilCoordsLSST._detector_arr
+
+        if hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
+            del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
+
+        if hasattr(lsst_camera, '_lsst_camera'):
+            del lsst_camera._lsst_camera
+
+    def test_chip_name_from_pupil_coords_lsst(self):
+        camera = lsst_camera()
+
+        x_pup, y_pup = pupilCoordsFromRaDec(self._truth_data['ra'],
+                                            self._truth_data['dec'],
+                                            pm_ra=self._truth_data['pmra'],
+                                            pm_dec=self._truth_data['pmdec'],
+                                            parallax=self._truth_data['px'],
+                                            v_rad=self._truth_data['vrad'],
+                                            obs_metadata=self._obs)
+
+        chip_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup, band='u')
+        n_checked = 0
+        for ii in range(len(chip_name_list)):
+            chip_name = chip_name_list[ii]
+            if chip_name is None:
+                for kk in self._phosim_data:
+                    if kk[1] == 'u':
+                        try:
+                            assert self._truth_data['id'][ii] not in self._phosim_data[kk]['id']
+                        except AssertionError:
+                            # check that source wasn't just on the edge of the chip
+                            dex = np.where(self._phosim_data[kk]['id']==self._truth_data['id'][ii])[0]
+                            xx = self._phosim_data[kk]['xcam'][dex]
+                            yy = self._phosim_data[kk]['ycam'][dex]
+                            if xx>10.0 and xx<3990.0 and yy>10.0 and yy<3990.0:
+                                msg = '\nxpix: %.3f\nypix: %.3f\n' % (xx, yy)
+                                self.assertNotIn(self._truth_data['id'][ii],
+                                                 self._phosim_data[kk]['id'],
+                                                 msg=msg)
+                continue
+
+            det = camera[chip_name]
+            if det.getType() != SCIENCE:
+                continue
+            n_checked += 1
+            chip_name = chip_name.replace(':','').replace(',','')
+            chip_name = chip_name.replace(' ','_')
+            self.assertIn(self._truth_data['id'][ii],
+                          self._phosim_data[(chip_name, 'u')]['id'])
+
+        self.assertGreater(n_checked, 200)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
