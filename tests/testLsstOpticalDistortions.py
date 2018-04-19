@@ -181,6 +181,13 @@ class FullTransformationTestCase(unittest.TestCase):
             params = file_name.split('_')
             chip_name = params[5]+'_'+params[6]
             filter_name = int(params[4][1])
+            if len(data.shape) == 0:
+                data_raw = data
+                data = {}
+                data['id'] = np.array([data_raw['id']])
+                data['phot'] = np.array([data_raw['phot']])
+                data['xcam'] = np.array([data_raw['xcam']])
+                data['ycam'] = np.array([data_raw['ycam']])
             cls._phosim_data[(chip_name, 'ugrizy'[filter_name])] = data
 
     @classmethod
