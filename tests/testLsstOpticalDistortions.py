@@ -12,6 +12,7 @@ from lsst.sims.coordUtils import DMtoCameraPixelTransformer
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
+from lsst.sims.coordUtils.LsstZernikeFitter import _rawPupilCoordsFromObserved
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -243,6 +244,65 @@ class FullTransformationTestCase(unittest.TestCase):
                           self._phosim_data[(chip_name, 'u')]['id'])
 
         self.assertGreater(n_checked, 200)
+
+    def test_pupil_coords_from_ra_dec(self):
+        """
+        Verifythat pupilCoordsFromRaDec gives results consistent
+        with the naive pupil coordinate method used by the
+        Zernike fitter
+        """
+
+        phosim_catalog_file = os.path.join(self._data_dir, 'phosim_catalog.txt')
+        ra_obs = []
+        dec_obs = []
+        unique_id = []
+        with open(phosim_catalog_file,'r') as input_file:
+            for line in input_file:
+                params = line.strip().split()
+                if params[0] != 'object':
+                    if params[0] == 'rightascension':
+                        ra_pointing = float(params[1])
+                    if params[0] == 'declination':
+                        dec_pointing = float(params[1])
+                    if params[0] == 'rotskypos':
+                        rotskypos = float(params[1])
+                    continue
+                unique_id.append(int(params[1]))
+                ra_obs.append(float(params[2]))
+                dec_obs.append(float(params[3]))
+        unique_id = np.array(unique_id)
+        ra_obs = np.array(ra_obs)
+        dec_obs = np.array(dec_obs)
+        x_pup, y_pup = _rawPupilCoordsFromObserved(np.radians(ra_obs),
+                                                   np.radians(dec_obs),
+                                                   np.radians(ra_pointing),
+                                                   np.radians(dec_pointing),
+                                                   np.radians(rotskypos))
+
+        sorted_dex = np.argsort(unique_id)
+        unique_id = unique_id[sorted_dex]
+        x_pup = x_pup[sorted_dex]
+        y_pup = y_pup[sorted_dex]
+
+        (x_pup_test,
+         y_pup_test) = pupilCoordsFromRaDec(self._truth_data['ra'],
+                                            self._truth_data['dec'],
+                                            pm_ra=self._truth_data['pmra'],
+                                            pm_dec=self._truth_data['pmdec'],
+                                            parallax=self._truth_data['px'],
+                                            v_rad=self._truth_data['vrad'],
+                                            obs_metadata=self._obs)
+
+        sorted_dex = np.argsort(self._truth_data['id'])
+        truth_id = self._truth_data['id'][sorted_dex]
+        x_pup_test = x_pup_test[sorted_dex]
+        y_pup_test = y_pup_test[sorted_dex]
+
+        np.testing.assert_array_equal(unique_id, truth_id)
+        distance = np.sqrt((x_pup-x_pup_test)**2 +
+                           (y_pup-y_pup_test)**2)
+
+        self.assertLess(distance.max(), 1.0e-12)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
