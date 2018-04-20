@@ -8,6 +8,7 @@ from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, SCIENCE
 import lsst.afw.geom as afwGeom
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import pupilCoordsFromRaDec
@@ -344,20 +345,37 @@ class FullTransformationTestCase(unittest.TestCase):
                 xp = x_pup[dex]
                 yp = y_pup[dex]
                 xf, yf = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, 'u')
+
+                (xf_no_optics,
+                 yf_no_optics) = focalPlaneCoordsFromPupilCoords(xp, yp,
+                                                                 camera=lsst_camera())
+
                 xdm, ydm = pix_transformer.dmPixFromCameraPix(xcam, ycam,
                                                               det_name)
                 pixel_pt = afwGeom.Point2D(xdm, ydm)
                 focal_pt = pixel_to_focal.applyForward(pixel_pt)
 
                 dist = np.sqrt((xf-focal_pt.getX())**2+(yf-focal_pt.getY())**2)
-                msg = '\nPhosim: %.4f %.4f\nCatSim: %.4f %.4f\n' % (focal_pt.getX(),
-                                                                    focal_pt.getY(),
-                                                                    xf, yf)
-                #self.assertLess(dist, 0.01, msg=msg)
-                if d_max is None or dist>d_max:
-                    d_max = dist
-                    print('d_max %e %.3f %.3f %s %d %d' %
-                          (d_max, xf, yf, det_name, xdm, ydm))
+                msg = '\nPhosim: %.4f %.4f' % (focal_pt.getX(),focal_pt.getY())
+                msg += '\nCatSim: %.4f %.4f'% (xf, yf)
+                msg += '\nPixels: %.4f %.4f' % (xdm, ydm)
+
+                old_dist = np.sqrt((xf_no_optics-focal_pt.getX())**2 +
+                                   (yf_no_optics-focal_pt.getY())**2)
+
+
+                # if we are off by more than a pixel, make sure that
+                # we have improved over the case without optical
+                # distortions, that the case without optical distortions
+                # was off by more than ten pixels, and that we are still
+                # off by less than five pixels
+                if dist>0.01:
+                    self.assertLess(dist, old_dist, msg=msg)
+                    self.assertGreater(old_dist, 0.1, msg=msg)
+                    self.assertLess(dist, 0.05, msg=msg)
+                else:
+                    self.assertLess(dist, old_dist)
+
                 n_check += 1
 
         self.assertGreater(n_check, 200)
