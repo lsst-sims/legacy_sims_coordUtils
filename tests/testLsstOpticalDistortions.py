@@ -366,14 +366,16 @@ class FullTransformationTestCase(unittest.TestCase):
                                    (yf_no_optics-focal_pt.getY())**2)
 
 
+                self.assertLess(dist, old_dist, msg=msg)
+
                 # if we are off by more than a pixel, make sure that
                 # we have improved over the case without optical
                 # distortions, that the case without optical distortions
                 # was off by more than ten pixels, and that we are still
                 # off by less than five pixels
+
                 if dist>0.01:
-                    self.assertLess(dist, old_dist, msg=msg)
-                    self.assertGreater(old_dist, 0.1, msg=msg)
+                    self.assertGreater(old_dist, 0.2, msg=msg)
                     self.assertLess(dist, 0.05, msg=msg)
                 else:
                     self.assertLess(dist, old_dist)
