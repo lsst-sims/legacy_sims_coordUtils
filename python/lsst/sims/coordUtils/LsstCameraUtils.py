@@ -489,7 +489,8 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
 def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
                               obs_metadata=None,
                               chipName=None, camera=None,
-                              epoch=2000.0, includeDistortion=True):
+                              epoch=2000.0, includeDistortion=True,
+                              band='r'):
     """
     Get the pixel positions on the LSST camera (or nan if not on a chip) for objects based
     on their RA, and Dec (in radians)
@@ -535,6 +536,8 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
+    @param [in] band is the filter we are simulating ('u', 'g', 'r', etc.) Default='r'
+
     @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
     and the second row is the y pixel coordinate
     """
@@ -565,14 +568,55 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
 
     if chipNameList is None:
         chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
+    else:
+        if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array([chipNameList])
+        elif isinstance(chipNameList, list):
+            chipNameList = np.array(chipNameList)
 
-    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=lsst_camera(),
-                                      includeDistortion=includeDistortion)
+    if not includeDistortion:
+        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=lsst_camera(),
+                                          includeDistortion=includeDistortion)
+
+    x_f, y_f = focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band=band)
+
+    if are_arrays:
+        x_pix = np.NaN*np.ones(len(x_f), dtype=float)
+        y_pix = np.NaN*np.ones(len(x_f), dtype=float)
+
+        chipNameList_str = chipNameList.astype(str)
+        for chip_name in np.unique(chipNameList_str):
+            if chip_name == 'None':
+                continue
+            det = lsst_camera()[chip_name]
+            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
+
+            valid = np.where(np.char.find(chipNameList_str, chip_name)==0)
+            for ii in valid[0]:
+                focal_pt = afwGeom.Point2D(x_f[ii], y_f[ii])
+                pixel_pt = focal_to_pixels.applyForward(focal_pt)
+                x_pix[ii] = pixel_pt.getX()
+                y_pix[ii] = pixel_pt.getY()
+    else:
+        chip_name = chipNameList[0]
+        if chip_name is None:
+            x_pix = np.NaN
+            y_pix = np.NaN
+        else:
+            det = lsst_camera()[chip_name]
+            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
+            focal_pt = afwGeom.Point2D(x_f, y_f)
+            pixel_pt = focal_to_pixels.applyForward(focal_pt)
+            x_pix= pixel_pt.getX()
+            y_pix = pixel_pt.getY()
+
+    return np.array([x_pix, y_pix])
 
 
 def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
                              obs_metadata=None, chipName=None,
-                             epoch=2000.0, includeDistortion=True):
+                             epoch=2000.0, includeDistortion=True,
+                             band='r'):
     """
     Get the pixel positions on the LSST camera (or nan if not on a chip) for objects based
     on their RA, and Dec (in degrees)
@@ -615,6 +659,8 @@ def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
+    @param [in] band is the filter we are simulating ('u', 'g', 'r', etc.) Default='r'
+
     @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
     and the second row is the y pixel coordinate
     """
@@ -638,4 +684,5 @@ def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_
                                      pm_ra=pm_ra_out, pm_dec=pm_dec_out,
                                      parallax=parallax_out, v_rad=v_rad,
                                      chipName=chipName, obs_metadata=obs_metadata,
-                                     epoch=2000.0, includeDistortion=includeDistortion)
+                                     epoch=2000.0, includeDistortion=includeDistortion,
+                                     band=band)

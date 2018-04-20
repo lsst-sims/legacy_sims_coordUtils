@@ -13,6 +13,8 @@ from lsst.sims.coordUtils import DMtoCameraPixelTransformer
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
+from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
+from lsst.sims.coordUtils import pixelCoordsFromRaDec
 from lsst.sims.coordUtils.LsstZernikeFitter import _rawPupilCoordsFromObserved
 
 def setup_module(module):
@@ -379,6 +381,118 @@ class FullTransformationTestCase(unittest.TestCase):
                 n_check += 1
 
         self.assertGreater(n_check, 200)
+
+    def test_pixel_coords_from_ra_dec(self):
+        """
+        Test that pixelCoordsFromRaDecLSST() works correctly
+        """
+        pix_transformer = DMtoCameraPixelTransformer()
+
+        x_pix, y_pix = pixelCoordsFromRaDecLSST(self._truth_data['ra'],
+                                                self._truth_data['dec'],
+                                                pm_ra=self._truth_data['pmra'],
+                                                pm_dec=self._truth_data['pmdec'],
+                                                parallax=self._truth_data['px'],
+                                                v_rad=self._truth_data['vrad'],
+                                                obs_metadata=self._obs,
+                                                band='u')
+
+        (x_pix_no_optics,
+         y_pix_no_optics) = pixelCoordsFromRaDec(self._truth_data['ra'],
+                                                 self._truth_data['dec'],
+                                                 pm_ra=self._truth_data['pmra'],
+                                                 pm_dec=self._truth_data['pmdec'],
+                                                 parallax=self._truth_data['px'],
+                                                 v_rad=self._truth_data['vrad'],
+                                                 obs_metadata=self._obs,
+                                                 camera=lsst_camera())
+        n_check = 0
+        n_diff_chip = 0
+
+        for det in lsst_camera():
+            if det.getType() != SCIENCE:
+                continue
+            det_name = det.getName()
+            name = det_name.replace(':','').replace(',','').replace(' ','_')
+            key_tuple = (name, 'u')
+            if key_tuple not in self._phosim_data:
+                continue
+            phosim_data = self._phosim_data[key_tuple]
+
+            for id_val, xcam, ycam in zip(phosim_data['id'],
+                                          phosim_data['xcam'],
+                                          phosim_data['ycam']):
+
+                dex = np.where(self._truth_data['id'] == id_val)
+                self.assertEqual(len(dex[0]), 1)
+                dex = dex[0][0]
+                x_pix_val = x_pix[dex]
+                y_pix_val = y_pix[dex]
+                if np.isnan(x_pix_val):
+                    # PhoSim centroid files will report flux from bright
+                    # stars that spill over onto neighboring chips.  In
+                    # this case, CatSim will report chipName=None and
+                    # xpix=ypix=Nan.  In these cases, we will force
+                    # CatSim to calculate the pixel coordinates of the
+                    # object on the chip that PhoSim is reporting and
+                    # compare that result to the contents of the PhoSim
+                    # centroid file.
+                    #
+                    n_diff_chip += 1
+
+                    (x_pix_val,
+                     y_pix_val) = pixelCoordsFromRaDecLSST(self._truth_data['ra'][dex],
+                                                           self._truth_data['dec'][dex],
+                                                           chipName = det_name,
+                                                           pm_ra=self._truth_data['pmra'][dex],
+                                                           pm_dec=self._truth_data['pmdec'][dex],
+                                                           parallax=self._truth_data['px'][dex],
+                                                           v_rad=self._truth_data['vrad'][dex],
+                                                           obs_metadata=self._obs,
+                                                           band='u')
+
+                self.assertIsInstance(x_pix_val, np.float)
+                self.assertIsInstance(y_pix_val, np.float)
+
+                x_pix_no_optics_val = x_pix_no_optics[dex]
+                y_pix_no_optics_val = y_pix_no_optics[dex]
+                if np.isnan(x_pix_no_optics_val):
+
+                    x, y = pixelCoordsFromRaDec(self._truth_data['ra'][dex],
+                                                self._truth_data['dec'][dex],
+                                                chipName = det_name,
+                                                pm_ra=self._truth_data['pmra'][dex],
+                                                pm_dec=self._truth_data['pmdec'][dex],
+                                                parallax=self._truth_data['px'][dex],
+                                                v_rad=self._truth_data['vrad'][dex],
+                                                obs_metadata=self._obs,
+                                                camera=lsst_camera())
+
+                    x_pix_no_optics_val = x
+                    y_pix_no_optics_val = y
+
+                self.assertIsInstance(x_pix_no_optics_val, np.float)
+                self.assertIsInstance(y_pix_no_optics_val, np.float)
+
+                x_dm, y_dm = pix_transformer.dmPixFromCameraPix(xcam, ycam, det_name)
+                dd = np.sqrt((x_dm-x_pix_val)**2 + (y_dm-y_pix_val)**2)
+                dd_no_optics = np.sqrt((x_dm-x_pix_no_optics_val)**2 +
+                                       (y_dm-y_pix_no_optics_val)**2)
+
+                msg = '\nObject %d' % id_val
+                msg += '\nPhoSim: %.4f %.4f' % (x_dm, y_dm)
+                msg += '\nCatSim: %.4f %.4f' % (x_pix_val, y_pix_val)
+                msg += '\nno Optics: %.4f %.4f' % (x_pix_no_optics_val,
+                                                   y_pix_no_optics_val)
+
+                self.assertLess(dd, dd_no_optics, msg=msg)
+                n_check += 1
+                if dd > 1.0:
+                    self.assertLess(dd, 5.0, msg=msg)
+                    self.assertGreater(dd_no_optics, 20.0, msg=msg)
+
+        self.assertGreater(n_check, 200)
+        self.assertLess(n_diff_chip, n_check//2)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
