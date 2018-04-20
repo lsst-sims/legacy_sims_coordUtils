@@ -250,11 +250,14 @@ class ChipNameTestCase(unittest.TestCase):
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = np.radians(raP + rr*np.cos(theta))
         dec_list = np.radians(decP + rr*np.sin(theta))
-        x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
+
+        x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
+                                             includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
-        x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
+                                                           includeDistortion=False)
 
         try:
             np.testing.assert_array_equal(x_pix, x_pix_test)
@@ -273,12 +276,14 @@ class ChipNameTestCase(unittest.TestCase):
 
         # test when we force a chipName
         x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                             obs_metadata=obs, camera=self.camera)
+                                             obs_metadata=obs, camera=self.camera,
+                                             includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                                           obs_metadata=obs)
+                                                           obs_metadata=obs,
+                                                           includeDistortion=False)
         np.testing.assert_array_equal(x_pix, x_pix_test)
         np.testing.assert_array_equal(y_pix, y_pix_test)
 
@@ -304,6 +309,7 @@ class ChipNameTestCase(unittest.TestCase):
                         n_problematic += 1
             if n_problematic>0:
                 raise
+
 
         # test that exceptions are raised when incomplete ObservationMetaData are used
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
@@ -341,11 +347,14 @@ class ChipNameTestCase(unittest.TestCase):
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = raP + rr*np.cos(theta)
         dec_list = decP + rr*np.sin(theta)
-        x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
+
+        x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
+                                            includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
-        x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
+        x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
+                                                          includeDistortion=False)
         try:
             np.testing.assert_array_equal(x_pix, x_pix_test)
             np.testing.assert_array_equal(y_pix, y_pix_test)
@@ -363,12 +372,14 @@ class ChipNameTestCase(unittest.TestCase):
 
         # test when we force a chipName
         x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                            obs_metadata=obs, camera=self.camera)
+                                            obs_metadata=obs, camera=self.camera,
+                                            includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                                          obs_metadata=obs)
+                                                          obs_metadata=obs,
+                                                          includeDistortion=False)
         np.testing.assert_array_equal(x_pix, x_pix_test)
         np.testing.assert_array_equal(y_pix, y_pix_test)
 
@@ -541,18 +552,21 @@ class MotionTestCase(unittest.TestCase):
                                           parallax=parallax, v_rad=v_rad,
                                           obs_metadata=obs)
 
-            xpx_control, ypx_control = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera)
+            xpx_control, ypx_control = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera,
+                                                                  includeDistortion=False)
 
             xpx_test, ypx_test = pixelCoordsFromRaDecLSST(ra_list, dec_list,
                                                           pm_ra=pm_ra, pm_dec=pm_dec,
                                                           parallax=parallax, v_rad=v_rad,
-                                                          obs_metadata=obs)
+                                                          obs_metadata=obs,
+                                                          includeDistortion=False)
 
             xpx_radians, ypx_radians = _pixelCoordsFromRaDecLSST(np.radians(ra_list), np.radians(dec_list),
                                                                  pm_ra=radiansFromArcsec(pm_ra),
                                                                  pm_dec=radiansFromArcsec(pm_dec),
                                                                  parallax=radiansFromArcsec(parallax),
-                                                                 v_rad=v_rad, obs_metadata=obs)
+                                                                 v_rad=v_rad, obs_metadata=obs,
+                                                                 includeDistortion=False)
 
             np.testing.assert_array_equal(xpx_control, xpx_test)
             np.testing.assert_array_equal(ypx_control, ypx_test)
