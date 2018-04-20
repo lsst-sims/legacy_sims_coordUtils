@@ -183,10 +183,19 @@ class LsstZernikeFitter(object):
                     continue
                 pixels_to_focal = det.getTransform(PIXELS, FOCAL_PLANE)
                 det_name = det.getName()
+                bbox = det.getBBox()
                 det_name_m = det_name.replace(':','').replace(',','').replace(' ','_')
                 centroid_name = 'centroid_lsst_e_2_f%d_%s_E000.txt' % (i_filter, det_name_m)
                 full_name = os.path.join(phosim_dir, centroid_name)
                 phosim_data = np.genfromtxt(full_name, dtype=phosim_dtype, skip_header=1)
+
+                # make sure that the data we are fitting to is not too close
+                # to the edge of the detector
+                assert phosim_data['xpix'].min() > bbox.getMinY() + 50.0
+                assert phosim_data['xpix'].max() < bbox.getMaxY() - 50.0
+                assert phosim_data['ypix'].min() > bbox.getMinX() + 50.0
+                assert phosim_data['ypix'].max() < bbox.getMaxX() - 50.0
+
                 xpix, ypix = self._pixel_transformer.dmPixFromCameraPix(phosim_data['xpix'],
                                                                         phosim_data['ypix'],
                                                                         det_name)
