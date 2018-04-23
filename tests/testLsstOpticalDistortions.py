@@ -216,37 +216,38 @@ class FullTransformationTestCase(unittest.TestCase):
                                             v_rad=self._truth_data['vrad'],
                                             obs_metadata=self._obs)
 
-        chip_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup, band='u')
-        n_checked = 0
-        for ii in range(len(chip_name_list)):
-            chip_name = chip_name_list[ii]
-            if chip_name is None:
-                for kk in self._phosim_data:
-                    if kk[1] == 'u':
-                        try:
-                            assert self._truth_data['id'][ii] not in self._phosim_data[kk]['id']
-                        except AssertionError:
-                            # check that source wasn't just on the edge of the chip
-                            dex = np.where(self._phosim_data[kk]['id']==self._truth_data['id'][ii])[0]
-                            xx = self._phosim_data[kk]['xcam'][dex]
-                            yy = self._phosim_data[kk]['ycam'][dex]
-                            if xx>10.0 and xx<3990.0 and yy>10.0 and yy<3990.0:
-                                msg = '\nxpix: %.3f\nypix: %.3f\n' % (xx, yy)
-                                self.assertNotIn(self._truth_data['id'][ii],
-                                                 self._phosim_data[kk]['id'],
-                                                 msg=msg)
-                continue
+        for band in 'ugrizy':
+            chip_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup, band=band)
+            n_checked = 0
+            for ii in range(len(chip_name_list)):
+                chip_name = chip_name_list[ii]
+                if chip_name is None:
+                    for kk in self._phosim_data:
+                        if kk[1] == band:
+                            try:
+                                assert self._truth_data['id'][ii] not in self._phosim_data[kk]['id']
+                            except AssertionError:
+                                # check that source wasn't just on the edge of the chip
+                                dex = np.where(self._phosim_data[kk]['id']==self._truth_data['id'][ii])[0]
+                                xx = self._phosim_data[kk]['xcam'][dex]
+                                yy = self._phosim_data[kk]['ycam'][dex]
+                                if xx>10.0 and xx<3990.0 and yy>10.0 and yy<3990.0:
+                                    msg = '\nxpix: %.3f\nypix: %.3f\n' % (xx, yy)
+                                    self.assertNotIn(self._truth_data['id'][ii],
+                                                     self._phosim_data[kk]['id'],
+                                                     msg=msg)
+                    continue
 
-            det = camera[chip_name]
-            if det.getType() != SCIENCE:
-                continue
-            n_checked += 1
-            chip_name = chip_name.replace(':','').replace(',','')
-            chip_name = chip_name.replace(' ','_')
-            self.assertIn(self._truth_data['id'][ii],
-                          self._phosim_data[(chip_name, 'u')]['id'])
+                det = camera[chip_name]
+                if det.getType() != SCIENCE:
+                    continue
+                n_checked += 1
+                chip_name = chip_name.replace(':','').replace(',','')
+                chip_name = chip_name.replace(' ','_')
+                self.assertIn(self._truth_data['id'][ii],
+                              self._phosim_data[(chip_name, band)]['id'])
 
-        self.assertGreater(n_checked, 200)
+            self.assertGreater(n_checked, 200)
 
     def test_pupil_coords_from_ra_dec(self):
         """
