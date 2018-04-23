@@ -326,6 +326,8 @@ class FullTransformationTestCase(unittest.TestCase):
 
         n_check = 0
         d_max = None
+        n_old_better = 0
+        n_new_better = 0
 
         for det in camera:
             if det.getType() != SCIENCE:
@@ -368,7 +370,18 @@ class FullTransformationTestCase(unittest.TestCase):
                                    (yf_no_optics-focal_pt.getY())**2)
 
 
-                self.assertLess(dist, old_dist, msg=msg)
+                if dist<old_dist:
+                    n_new_better += 1
+                else:
+                    n_old_better += 1
+
+                if np.sqrt(x_pup[dex]**2+y_pup[dex]**2) > 6.0e-5:
+                    # Near the center of the focal plane, the old transformation
+                    # with no filter-dependence is actually better, but neither
+                    # is off by more than half a pixel
+                    self.assertLess(dist, old_dist, msg=msg)
+                else:
+                    self.assertLess(dist-old_dist, 0.05, msg=msg)
 
                 # if we are off by more than a pixel, make sure that
                 # we have improved over the case without optical
@@ -383,6 +396,7 @@ class FullTransformationTestCase(unittest.TestCase):
                 n_check += 1
 
         self.assertGreater(n_check, 200)
+        self.assertGreater(n_new_better, 2*n_old_better)
 
     def test_pixel_coords_from_ra_dec(self):
         """
@@ -418,6 +432,8 @@ class FullTransformationTestCase(unittest.TestCase):
                                                  camera=lsst_camera())
         n_check = 0
         n_diff_chip = 0
+        n_old_better = 0
+        n_new_better = 0
 
         for det in lsst_camera():
             if det.getType() != SCIENCE:
@@ -496,14 +512,28 @@ class FullTransformationTestCase(unittest.TestCase):
                 msg += '\nno Optics: %.4f %.4f' % (x_pix_no_optics_val,
                                                    y_pix_no_optics_val)
 
-                self.assertLess(dd, dd_no_optics, msg=msg)
+                if dd<dd_no_optics:
+                    n_new_better += 1
+                else:
+                    n_old_better += 1
+
+                if np.sqrt(x_pup[dex]**2 + y_pup[dex]**2) > 6.0e-5:
+                    # Near the center of the focal plane, the old transformation
+                    # with no filter-dependence is actually better, but neither
+                    # is off by more than half a pixel
+                    self.assertLess(dd, dd_no_optics, msg=msg)
+                else:
+                    self.assertLess(dd-dd_no_optics, 0.5, msg=msg)
+
                 n_check += 1
+
                 if dd > 1.0:
                     self.assertLess(dd, 5.0, msg=msg)
                     self.assertGreater(dd_no_optics, 20.0, msg=msg)
 
         self.assertGreater(n_check, 200)
         self.assertLess(n_diff_chip, n_check//2)
+        self.assertGreater(n_new_better, 2*n_old_better)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
