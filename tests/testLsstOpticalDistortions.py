@@ -324,79 +324,109 @@ class FullTransformationTestCase(unittest.TestCase):
                                             v_rad=self._truth_data['vrad'],
                                             obs_metadata=self._obs)
 
-        n_check = 0
-        d_max = None
-        n_old_better = 0
-        n_new_better = 0
+        for band in 'ugrizy':
 
-        for det in camera:
-            if det.getType() != SCIENCE:
-                continue
-            det_name = det.getName()
-            name = det_name.replace(':','').replace(',','').replace(' ','_')
-            key_tuple = (name, 'u')
-            if key_tuple not in self._phosim_data:
-                continue
-            phosim_data = self._phosim_data[key_tuple]
+            n_check = 0
+            d_max = None
+            n_old_better = 0
+            n_new_better = 0
 
-            pixel_to_focal = det.getTransform(PIXELS, FOCAL_PLANE)
+            for det in camera:
+                if det.getType() != SCIENCE:
+                    continue
+                det_name = det.getName()
+                name = det_name.replace(':','').replace(',','').replace(' ','_')
+                key_tuple = (name, band)
+                if key_tuple not in self._phosim_data:
+                    continue
+                phosim_data = self._phosim_data[key_tuple]
 
-            for id_val, xcam, ycam in zip(phosim_data['id'],
-                                          phosim_data['xcam'],
-                                          phosim_data['ycam']):
+                pixel_to_focal = det.getTransform(PIXELS, FOCAL_PLANE)
 
-                dex = np.where(self._truth_data['id'] == id_val)
-                xp = x_pup[dex]
-                yp = y_pup[dex]
-                xf, yf = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, 'u')
+                for id_val, xcam, ycam in zip(phosim_data['id'],
+                                              phosim_data['xcam'],
+                                              phosim_data['ycam']):
 
-                (xf_no_optics,
-                 yf_no_optics) = focalPlaneCoordsFromPupilCoords(xp, yp,
-                                                                 camera=lsst_camera())
+                    dex = np.where(self._truth_data['id'] == id_val)
+                    xp = x_pup[dex]
+                    yp = y_pup[dex]
+                    xf, yf = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, band)
 
-                xdm, ydm = pix_transformer.dmPixFromCameraPix(xcam, ycam,
+                    (xf_no_optics,
+                     yf_no_optics) = focalPlaneCoordsFromPupilCoords(xp, yp,
+                                                                     camera=lsst_camera())
+
+                    xdm, ydm = pix_transformer.dmPixFromCameraPix(xcam, ycam,
                                                               det_name)
-                pixel_pt = afwGeom.Point2D(xdm, ydm)
-                focal_pt = pixel_to_focal.applyForward(pixel_pt)
+                    pixel_pt = afwGeom.Point2D(xdm, ydm)
+                    focal_pt = pixel_to_focal.applyForward(pixel_pt)
 
-                dist = np.sqrt((xf-focal_pt.getX())**2+(yf-focal_pt.getY())**2)
-                msg = '\nchip %s' % det_name
-                msg += '\nPupil: %.4e %.4e' % (x_pup[dex], y_pup[dex])
-                msg += '\nPhosim: %.4f %.4f' % (focal_pt.getX(),focal_pt.getY())
-                msg += '\nCatSim: %.4f %.4f'% (xf, yf)
-                msg += '\nPixels: %.4f %.4f' % (xdm, ydm)
-
-                old_dist = np.sqrt((xf_no_optics-focal_pt.getX())**2 +
-                                   (yf_no_optics-focal_pt.getY())**2)
+                    dist = np.sqrt((xf-focal_pt.getX())**2+(yf-focal_pt.getY())**2)
+                    r_center = np.sqrt(focal_pt.getX()**2 + focal_pt.getY()**2)
 
 
-                if dist<old_dist:
-                    n_new_better += 1
-                else:
-                    n_old_better += 1
+                    old_dist = np.sqrt((xf_no_optics-focal_pt.getX())**2 +
+                                       (yf_no_optics-focal_pt.getY())**2)
 
-                if np.sqrt(x_pup[dex]**2+y_pup[dex]**2) > 6.0e-5:
+                    msg = '\nObject %d' % id_val
+                    msg += '\nchip %s' % det_name
+                    msg += '\nband %s' % band
+                    msg += '\ndistance from center: %.4e' % r_center
+                    msg += '\nPupil: %.4e %.4e' % (x_pup[dex], y_pup[dex])
+                    msg += '\nPhosim: %.4f %.4f' % (focal_pt.getX(),focal_pt.getY())
+                    msg += '\nCatSim: %.4f %.4f'% (xf, yf)
+                    msg += '\nPixels: %.4f %.4f' % (xdm, ydm)
+                    msg += '\nnew dist %.4e old_dist %.4e' % (dist, old_dist)
+
+                    if dist<old_dist:
+                        n_new_better += 1
+                    else:
+                        n_old_better += 1
+
                     # Near the center of the focal plane, the old transformation
                     # with no filter-dependence is actually better, but neither
-                    # is off by more than half a pixel
-                    self.assertLess(dist, old_dist, msg=msg)
-                else:
-                    self.assertLess(dist-old_dist, 0.05, msg=msg)
+                    # is off by more than a pixel
+                    #
+                    # It also occasionally happens that the old transformation
+                    # was slightly better at the very edge of the focal plane
+                    # (in some filters)
+                    if old_dist<dist:
+                        if r_center < 100.0:
+                            # if we in the heart of the focal plane, make
+                            # sure that the fit has not degraded by more
+                            # than half a pixel and that the difference
+                            # between CatSim and PhoSim is still less
+                            # than a pixel
+                            self.assertLess(dist-old_dist, 0.005, msg=msg)
+                            self.assertLess(dist, 0.01, msg=msg)
+                        else:
+                            # if we are near the edge of the focal plane,
+                            # make sure that the difference between
+                            # CatSim and PhoSim is less than 2 pixels
+                            self.assertLess(dist, 0.02, msg=msg)
+                    else:
+                        if r_center < 100.0:
+                            # if we are in the heart of the focal plane,
+                            # make sure that the difference between
+                            # CatSim and PhoSim is less than a pixel
+                            self.assertLess(dist, 0.01, msg=msg)
+                        else:
+                            # If we are at the edge of the focal plane,
+                            # make sure that the difference between
+                            # CatSim and PhoSim is less than five pixels,
+                            # and if the difference is less than 2 pixels,
+                            # make sure that the difference under the old
+                            # transformation is more than 15 pixels (indicating
+                            # that we are in a difficult-to-fit part of the
+                            # focal plane)
+                            self.assertLess(dist, 0.05, msg=msg)
+                            if dist > 0.02:
+                                self.assertGreater(old_dist, 0.15, msg=msg)
 
-                # if we are off by more than a pixel, make sure that
-                # we have improved over the case without optical
-                # distortions, that the case without optical distortions
-                # was off by more than ten pixels, and that we are still
-                # off by less than five pixels
+                    n_check += 1
 
-                if dist>0.01:
-                    self.assertGreater(old_dist, 0.2, msg=msg)
-                    self.assertLess(dist, 0.05, msg=msg)
-
-                n_check += 1
-
-        self.assertGreater(n_check, 200)
-        self.assertGreater(n_new_better, 2*n_old_better)
+            self.assertGreater(n_check, 200)
+            self.assertGreater(n_new_better, 4*n_old_better)
 
     def test_pixel_coords_from_ra_dec(self):
         """
