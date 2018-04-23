@@ -473,6 +473,8 @@ class FullTransformationTestCase(unittest.TestCase):
             n_old_better = 0
             n_new_better = 0
 
+            dist_arr = []
+
             for det in lsst_camera():
                 if det.getType() != SCIENCE:
                     continue
@@ -540,6 +542,7 @@ class FullTransformationTestCase(unittest.TestCase):
 
                     x_dm, y_dm = pix_transformer.dmPixFromCameraPix(xcam, ycam, det_name)
                     dd = np.sqrt((x_dm-x_pix_val)**2 + (y_dm-y_pix_val)**2)
+                    dist_arr.append(dd)
                     dd_no_optics = np.sqrt((x_dm-x_pix_no_optics_val)**2 +
                                            (y_dm-y_pix_no_optics_val)**2)
 
@@ -609,6 +612,11 @@ class FullTransformationTestCase(unittest.TestCase):
             self.assertGreater(n_check, 200)
             self.assertLess(n_diff_chip, n_check//2)
             self.assertGreater(n_new_better, 4*n_old_better)
+            dist_arr = np.array(dist_arr)
+            dist_arr = np.sort(dist_arr)
+            print('%s %.2e %.2e %.2e %.2e' %
+            (band,dist_arr[len(dist_arr)//4],np.median(dist_arr),
+             dist_arr[3*len(dist_arr)//4],dist_arr.max()))
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
