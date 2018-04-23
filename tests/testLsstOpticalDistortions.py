@@ -552,7 +552,7 @@ class FullTransformationTestCase(unittest.TestCase):
 
             self.assertGreater(n_check, 200)
             self.assertLess(n_diff_chip, n_check//2)
-            self.assertGreater(n_new_better, 2*n_old_better)
+            self.assertGreater(n_new_better, 4*n_old_better)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
