@@ -358,7 +358,9 @@ class FullTransformationTestCase(unittest.TestCase):
                 focal_pt = pixel_to_focal.applyForward(pixel_pt)
 
                 dist = np.sqrt((xf-focal_pt.getX())**2+(yf-focal_pt.getY())**2)
-                msg = '\nPhosim: %.4f %.4f' % (focal_pt.getX(),focal_pt.getY())
+                msg = '\nchip %s' % det_name
+                msg += '\nPupil: %.4e %.4e' % (x_pup[dex], y_pup[dex])
+                msg += '\nPhosim: %.4f %.4f' % (focal_pt.getX(),focal_pt.getY())
                 msg += '\nCatSim: %.4f %.4f'% (xf, yf)
                 msg += '\nPixels: %.4f %.4f' % (xdm, ydm)
 
@@ -387,6 +389,14 @@ class FullTransformationTestCase(unittest.TestCase):
         Test that pixelCoordsFromRaDecLSST() works correctly
         """
         pix_transformer = DMtoCameraPixelTransformer()
+
+        x_pup, y_pup = pupilCoordsFromRaDec(self._truth_data['ra'],
+                                            self._truth_data['dec'],
+                                            pm_ra=self._truth_data['pmra'],
+                                            pm_dec=self._truth_data['pmdec'],
+                                            parallax=self._truth_data['px'],
+                                            v_rad=self._truth_data['vrad'],
+                                            obs_metadata=self._obs)
 
         x_pix, y_pix = pixelCoordsFromRaDecLSST(self._truth_data['ra'],
                                                 self._truth_data['dec'],
@@ -479,7 +489,8 @@ class FullTransformationTestCase(unittest.TestCase):
                 dd_no_optics = np.sqrt((x_dm-x_pix_no_optics_val)**2 +
                                        (y_dm-y_pix_no_optics_val)**2)
 
-                msg = '\nObject %d' % id_val
+                msg = '\nObject %d; chip %s' % (id_val, det_name)
+                msg += '\nPupil: %.4e %.4e' % (x_pup[dex], x_pup[dex])
                 msg += '\nPhoSim: %.4f %.4f' % (x_dm, y_dm)
                 msg += '\nCatSim: %.4f %.4f' % (x_pix_val, y_pix_val)
                 msg += '\nno Optics: %.4f %.4f' % (x_pix_no_optics_val,
