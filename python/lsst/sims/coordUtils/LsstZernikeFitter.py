@@ -232,14 +232,8 @@ class LsstZernikeFitter(object):
             alpha_x, alpha_y = self._get_coeffs(catsim_xmm, catsim_ymm,
                                                 phosim_xmm, phosim_ymm)
 
-            self._pupil_to_focal[self._int_to_band[i_filter]]['x'] = {}
-            for kk in alpha_x:
-                self._pupil_to_focal[self._int_to_band[i_filter]]['x'][kk] = alpha_x[kk]
-
-
-            self._pupil_to_focal[self._int_to_band[i_filter]]['y'] = {}
-            for kk in alpha_y:
-                self._pupil_to_focal[self._int_to_band[i_filter]]['y'][kk] = alpha_y[kk]
+            self._pupil_to_focal[self._int_to_band[i_filter]]['x'] = alpha_x
+            self._pupil_to_focal[self._int_to_band[i_filter]]['y'] = alpha_y
 
     def _apply_transformation(self, transformation_dict, xmm, ymm, band):
         """
