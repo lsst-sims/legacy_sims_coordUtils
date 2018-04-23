@@ -173,8 +173,6 @@ class LsstZernikeFitter(object):
 
         for i_filter in range(6):
             self._pupil_to_focal[self._int_to_band[i_filter]] = {}
-            dx = np.zeros(len(catsim_data['xpup']), dtype=float)
-            dy = np.zeros(len(catsim_data['ypup']), dtype=float)
             phosim_xmm = np.zeros(len(catsim_data['ypup']), dtype=float)
             phosim_ymm = np.zeros(len(catsim_data['ypup']), dtype=float)
 
@@ -205,10 +203,11 @@ class LsstZernikeFitter(object):
                     focal_pt = pixels_to_focal.applyForward(afwGeom.Point2D(xpix[ii], ypix[ii]))
                     xmm[ii] = focal_pt.getX()
                     ymm[ii] = focal_pt.getY()
-                dx[phosim_data['id']-1] = xmm - catsim_xmm[phosim_data['id']-1]
-                dy[phosim_data['id']-1] = ymm - catsim_ymm[phosim_data['id']-1]
                 phosim_xmm[phosim_data['id']-1] = xmm
                 phosim_ymm[phosim_data['id']-1] = ymm
+
+            dx = phosim_xmm - catsim_xmm
+            dy = phosim_ymm - catsim_ymm
 
             b = np.array([(dx*polynomials[k]).sum() for k in poly_keys])
             m = np.array([[(polynomials[k1]*polynomials[k2]).sum() for k1 in poly_keys]
