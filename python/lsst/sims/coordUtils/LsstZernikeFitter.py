@@ -115,16 +115,24 @@ class LsstZernikeFitter(object):
         self._build_transformations()
 
     def _get_coeffs(self, x_in, y_in, x_out, y_out):
+        dx = x_out - x_in
+        dy = y_out - y_in
+
+        global_dx = np.mean(dx)
+        global_dy = np.mean(dy)
+
+        dx = dx - global_dx
+        dy = dy - global_dy
+
+        x_recenter = x_in + global_dx
+        y_recenter = y_in + global_dy
 
         polynomials ={}
         for n, m in zip(self._n_grid, self._m_grid):
-            values = self._z_gen.evaluate_xy(x_in/self._rr, y_in/self._rr, n, m)
+            values = self._z_gen.evaluate_xy(x_recenter/self._rr, y_recenter/self._rr, n, m)
             polynomials[(n,m)] = values
 
         poly_keys = list(polynomials.keys())
-
-        dx = x_out - x_in
-        dy = y_out - y_in
 
         b = np.array([(dx*polynomials[k]).sum() for k in poly_keys])
         m = np.array([[(polynomials[k1]*polynomials[k2]).sum() for k1 in poly_keys]
@@ -145,7 +153,7 @@ class LsstZernikeFitter(object):
         for ii, kk in enumerate(poly_keys):
             alpha_y[kk] = alpha_y_[ii]
 
-        return alpha_x, alpha_y
+        return global_dx, global_dy, alpha_x, alpha_y
 
     def _build_transformations(self):
         catsim_dir = os.path.join(getPackageDir('sims_data'),
@@ -193,8 +201,11 @@ class LsstZernikeFitter(object):
                                  ('xpix', float), ('ypix', float)])
 
         self._pupil_to_focal = {}
+        self._global_dx = {}
+        self._global_dy = {}
 
         for i_filter in range(6):
+            band = self._int_to_band[i_filter]
             self._pupil_to_focal[self._int_to_band[i_filter]] = {}
             phosim_xmm = np.zeros(len(catsim_data['ypup']), dtype=float)
             phosim_ymm = np.zeros(len(catsim_data['ypup']), dtype=float)
@@ -229,8 +240,14 @@ class LsstZernikeFitter(object):
                 phosim_xmm[phosim_data['id']-1] = xmm
                 phosim_ymm[phosim_data['id']-1] = ymm
 
-            alpha_x, alpha_y = self._get_coeffs(catsim_xmm, catsim_ymm,
-                                                phosim_xmm, phosim_ymm)
+            (global_dx,
+             global_dy,
+             alpha_x,
+             alpha_y) = self._get_coeffs(catsim_xmm, catsim_ymm,
+                                         phosim_xmm, phosim_ymm)
+
+            self._global_dx[band] = global_dx
+            self._global_dy[band] = global_dy
 
             self._pupil_to_focal[self._int_to_band[i_filter]]['x'] = {}
             for kk in alpha_x:
@@ -261,14 +278,16 @@ class LsstZernikeFitter(object):
             band = self._int_to_band[band]
 
         if isinstance(xmm, numbers.Number):
-            dx = 0.0
-            dy = 0.0
+            dx = self._global_dx[band]
+            dy = self._global_dy[band]
         else:
-            dx = np.zeros(len(xmm), dtype=float)
-            dy = np.zeros(len(ymm), dtype=float)
+            dx = self._global_dx[band]*np.ones(len(xmm), dtype=float)
+            dy = self._global_dy[band]*np.ones(len(ymm), dtype=float)
 
         for kk in self._pupil_to_focal[band]['x']:
-            values = self._z_gen.evaluate_xy(xmm/self._rr, ymm/self._rr, kk[0], kk[1])
+            values = self._z_gen.evaluate_xy((xmm+self._global_dx[band])/self._rr,
+                                             (ymm+self._global_dy[band])/self._rr,
+                                             kk[0], kk[1])
             dx += self._pupil_to_focal[band]['x'][kk]*values
             dy += self._pupil_to_focal[band]['y'][kk]*values
 
