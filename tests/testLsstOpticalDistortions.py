@@ -377,8 +377,6 @@ class FullTransformationTestCase(unittest.TestCase):
                 if dist>0.01:
                     self.assertGreater(old_dist, 0.2, msg=msg)
                     self.assertLess(dist, 0.05, msg=msg)
-                else:
-                    self.assertLess(dist, old_dist)
 
                 n_check += 1
 
