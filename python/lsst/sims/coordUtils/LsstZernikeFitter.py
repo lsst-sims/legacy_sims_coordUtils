@@ -112,9 +112,42 @@ class LsstZernikeFitter(object):
                 self._n_grid.append(n)
                 self._m_grid.append(m)
 
-        self._get_fit_coeffs()
+        self._build_transformations()
 
-    def _get_fit_coeffs(self):
+    def _get_coeffs(self, x_in, y_in, x_out, y_out):
+
+        polynomials ={}
+        for n, m in zip(self._n_grid, self._m_grid):
+            values = self._z_gen.evaluate_xy(x_in/self._rr, y_in/self._rr, n, m)
+            polynomials[(n,m)] = values
+
+        poly_keys = list(polynomials.keys())
+
+        dx = x_out - x_in
+        dy = y_out - y_in
+
+        b = np.array([(dx*polynomials[k]).sum() for k in poly_keys])
+        m = np.array([[(polynomials[k1]*polynomials[k2]).sum() for k1 in poly_keys]
+                      for k2 in poly_keys])
+
+        alpha_x_ = np.linalg.solve(m, b)
+        alpha_x = {}
+        for ii, kk in enumerate(poly_keys):
+            alpha_x[kk] = alpha_x_[ii]
+
+
+        b = np.array([(dy*polynomials[k]).sum() for k in poly_keys])
+        m = np.array([[(polynomials[k1]*polynomials[k2]).sum() for k1 in poly_keys]
+                      for k2 in poly_keys])
+
+        alpha_y_ = np.linalg.solve(m, b)
+        alpha_y = {}
+        for ii, kk in enumerate(poly_keys):
+            alpha_y[kk] = alpha_y_[ii]
+
+        return alpha_x, alpha_y
+
+    def _build_transformations(self):
         catsim_dir = os.path.join(getPackageDir('sims_data'),
                                   'FocalPlaneData',
                                   'CatSimData')
@@ -156,16 +189,6 @@ class LsstZernikeFitter(object):
         catsim_radius = np.sqrt(catsim_xmm**2 + catsim_ymm**2)
         self._rr = catsim_radius.max()
 
-        catsim_x = catsim_xmm/self._rr
-        catsim_y = catsim_ymm/self._rr
-
-        polynomials ={}
-        for n, m in zip(self._n_grid, self._m_grid):
-            values = self._z_gen.evaluate_xy(catsim_x, catsim_y, n, m)
-            polynomials[(n,m)] = values
-
-        poly_keys = list(polynomials.keys())
-
         phosim_dtype = np.dtype([('id', int), ('phot', float),
                                  ('xpix', float), ('ypix', float)])
 
@@ -206,28 +229,17 @@ class LsstZernikeFitter(object):
                 phosim_xmm[phosim_data['id']-1] = xmm
                 phosim_ymm[phosim_data['id']-1] = ymm
 
-            dx = phosim_xmm - catsim_xmm
-            dy = phosim_ymm - catsim_ymm
-
-            b = np.array([(dx*polynomials[k]).sum() for k in poly_keys])
-            m = np.array([[(polynomials[k1]*polynomials[k2]).sum() for k1 in poly_keys]
-                          for k2 in poly_keys])
-
-            alpha_x = np.linalg.solve(m, b)
+            alpha_x, alpha_y = self._get_coeffs(catsim_xmm, catsim_ymm,
+                                                phosim_xmm, phosim_ymm)
 
             self._pupil_to_focal[self._int_to_band[i_filter]]['x'] = {}
-            for ii, kk in enumerate(poly_keys):
-                self._pupil_to_focal[self._int_to_band[i_filter]]['x'][kk] = alpha_x[ii]
+            for kk in alpha_x:
+                self._pupil_to_focal[self._int_to_band[i_filter]]['x'][kk] = alpha_x[kk]
 
-            b = np.array([(dy*polynomials[k]).sum() for k in poly_keys])
-            m = np.array([[(polynomials[k1]*polynomials[k2]).sum() for k1 in poly_keys]
-                          for k2 in poly_keys])
-
-            alpha_y = np.linalg.solve(m, b)
 
             self._pupil_to_focal[self._int_to_band[i_filter]]['y'] = {}
-            for ii, kk in enumerate(poly_keys):
-                self._pupil_to_focal[self._int_to_band[i_filter]]['y'][kk] = alpha_y[ii]
+            for kk in alpha_y:
+                self._pupil_to_focal[self._int_to_band[i_filter]]['y'][kk] = alpha_y[kk]
 
     def dxdy(self, xmm, ymm, band):
         """
