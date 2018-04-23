@@ -169,10 +169,10 @@ class LsstZernikeFitter(object):
         phosim_dtype = np.dtype([('id', int), ('phot', float),
                                  ('xpix', float), ('ypix', float)])
 
-        self._transformations = {}
+        self._pupil_to_focal = {}
 
         for i_filter in range(6):
-            self._transformations[self._int_to_band[i_filter]] = {}
+            self._pupil_to_focal[self._int_to_band[i_filter]] = {}
             dx = np.zeros(len(catsim_data['xpup']), dtype=float)
             dy = np.zeros(len(catsim_data['ypup']), dtype=float)
             phosim_xmm = np.zeros(len(catsim_data['ypup']), dtype=float)
@@ -216,9 +216,9 @@ class LsstZernikeFitter(object):
 
             alpha_x = np.linalg.solve(m, b)
 
-            self._transformations[self._int_to_band[i_filter]]['x'] = {}
+            self._pupil_to_focal[self._int_to_band[i_filter]]['x'] = {}
             for ii, kk in enumerate(poly_keys):
-                self._transformations[self._int_to_band[i_filter]]['x'][kk] = alpha_x[ii]
+                self._pupil_to_focal[self._int_to_band[i_filter]]['x'][kk] = alpha_x[ii]
 
             b = np.array([(dy*polynomials[k]).sum() for k in poly_keys])
             m = np.array([[(polynomials[k1]*polynomials[k2]).sum() for k1 in poly_keys]
@@ -226,9 +226,9 @@ class LsstZernikeFitter(object):
 
             alpha_y = np.linalg.solve(m, b)
 
-            self._transformations[self._int_to_band[i_filter]]['y'] = {}
+            self._pupil_to_focal[self._int_to_band[i_filter]]['y'] = {}
             for ii, kk in enumerate(poly_keys):
-                self._transformations[self._int_to_band[i_filter]]['y'][kk] = alpha_y[ii]
+                self._pupil_to_focal[self._int_to_band[i_filter]]['y'][kk] = alpha_y[ii]
 
     def dxdy(self, xmm, ymm, band):
         """
@@ -256,9 +256,9 @@ class LsstZernikeFitter(object):
             dx = np.zeros(len(xmm), dtype=float)
             dy = np.zeros(len(ymm), dtype=float)
 
-        for kk in self._transformations[band]['x']:
+        for kk in self._pupil_to_focal[band]['x']:
             values = self._z_gen.evaluate_xy(xmm/self._rr, ymm/self._rr, kk[0], kk[1])
-            dx += self._transformations[band]['x'][kk]*values
-            dy += self._transformations[band]['y'][kk]*values
+            dx += self._pupil_to_focal[band]['x'][kk]*values
+            dy += self._pupil_to_focal[band]['y'][kk]*values
 
         return dx, dy
