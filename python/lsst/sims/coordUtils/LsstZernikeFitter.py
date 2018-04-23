@@ -241,6 +241,42 @@ class LsstZernikeFitter(object):
             for kk in alpha_y:
                 self._pupil_to_focal[self._int_to_band[i_filter]]['y'][kk] = alpha_y[kk]
 
+    def _apply_transformation(self, transformation_dict, xmm, ymm, band):
+        """
+        Parameters
+        ----------
+        tranformation_dict -- a dict containing the coefficients
+        of the Zernike decomposition to be applied
+
+        xmm -- the input x position in mm
+
+        ymm -- the input y position in mm
+
+        band -- the filter in which we are operating
+
+        Returns
+        -------
+        dx -- the x offset resulting from the transformation
+
+        dy -- the y offset resulting from the transformation
+        """
+        if isinstance(band, int):
+            band = self._int_to_band[band]
+
+        if isinstance(xmm, numbers.Number):
+            dx = 0.0
+            dy = 0.0
+        else:
+            dx = np.zeros(len(xmm), dtype=float)
+            dy = np.zeros(len(ymm), dtype=float)
+
+        for kk in self._pupil_to_focal[band]['x']:
+            values = self._z_gen.evaluate_xy(xmm/self._rr, ymm/self._rr, kk[0], kk[1])
+            dx += transformation_dict[band]['x'][kk]*values
+            dy += transformation_dict[band]['y'][kk]*values
+
+        return dx, dy
+
     def dxdy(self, xmm, ymm, band):
         """
         Parameters
@@ -257,19 +293,4 @@ class LsstZernikeFitter(object):
 
         dy -- the offset in the y focal plane position in mm
         """
-        if isinstance(band, int):
-            band = self._int_to_band[band]
-
-        if isinstance(xmm, numbers.Number):
-            dx = 0.0
-            dy = 0.0
-        else:
-            dx = np.zeros(len(xmm), dtype=float)
-            dy = np.zeros(len(ymm), dtype=float)
-
-        for kk in self._pupil_to_focal[band]['x']:
-            values = self._z_gen.evaluate_xy(xmm/self._rr, ymm/self._rr, kk[0], kk[1])
-            dx += self._pupil_to_focal[band]['x'][kk]*values
-            dy += self._pupil_to_focal[band]['y'][kk]*values
-
-        return dx, dy
+        return self._apply_transformation(self._pupil_to_focal, xmm, ymm, band)
