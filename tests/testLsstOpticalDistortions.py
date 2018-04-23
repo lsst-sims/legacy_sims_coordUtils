@@ -566,11 +566,37 @@ class FullTransformationTestCase(unittest.TestCase):
                     # was slightly better at the very edge of the focal plane
                     # (in some filters)
                     if dd_no_optics<dd:
-                        if r_center[dex]/0.01 < 10000.0:
-                            self.assertLess(dd-dd_no_optics, 0.5, msg=msg)
+                        if r_center[dex] < 100.0:
+                            # if we in the heart of the focal plane, make
+                            # sure that the fit has not degraded by more
+                            # than half a pixel and that the difference
+                            # between CatSim and PhoSim is still less
+                            # than a pixel
+                            self.assertLess(dd-dd_no_optics, 5.0, msg=msg)
                             self.assertLess(dd, 1.0, msg=msg)
                         else:
+                            # if we are near the edge of the focal plane,
+                            # make sure that the difference between
+                            # CatSim and PhoSim is less than 2 pixels
                             self.assertLess(dd, 2.0, msg=msg)
+                    else:
+                        if r_center[dex] < 100.0:
+                            # if we are in the heart of the focal plane,
+                            # make sure that the difference between
+                            # CatSim and PhoSim is less than a pixel
+                            self.assertLess(dd, 1.0, msg=msg)
+                        else:
+                            # If we are at the edge of the focal plane,
+                            # make sure that the difference between
+                            # CatSim and PhoSim is less than five pixels,
+                            # and if the difference is less than 2 pixels,
+                            # make sure that the difference under the old
+                            # transformation is more than 15 pixels (indicating
+                            # that we are in a difficult-to-fit part of the
+                            # focal plane)
+                            self.assertLess(dd, 5.0, msg=msg)
+                            if dd > 2.0:
+                                self.assertGreater(dd_no_optics, 15.0, msg=msg)
 
                     n_check += 1
 
