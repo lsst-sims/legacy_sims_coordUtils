@@ -721,6 +721,29 @@ class FullTransformationTestCase(unittest.TestCase):
             dd = np.sqrt((x_f-x_f1)**2 + (y_f-y_f1)**2)
             self.assertLess(dd.max(), 1.0e-5)
 
+    def test_pupil_coords_from_focal_plane_coords_LSST_one_at_a_time(self):
+        """
+        Test that pupilCoordsFromFocalPlaneCoordsLSST works on scalars
+        """
+        x_f = np.arange(-400.0, 400.0, 20.0)
+        y_f = np.arange(-400.0, 400.0, 20.0)
+        mesh = np.meshgrid(x_f, y_f)
+        x_f = mesh[0].flatten()
+        y_f = mesh[1].flatten()
+
+        for band in 'ugrizy':
+            x_p, y_p = pupilCoordsFromFocalPlaneCoordsLSST(x_f, y_f, band=band)
+            self.assertIsInstance(x_p, np.ndarray)
+            self.assertIsInstance(y_p, np.ndarray)
+            for ii in range(len(x_p)):
+                x_p1, y_p1 = pupilCoordsFromFocalPlaneCoordsLSST(x_f[ii], y_f[ii],
+                                                                 band=band)
+
+                self.assertIsInstance(x_p1, numbers.Number)
+                self.assertIsInstance(y_p1, numbers.Number)
+                self.assertAlmostEqual(x_p1, x_p[ii], 16)
+                self.assertAlmostEqual(y_p1, y_p[ii], 16)
+
     def test_chip_name_from_ra_dec_lsst(self):
         """
         Test that chipNameFromRaDecLSST is consistent with
