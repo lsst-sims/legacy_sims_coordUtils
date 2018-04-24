@@ -9,6 +9,7 @@ import lsst.afw.geom as afwGeom
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
+from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoordsLSST
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import pupilCoordsFromRaDec
@@ -201,6 +202,9 @@ class FullTransformationTestCase(unittest.TestCase):
 
         if hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
             del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
+
+        if hasattr(pupilCoordsFromFocalPlaneCoordsLSST, '_z_fitter'):
+            del pupilCoordsFromFocalPlaneCoordsLSST._z_fitter
 
         if hasattr(lsst_camera, '_lsst_camera'):
             del lsst_camera._lsst_camera
@@ -619,6 +623,23 @@ class FullTransformationTestCase(unittest.TestCase):
             (band,dist_arr[len(dist_arr)//4],np.median(dist_arr),
              dist_arr[3*len(dist_arr)//4],dist_arr.max()))
 
+    def test_pupil_coords_from_focal_plane_coords_LSST(self):
+        """
+        Test that pupilCoordsFromFocalPlaneCoordsLSST inverts
+        focalPlaneCoordsFromPupilCoordsLSST
+        """
+        x_f = np.arange(-400.0, 400.0, 20.0)
+        y_f = np.arange(-400.0, 400.0, 20.0)
+        mesh = np.meshgrid(x_f, y_f)
+        x_f = mesh[0].flatten()
+        y_f = mesh[1].flatten()
+        for band in 'ugrizy':
+            x_p, y_p = pupilCoordsFromFocalPlaneCoordsLSST(x_f, y_f, band=band)
+            x_f1, y_f1 = focalPlaneCoordsFromPupilCoordsLSST(x_p, y_p,
+                                                             band=band)
+
+            dd = np.sqrt((x_f-x_f1)**2 + (y_f-y_f1)**2)
+            self.assertLess(dd.max(), 1.0e-5)
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass

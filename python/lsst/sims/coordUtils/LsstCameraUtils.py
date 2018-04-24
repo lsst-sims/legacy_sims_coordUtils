@@ -9,6 +9,7 @@ from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
 from lsst.sims.coordUtils import LsstZernikeFitter
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
+from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
 from lsst.sims.utils.CodeUtilities import _validate_inputs
@@ -16,6 +17,7 @@ from lsst.sims.utils import radiansFromArcsec
 
 
 __all__ = ["focalPlaneCoordsFromPupilCoordsLSST",
+           "pupilCoordsFromFocalPlaneCoordsLSST",
            "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
@@ -49,6 +51,39 @@ def focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band='r'):
     x_f0, y_f0 = focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=lsst_camera())
     dx, dy = z_fitter.dxdy(x_f0, y_f0, band)
     return np.array([x_f0+dx, y_f0+dy])
+
+
+def pupilCoordsFromFocalPlaneCoordsLSST(xmm, ymm, band='r'):
+    """
+    Convert radians on the pupil into mm on the focal plane.
+
+    Note: round-tripping through focalPlaneCoordsFromPupilCoordsLSST
+    and pupilCoordsFromFocalPlaneCoordsLSST introduces a residual
+    of up to 2.18e-6 mm that accumulates with each round trip.
+
+    Parameters
+    ----------
+    xmm -- x coordinate in millimeters on the focal plane
+
+    ymm -- y coordinate in millimeters on the focal plane
+
+    band -- the filter we are simulating (default='r')
+
+    Returns
+    -------
+    a 2-D numpy array in which the first row is the x
+    pupil coordinate and the second row is the y pupil
+    coordinate (both in radians)
+    """
+    if not hasattr(pupilCoordsFromFocalPlaneCoordsLSST, '_z_fitter'):
+        pupilCoordsFromFocalPlaneCoordsLSST._z_fitter = LsstZernikeFitter()
+
+    z_fitter = pupilCoordsFromFocalPlaneCoordsLSST._z_fitter
+    dx, dy = z_fitter.dxdy_inverse(xmm, ymm, band)
+    x_f1 = xmm + dx
+    y_f1 = ymm + dy
+    xp, yp = pupilCoordsFromFocalPlaneCoords(x_f1, y_f1, camera=lsst_camera())
+    return np.array([xp, yp])
 
 
 def _build_lsst_focal_coord_map():

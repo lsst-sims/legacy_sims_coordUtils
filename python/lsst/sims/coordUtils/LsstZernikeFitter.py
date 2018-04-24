@@ -193,9 +193,11 @@ class LsstZernikeFitter(object):
                                  ('xpix', float), ('ypix', float)])
 
         self._pupil_to_focal = {}
+        self._focal_to_pupil = {}
 
         for i_filter in range(6):
             self._pupil_to_focal[self._int_to_band[i_filter]] = {}
+            self._focal_to_pupil[self._int_to_band[i_filter]] = {}
             phosim_xmm = np.zeros(len(catsim_data['ypup']), dtype=float)
             phosim_ymm = np.zeros(len(catsim_data['ypup']), dtype=float)
 
@@ -234,6 +236,12 @@ class LsstZernikeFitter(object):
 
             self._pupil_to_focal[self._int_to_band[i_filter]]['x'] = alpha_x
             self._pupil_to_focal[self._int_to_band[i_filter]]['y'] = alpha_y
+
+            alpha_x, alpha_y = self._get_coeffs(phosim_xmm, phosim_ymm,
+                                                catsim_xmm, catsim_ymm)
+
+            self._focal_to_pupil[self._int_to_band[i_filter]]['x'] = alpha_x
+            self._focal_to_pupil[self._int_to_band[i_filter]]['y'] = alpha_y
 
     def _apply_transformation(self, transformation_dict, xmm, ymm, band):
         """
@@ -288,3 +296,6 @@ class LsstZernikeFitter(object):
         dy -- the offset in the y focal plane position in mm
         """
         return self._apply_transformation(self._pupil_to_focal, xmm, ymm, band)
+
+    def dxdy_inverse(self, xmm, ymm, band):
+        return self._apply_transformation(self._focal_to_pupil, xmm, ymm, band)
