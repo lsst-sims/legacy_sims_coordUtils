@@ -641,6 +641,7 @@ class FullTransformationTestCase(unittest.TestCase):
             dd = np.sqrt((x_f-x_f1)**2 + (y_f-y_f1)**2)
             self.assertLess(dd.max(), 1.0e-5)
 
+
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
 
