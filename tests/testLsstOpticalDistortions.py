@@ -16,6 +16,7 @@ from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
+from lsst.sims.coordUtils import _chipNameFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import _pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDec
@@ -674,7 +675,8 @@ class FullTransformationTestCase(unittest.TestCase):
 
     def test_radians(self):
         """
-        Test the radians versions of pixelCoordsFromRaDecLSST
+        Test the radians versions of pixelCoordsFromRaDecLSST and
+        chipNameFromRaDecLSST
         """
         for band in 'ugrizy':
 
@@ -699,6 +701,26 @@ class FullTransformationTestCase(unittest.TestCase):
 
             np.testing.assert_array_equal(x_pix, x_pix_r)
             np.testing.assert_array_equal(y_pix, y_pix_r)
+
+            chip_name_list = chipNameFromRaDecLSST(self._truth_data['ra'],
+                                                   self._truth_data['dec'],
+                                                   pm_ra=self._truth_data['pmra'],
+                                                   pm_dec=self._truth_data['pmdec'],
+                                                   parallax=self._truth_data['px'],
+                                                   v_rad=self._truth_data['vrad'],
+                                                   obs_metadata=self._obs,
+                                                   band=band)
+
+            chip_name_list_r = _chipNameFromRaDecLSST(np.radians(self._truth_data['ra']),
+                                                      np.radians(self._truth_data['dec']),
+                                                      pm_ra=radiansFromArcsec(self._truth_data['pmra']),
+                                                      pm_dec=radiansFromArcsec(self._truth_data['pmdec']),
+                                                      parallax=radiansFromArcsec(self._truth_data['px']),
+                                                      v_rad=self._truth_data['vrad'],
+                                                      obs_metadata=self._obs,
+                                                      band=band)
+
+            np.testing.assert_array_equal(chip_name_list, chip_name_list_r)
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
