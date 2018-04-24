@@ -258,6 +258,34 @@ class FullTransformationTestCase(unittest.TestCase):
 
             self.assertGreater(n_checked, 200)
 
+    def test_chip_name_from_pupil_coords_lsst_one_at_a_time(self):
+        """
+        Test that chipNameFromPupilCoordsLSST works on scalars
+        """
+        x_pup, y_pup = pupilCoordsFromRaDec(self._truth_data['ra'],
+                                            self._truth_data['dec'],
+                                            pm_ra=self._truth_data['pmra'],
+                                            pm_dec=self._truth_data['pmdec'],
+                                            parallax=self._truth_data['px'],
+                                            v_rad=self._truth_data['vrad'],
+                                            obs_metadata=self._obs)
+
+        for band in 'ugrizy':
+            chip_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup, band=band)
+            self.assertIsInstance(chip_name_list, np.ndarray)
+            n_none = 0
+            n_not_none = 0
+            for ii in range(len(chip_name_list)//4):
+                name = chipNameFromPupilCoordsLSST(x_pup[ii], y_pup[ii], band=band)
+                if name is not None:
+                    self.assertIsInstance(name, str)
+                    n_not_none += 1
+                else:
+                    n_none += 1
+                self.assertEqual(name, chip_name_list[ii])
+
+            self.assertGreater(n_not_none, n_none//2)
+
     def test_pupil_coords_from_ra_dec(self):
         """
         Verifythat pupilCoordsFromRaDec gives results consistent

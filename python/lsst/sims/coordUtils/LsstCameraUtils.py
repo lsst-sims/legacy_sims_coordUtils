@@ -393,6 +393,9 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
 
     nameList[good_radii] = nameList_good
 
+    if not are_arrays:
+        return nameList[0]
+
     return nameList
 
 
@@ -457,12 +460,8 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
                                    parallax=parallax, v_rad=v_rad,
                                    obs_metadata=obs_metadata, epoch=epoch)
 
-    ans = chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips,
-                                      band=band)
-
-    if not are_arrays:
-        return ans[0]
-    return ans
+    return chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips,
+                                       band=band)
 
 
 def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
@@ -611,6 +610,8 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
 
     if chipNameList is None:
         chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
+        if not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array([chipNameList])
     else:
         if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
             chipNameList = np.array([chipNameList])
