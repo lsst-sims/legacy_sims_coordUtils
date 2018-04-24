@@ -660,6 +660,49 @@ class FullTransformationTestCase(unittest.TestCase):
             (band,dist_arr[len(dist_arr)//4],np.median(dist_arr),
              dist_arr[3*len(dist_arr)//4],dist_arr.max()))
 
+    def test_pixel_coords_from_ra_dec_one_at_a_time(self):
+        """
+        Test that pixelCoordsFromRaDecLSST works correctly on
+        scalars
+        """
+
+        for band in 'ugrizy':
+
+            x_pix, y_pix = pixelCoordsFromRaDecLSST(self._truth_data['ra'],
+                                                    self._truth_data['dec'],
+                                                    pm_ra=self._truth_data['pmra'],
+                                                    pm_dec=self._truth_data['pmdec'],
+                                                    parallax=self._truth_data['px'],
+                                                    v_rad=self._truth_data['vrad'],
+                                                    obs_metadata=self._obs,
+                                                    band=band)
+
+            self.assertIsInstance(x_pix, np.ndarray)
+            self.assertIsInstance(y_pix, np.ndarray)
+
+            n_nan = 0
+            n_good = 0
+            for ii in range(len(x_pix)//4):  # only test on a subsample; this is slow
+                x_pix1, y_pix1 = pixelCoordsFromRaDecLSST(self._truth_data['ra'][ii],
+                                                          self._truth_data['dec'][ii],
+                                                          pm_ra=self._truth_data['pmra'][ii],
+                                                          pm_dec=self._truth_data['pmdec'][ii],
+                                                          parallax=self._truth_data['px'][ii],
+                                                          v_rad=self._truth_data['vrad'][ii],
+                                                          obs_metadata=self._obs,
+                                                          band=band)
+
+                self.assertIsInstance(x_pix1, numbers.Number)
+                self.assertIsInstance(y_pix1, numbers.Number)
+                if not np.isnan(x_pix1):
+                    self.assertEqual(x_pix1, x_pix[ii])
+                    self.assertEqual(y_pix1, y_pix[ii])
+                    n_good += 1
+                else:
+                    n_nan += 1
+
+            self.assertLess(n_nan, n_good//2)
+
     def test_pupil_coords_from_focal_plane_coords_LSST(self):
         """
         Test that pupilCoordsFromFocalPlaneCoordsLSST inverts
