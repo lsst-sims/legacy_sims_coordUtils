@@ -772,6 +772,43 @@ class FullTransformationTestCase(unittest.TestCase):
             n_none = np.where(np.char.find(chip_name_list.astype(str), 'None')==0)
             self.assertLess(len(n_none[0]), len(chip_name_list)//4)
 
+    def test_chip_name_from_ra_dec_lsst_one_at_a_time(self):
+        """
+        Test that chipNameFromRaDecLSST works on scalars
+        """
+        for band in 'ugrizy':
+            chip_name_list = chipNameFromRaDecLSST(self._truth_data['ra'],
+                                                   self._truth_data['dec'],
+                                                   pm_ra=self._truth_data['pmra'],
+                                                   pm_dec=self._truth_data['pmdec'],
+                                                   parallax=self._truth_data['px'],
+                                                   v_rad=self._truth_data['vrad'],
+                                                   obs_metadata=self._obs,
+                                                   band=band)
+
+            self.assertIsInstance(chip_name_list, np.ndarray)
+            n_none = 0
+            n_not_none = 0
+            for ii in range(len(chip_name_list)//4):
+                name = chipNameFromRaDecLSST(self._truth_data['ra'][ii],
+                                             self._truth_data['dec'][ii],
+                                             pm_ra=self._truth_data['pmra'][ii],
+                                             pm_dec=self._truth_data['pmdec'][ii],
+                                             parallax=self._truth_data['px'][ii],
+                                             v_rad=self._truth_data['vrad'][ii],
+                                             obs_metadata=self._obs,
+                                             band=band)
+
+                if name is not None:
+                    n_not_none += 1
+                    self.assertIsInstance(name, str)
+                else:
+                    n_none += 1
+
+                self.assertEqual(name, chip_name_list[ii])
+
+            self.assertGreater(n_not_none, n_none//2)
+
     def test_radians(self):
         """
         Test the radians versions of pixelCoordsFromRaDecLSST and
