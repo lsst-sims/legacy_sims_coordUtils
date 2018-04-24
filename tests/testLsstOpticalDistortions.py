@@ -1,6 +1,7 @@
 import unittest
 import os
 import numpy as np
+import numbers
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
@@ -436,6 +437,38 @@ class FullTransformationTestCase(unittest.TestCase):
 
             self.assertGreater(n_check, 200)
             self.assertGreater(n_new_better, 4*n_old_better)
+
+    def test_focal_coords_from_pupil_coords_vectorized(self):
+        """
+        Test that focalPlaneCoordsFromPupilCoordsLSST acting
+        on numpy arrays gives the same result as acting on
+        scalars
+        """
+        camera = lsst_camera()
+        pix_transformer = DMtoCameraPixelTransformer()
+
+        x_pup, y_pup = pupilCoordsFromRaDec(self._truth_data['ra'],
+                                            self._truth_data['dec'],
+                                            pm_ra=self._truth_data['pmra'],
+                                            pm_dec=self._truth_data['pmdec'],
+                                            parallax=self._truth_data['px'],
+                                            v_rad=self._truth_data['vrad'],
+                                            obs_metadata=self._obs)
+
+        for band in 'ugrizy':
+            x_f, y_f = focalPlaneCoordsFromPupilCoordsLSST(x_pup,
+                                                           y_pup,
+                                                           band=band)
+
+            for ii in range(len(x_pup)):
+                x_f1, y_f1 = focalPlaneCoordsFromPupilCoordsLSST(x_pup[ii],
+                                                                 y_pup[ii],
+                                                                 band=band)
+
+                self.assertIsInstance(x_f1, numbers.Number)
+                self.assertIsInstance(y_f1, numbers.Number)
+                self.assertEqual(x_f1, x_f[ii])
+                self.assertEqual(y_f1, y_f[ii])
 
     def test_pixel_coords_from_ra_dec(self):
         """
