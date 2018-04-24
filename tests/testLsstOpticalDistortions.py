@@ -15,6 +15,7 @@ from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import radiansFromArcsec
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
+from lsst.sims.coordUtils import chipNameFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import _pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDec
@@ -642,6 +643,34 @@ class FullTransformationTestCase(unittest.TestCase):
 
             dd = np.sqrt((x_f-x_f1)**2 + (y_f-y_f1)**2)
             self.assertLess(dd.max(), 1.0e-5)
+
+    def test_chip_name_from_ra_dec_lsst(self):
+        """
+        Test that chipNameFromRaDecLSST is consistent with
+        chipNameFromPupilCoordsLSST
+        """
+        x_pup, y_pup = pupilCoordsFromRaDec(self._truth_data['ra'],
+                                            self._truth_data['dec'],
+                                            pm_ra=self._truth_data['pmra'],
+                                            pm_dec=self._truth_data['pmdec'],
+                                            parallax=self._truth_data['px'],
+                                            v_rad=self._truth_data['vrad'],
+                                            obs_metadata=self._obs)
+
+        for band in 'ugrizy':
+            chip_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup, band=band)
+            chip_name_list_1 = chipNameFromRaDecLSST(self._truth_data['ra'],
+                                                     self._truth_data['dec'],
+                                                     pm_ra=self._truth_data['pmra'],
+                                                     pm_dec=self._truth_data['pmdec'],
+                                                     parallax=self._truth_data['px'],
+                                                     v_rad=self._truth_data['vrad'],
+                                                     obs_metadata=self._obs,
+                                                     band=band)
+
+            np.testing.assert_array_equal(chip_name_list, chip_name_list_1)
+            n_none = np.where(np.char.find(chip_name_list.astype(str), 'None')==0)
+            self.assertLess(len(n_none[0]), len(chip_name_list)//4)
 
     def test_radians(self):
         """

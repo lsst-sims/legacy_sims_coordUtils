@@ -397,7 +397,8 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
 
 
 def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
-                           obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
+                           obs_metadata=None, epoch=2000.0, allow_multiple_chips=False,
+                           band='r'):
     """
     Return the names of detectors on the LSST camera that see the object specified by
     (RA, Dec) in radians.
@@ -431,6 +432,8 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
     chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
 
+    @param [in] band is the filter we are simulating (Default=r)
+
     @param [out] the name(s) of the chips on which ra, dec fall (will be a numpy
     array if more than one)
     """
@@ -454,7 +457,8 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
                                    parallax=parallax, v_rad=v_rad,
                                    obs_metadata=obs_metadata, epoch=epoch)
 
-    ans = chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips)
+    ans = chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips,
+                                      band=band)
 
     if not are_arrays:
         return ans[0]
@@ -462,7 +466,8 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
 
 
 def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
-                          obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
+                          obs_metadata=None, epoch=2000.0, allow_multiple_chips=False,
+                          band='r'):
     """
     Return the names of detectors on the LSST camera that see the object specified by
     (RA, Dec) in degrees.
@@ -496,6 +501,8 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
     chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
 
+    @param [in] band is the filter that we are simulating (Default=r)
+
     @param [out] the name(s) of the chips on which ra, dec fall (will be a numpy
     array if more than one)
     """
@@ -518,7 +525,8 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
                                   pm_ra=pm_ra_out, pm_dec=pm_dec_out,
                                   parallax=parallax_out, v_rad=v_rad,
                                   obs_metadata=obs_metadata, epoch=epoch,
-                                  allow_multiple_chips=allow_multiple_chips)
+                                  allow_multiple_chips=allow_multiple_chips,
+                                  band=band)
 
 
 def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
