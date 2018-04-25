@@ -20,6 +20,7 @@ __all__ = ["focalPlaneCoordsFromPupilCoordsLSST",
            "pupilCoordsFromFocalPlaneCoordsLSST",
            "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
+           "pixelCoordsFromPupilCoordsLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
 
 
@@ -528,6 +529,92 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
                                   band=band)
 
 
+def pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=None, band="r",
+                                   includeDistortion=True):
+    """
+    Convert radians on the pupil into pixel coordinates.
+
+    Parameters
+    ----------
+    xPupil -- is the x coordinate on the pupil in radians
+
+    yPupil -- is the y coordinate on the pupil in radians
+
+    chipName -- designates the names of the chips on which the pixel
+    coordinates will be reckoned.  Can be either single value, an array, or None.
+    If an array, there must be as many chipNames as there are (xPupil, yPupil) pairs.
+    If a single value, all of the pixel coordinates will be reckoned on the same
+    chip.  If None, this method will calculate which chip each(xPupil, yPupil) pair
+    actually falls on, and return pixel coordinates for each (xPupil, yPupil) pair on
+    the appropriate chip.  Default is None.
+
+    band -- the filter we are simulating (default=r)
+
+    includeDistortion -- a boolean which turns on and off optical distortions
+    (default=True)
+
+    Returns
+    -------
+    a 2-D numpy array in which the first row is the x pixel coordinate
+    and the second row is the y pixel coordinate
+    """
+
+    if not includeDistortion:
+        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipName,
+                                          camera=lsst_camera(),
+                                          includeDistortion=includeDistortion)
+
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipname([xPupil, yPupil],
+                                                 ['xPupil', 'yPupil'],
+                                                 'pixelCoordsFromPupilCoordsLSST',
+                                                 chipName)
+
+    if chipNameList is None:
+        chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
+        if not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array([chipNameList])
+    else:
+        if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array([chipNameList])
+        elif isinstance(chipNameList, list):
+            chipNameList = np.array(chipNameList)
+
+    x_f, y_f = focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band=band)
+
+    if are_arrays:
+        x_pix = np.NaN*np.ones(len(x_f), dtype=float)
+        y_pix = np.NaN*np.ones(len(x_f), dtype=float)
+
+        chipNameList_str = chipNameList.astype(str)
+        for chip_name in np.unique(chipNameList_str):
+            if chip_name == 'None':
+                continue
+            det = lsst_camera()[chip_name]
+            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
+
+            valid = np.where(np.char.find(chipNameList_str, chip_name)==0)
+            for ii in valid[0]:
+                focal_pt = afwGeom.Point2D(x_f[ii], y_f[ii])
+                pixel_pt = focal_to_pixels.applyForward(focal_pt)
+                x_pix[ii] = pixel_pt.getX()
+                y_pix[ii] = pixel_pt.getY()
+    else:
+        chip_name = chipNameList[0]
+        if chip_name is None:
+            x_pix = np.NaN
+            y_pix = np.NaN
+        else:
+            det = lsst_camera()[chip_name]
+            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
+            focal_pt = afwGeom.Point2D(x_f, y_f)
+            pixel_pt = focal_to_pixels.applyForward(focal_pt)
+            x_pix= pixel_pt.getX()
+            y_pix = pixel_pt.getY()
+
+    return np.array([x_pix, y_pix])
+
+
 def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
                               obs_metadata=None,
                               chipName=None, camera=None,
@@ -584,11 +671,6 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
     and the second row is the y pixel coordinate
     """
 
-    are_arrays, \
-    chipNameList = _validate_inputs_and_chipname([ra, dec], ['ra', 'dec'],
-                                                 'pixelCoordsFromRaDecLSST',
-                                                 chipName)
-
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
 
@@ -608,53 +690,8 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
                                            parallax=parallax, v_rad=v_rad,
                                            obs_metadata=obs_metadata, epoch=epoch)
 
-    if chipNameList is None:
-        chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
-        if not isinstance(chipNameList, np.ndarray):
-            chipNameList = np.array([chipNameList])
-    else:
-        if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
-            chipNameList = np.array([chipNameList])
-        elif isinstance(chipNameList, list):
-            chipNameList = np.array(chipNameList)
-
-    if not includeDistortion:
-        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=lsst_camera(),
+    return pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=chipName, band=band,
                                           includeDistortion=includeDistortion)
-
-    x_f, y_f = focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band=band)
-
-    if are_arrays:
-        x_pix = np.NaN*np.ones(len(x_f), dtype=float)
-        y_pix = np.NaN*np.ones(len(x_f), dtype=float)
-
-        chipNameList_str = chipNameList.astype(str)
-        for chip_name in np.unique(chipNameList_str):
-            if chip_name == 'None':
-                continue
-            det = lsst_camera()[chip_name]
-            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
-
-            valid = np.where(np.char.find(chipNameList_str, chip_name)==0)
-            for ii in valid[0]:
-                focal_pt = afwGeom.Point2D(x_f[ii], y_f[ii])
-                pixel_pt = focal_to_pixels.applyForward(focal_pt)
-                x_pix[ii] = pixel_pt.getX()
-                y_pix[ii] = pixel_pt.getY()
-    else:
-        chip_name = chipNameList[0]
-        if chip_name is None:
-            x_pix = np.NaN
-            y_pix = np.NaN
-        else:
-            det = lsst_camera()[chip_name]
-            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
-            focal_pt = afwGeom.Point2D(x_f, y_f)
-            pixel_pt = focal_to_pixels.applyForward(focal_pt)
-            x_pix= pixel_pt.getX()
-            y_pix = pixel_pt.getY()
-
-    return np.array([x_pix, y_pix])
 
 
 def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
