@@ -21,6 +21,8 @@ from lsst.sims.coordUtils import _chipNameFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import _pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDec
+from lsst.sims.coordUtils import pixelCoordsFromPupilCoordsLSST
+from lsst.sims.coordUtils import pupilCoordsFromPixelCoordsLSST
 from lsst.sims.coordUtils.LsstZernikeFitter import _rawPupilCoordsFromObserved
 
 def setup_module(module):
@@ -885,6 +887,62 @@ class FullTransformationTestCase(unittest.TestCase):
                                                       band=band)
 
             np.testing.assert_array_equal(chip_name_list, chip_name_list_r)
+
+    def test_pupil_coords_from_pixel_coords_LSST(self):
+        """
+        Test that pupilCoordsFromPixelCoordsLSST inverts
+        pixelCoordsFromPupilCoordsLSST
+        """
+        xpix = np.arange(-2000.0, 2000.0, 100.0)
+        ypix = np.arange(-2000.0, 2000.0, 100.0)
+        mesh = np.meshgrid(xpix, ypix)
+        xpix = mesh[0].flatten()
+        ypix = mesh[1].flatten()
+
+        chip_name = 'R:3,1 S:1,2'
+
+        chip_name_list = ['None']
+        for det in lsst_camera():
+            if det.getType() == SCIENCE:
+                chip_name_list.append(det.getName())
+        chip_name_list = np.array(chip_name_list)
+        rng = np.random.RandomState(81231)
+        chip_name_sample = rng.choice(chip_name_list, size=len(xpix),
+                                      replace=True)
+
+        for band in 'ugrizy':
+            xpup, ypup = pupilCoordsFromPixelCoordsLSST(xpix, ypix,
+                                                        chipName=chip_name,
+                                                        band=band)
+
+            xpix1, ypix1 = pixelCoordsFromPupilCoordsLSST(xpup, ypup,
+                                                          chipName=chip_name,
+                                                          band=band)
+
+            dd = np.sqrt((xpix-xpix1)**2 + (ypix-ypix1)**2)
+            self.assertLess(dd.max(), 1.0e-4)
+
+            xpup, ypup = pupilCoordsFromPixelCoordsLSST(xpix, ypix,
+                                                        chipName=chip_name_sample,
+                                                        band=band)
+
+            xpix1, ypix1 = pixelCoordsFromPupilCoordsLSST(xpup, ypup,
+                                                          chipName=chip_name_sample,
+                                                          band=band)
+
+            valid = np.where(np.char.find(chip_name_sample, 'None')<0)
+            self.assertGreater(len(valid[0]), 0)
+            self.assertLess(len(valid[0]), len(xpix))
+            dd = np.sqrt((xpix[valid]-xpix1[valid])**2 + (ypix[valid]-ypix1[valid])**2)
+            self.assertLess(dd.max(), 1.0e-4)
+
+            for dist in dd:
+                self.assertFalse(np.isnan(dist))
+
+            invalid = np.where(np.char.find(chip_name_sample, 'None')==0)
+            for ii in invalid[0]:
+                self.assertTrue(np.isnan(xpix1[ii]))
+                self.assertTrue(np.isnan(ypix1[ii]))
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

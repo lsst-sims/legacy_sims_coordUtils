@@ -10,6 +10,7 @@ from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
 from lsst.sims.coordUtils import LsstZernikeFitter
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
 from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoords
+from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
 from lsst.sims.utils.CodeUtilities import _validate_inputs
@@ -21,6 +22,7 @@ __all__ = ["focalPlaneCoordsFromPupilCoordsLSST",
            "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "pixelCoordsFromPupilCoordsLSST",
+           "pupilCoordsFromPixelCoordsLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
 
 
@@ -527,6 +529,75 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
                                   obs_metadata=obs_metadata, epoch=epoch,
                                   allow_multiple_chips=allow_multiple_chips,
                                   band=band)
+
+
+def pupilCoordsFromPixelCoordsLSST(xPix, yPix, chipName=None, band="r",
+                                   includeDistortion=True):
+    """
+    Convert pixel coordinates into radians on the pupil
+
+    Parameters
+    ----------
+    xPix -- the x pixel coordinate
+
+    yPix -- the y pixel coordinate
+
+    chipName -- the name(s) of the chips on which xPix, yPix are reckoned
+
+    band -- the filter we are simulating (default=r)
+
+    includeDistortion -- a boolean which turns on or off optical
+    distortions (default=True)
+
+    Returns
+    -------
+    a 2-D numpy array in which the first row is the x
+    pupil coordinate and the second row is the y pupil
+    coordinate (both in radians)
+    """
+
+    if not includeDistortion:
+        return pupilCoordsFromPixelCoords(xPix, yPix, chipName=chipName,
+                                          camera=lsst_camera(),
+                                          includeDistortion=includeDistortion)
+
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipname([xPix, yPix], ['xPix', 'yPix'],
+                                                 "pupilCoordsFromPixelCoords",
+                                                 chipName,
+                                                 chipname_can_be_none=False)
+
+    pixel_to_focal_dict = {}
+    camera = lsst_camera()
+    for name in chipNameList:
+        if name not in pixel_to_focal_dict and name is not None and name != 'None':
+            pixel_to_focal_dict[name] = camera[name].getTransform(PIXELS, FOCAL_PLANE)
+
+    if are_arrays:
+        x_f = np.zeros(len(xPix), dtype=float)
+        y_f = np.zeros(len(yPix), dtype=float)
+        for ii in range(len(xPix)):
+            if chipNameList[ii] is None or chipNameList[ii] == 'None':
+                x_f[ii] = np.NaN
+                y_f[ii] = np.NaN
+                continue
+
+            pixel_pt = afwGeom.Point2D(xPix[ii], yPix[ii])
+            focal_pt = pixel_to_focal_dict[chipNameList[ii]].applyForward(pixel_pt)
+            x_f[ii] = focal_pt.getX()
+            y_f[ii] = focal_pt.getY()
+
+    else:
+        if chipNameList[0] is None or chipNameList[ii] == 'None':
+            x_f = np.NaN
+            y_f = np.NaN
+        else:
+            pixel_pt = afwGeom.Point2D(xPix, yPix)
+            focal_pt = pixel_to_focal_dict[chipNameList[0]].applyForward(pixel_pt)
+            x_f = focal_pt.getX()
+            y_f = focal_pt.getY()
+
+    return pupilCoordsFromFocalPlaneCoordsLSST(x_f, y_f, band=band)
 
 
 def pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=None, band="r",
