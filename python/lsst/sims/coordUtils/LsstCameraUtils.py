@@ -885,7 +885,8 @@ def _raDecFromPixelCoordsLSST(xPix, yPix, chipName, band='r',
     chipNameList = _validate_inputs_and_chipname([xPix, yPix],
                                                  ['xPix', 'yPix'],
                                                  'raDecFromPixelCoords',
-                                                 chipName)
+                                                 chipName,
+                                                 chipname_can_be_none=False)
 
     if epoch is None:
         raise RuntimeError("You cannot call raDecFromPixelCoords without specifying an epoch")
