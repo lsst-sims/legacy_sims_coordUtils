@@ -296,7 +296,7 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
+        self.assertIn("same length", context.exception.args[0])
 
     def test_pixel_coords_from_ra_dec_degrees(self):
         """
@@ -391,7 +391,7 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
+        self.assertIn("same length", context.exception.args[0])
 
 
 class MotionTestCase(unittest.TestCase):
