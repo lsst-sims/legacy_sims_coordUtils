@@ -681,22 +681,42 @@ def pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=None, band="r",
     x_f, y_f = focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band=band)
 
     if are_arrays:
+
+        has_transform = set()
+        focal_to_pixel_dict = {}
+        chip_name_int = np.zeros(len(x_f), dtype=int)
+        name_to_int = {}
+        name_to_int[None] = 0
+        name_to_int['None'] = 0
+        ii = 1
+        for i_obj, chip_name in enumerate(chipNameList):
+            if chip_name not in has_transform and chip_name is not None and chip_name != 'None':
+                has_transform.add(chip_name)
+                focal_to_pixel_dict[chip_name] = lsst_camera()[chip_name].getTransform(FOCAL_PLANE, PIXELS)
+                name_to_int[chip_name] = ii
+                ii += 1
+
+            chip_name_int[i_obj] = name_to_int[chip_name]
+
         x_pix = np.NaN*np.ones(len(x_f), dtype=float)
         y_pix = np.NaN*np.ones(len(x_f), dtype=float)
 
-        chipNameList_str = chipNameList.astype(str)
-        for chip_name in np.unique(chipNameList_str):
-            if chip_name == 'None':
+        for chip_name in has_transform:
+            if chip_name == 'None' or chip_name is None:
                 continue
-            det = lsst_camera()[chip_name]
-            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
 
-            valid = np.where(np.char.find(chipNameList_str, chip_name)==0)
-            for ii in valid[0]:
-                focal_pt = afwGeom.Point2D(x_f[ii], y_f[ii])
-                pixel_pt = focal_to_pixels.applyForward(focal_pt)
-                x_pix[ii] = pixel_pt.getX()
-                y_pix[ii] = pixel_pt.getY()
+            local_int = name_to_int[chip_name]
+            local_valid = np.where(chip_name_int == local_int)
+            if len(local_valid[0]) == 0:
+                continue
+            focal_pt_arr = [afwGeom.Point2D(x_f[ii], y_f[ii])
+                            for ii in local_valid[0]]
+            pixel_pt_arr = focal_to_pixel_dict[chip_name].applyForward(focal_pt_arr)
+            pixel_coord_arr = np.array([[pp.getX(), pp.getY()]
+                                        for pp in pixel_pt_arr]).transpose()
+
+            x_pix[local_valid] = pixel_coord_arr[0]
+            y_pix[local_valid] = pixel_coord_arr[1]
     else:
         chip_name = chipNameList[0]
         if chip_name is None:
