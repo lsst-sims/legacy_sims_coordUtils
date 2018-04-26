@@ -588,7 +588,7 @@ def pupilCoordsFromPixelCoordsLSST(xPix, yPix, chipName=None, band="r",
             y_f[ii] = focal_pt.getY()
 
     else:
-        if chipNameList[0] is None or chipNameList[ii] == 'None':
+        if chipNameList[0] is None or chipNameList[0] == 'None':
             x_f = np.NaN
             y_f = np.NaN
         else:
