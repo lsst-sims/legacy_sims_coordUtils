@@ -500,8 +500,8 @@ class FullTransformationTestCase(unittest.TestCase):
 
                 self.assertIsInstance(x_f1, numbers.Number)
                 self.assertIsInstance(y_f1, numbers.Number)
-                self.assertEqual(x_f1, x_f[ii])
-                self.assertEqual(y_f1, y_f[ii])
+                self.assertAlmostEqual(x_f1, x_f[ii], 8)
+                self.assertAlmostEqual(y_f1, y_f[ii], 8)
 
     def test_pixel_coords_from_ra_dec(self):
         """
@@ -728,8 +728,8 @@ class FullTransformationTestCase(unittest.TestCase):
                 self.assertIsInstance(x_pix1, numbers.Number)
                 self.assertIsInstance(y_pix1, numbers.Number)
                 if not np.isnan(x_pix1):
-                    self.assertEqual(x_pix1, x_pix[ii])
-                    self.assertEqual(y_pix1, y_pix[ii])
+                    self.assertAlmostEqual(x_pix1, x_pix[ii], 8)
+                    self.assertAlmostEqual(y_pix1, y_pix[ii], 8)
                     n_good += 1
                 else:
                     n_nan += 1
