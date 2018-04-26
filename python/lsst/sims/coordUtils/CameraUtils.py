@@ -1028,11 +1028,18 @@ def pupilCoordsFromFocalPlaneCoords(xFocal, yFocal, camera=None):
     if are_arrays:
         focal_point_list = [afwGeom.Point2D(x,y) for x,y in zip(xFocal, yFocal)]
         pupil_point_list = focal_to_field.applyForward(focal_point_list)
-        xPupil = np.array([pp.getX() for pp in pupil_point_list])
-        yPupil = np.array([pp.getY() for pp in pupil_point_list])
+        pupil_arr = np.array([[pp.getX(), pp.getY()]
+                              if np.isfinite(xFocal[ii]) and np.isfinite(yFocal[ii])
+                              else [np.NaN, np.NaN]
+                              for ii, pp in enumerate(pupil_point_list)]).transpose()
+        xPupil = pupil_arr[0]
+        yPupil = pupil_arr[1]
 
         return np.array([xPupil, yPupil])
 
     # if not are_arrays
-    pupPoint = focal_to_field.applyForward(afwGeom.Point2D(xFocal, yFocal))
-    return np.array([pupPoint.getX(), pupPoint.getY()])
+    if np.isfinite(xFocal) and np.isfinite(yFocal):
+        pupPoint = focal_to_field.applyForward(afwGeom.Point2D(xFocal, yFocal))
+        return np.array([pupPoint.getX(), pupPoint.getY()])
+
+    return np.array([np.NaN, np.NaN])
