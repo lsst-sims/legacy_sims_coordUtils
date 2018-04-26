@@ -15,6 +15,7 @@ from lsst.sims.coordUtils import DMtoCameraPixelTransformer
 from lsst.sims.utils import ObservationMetaData
 from lsst.sims.utils import pupilCoordsFromRaDec
 from lsst.sims.utils import radiansFromArcsec
+from lsst.sims.utils import angularSeparation
 from lsst.sims.coordUtils import chipNameFromPupilCoordsLSST
 from lsst.sims.coordUtils import chipNameFromRaDecLSST
 from lsst.sims.coordUtils import _chipNameFromRaDecLSST
@@ -23,6 +24,8 @@ from lsst.sims.coordUtils import _pixelCoordsFromRaDecLSST
 from lsst.sims.coordUtils import pixelCoordsFromRaDec
 from lsst.sims.coordUtils import pixelCoordsFromPupilCoordsLSST
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoordsLSST
+from lsst.sims.coordUtils import raDecFromPixelCoordsLSST
+from lsst.sims.coordUtils import _raDecFromPixelCoordsLSST
 from lsst.sims.coordUtils.LsstZernikeFitter import _rawPupilCoordsFromObserved
 
 def setup_module(module):
@@ -943,6 +946,117 @@ class FullTransformationTestCase(unittest.TestCase):
             for ii in invalid[0]:
                 self.assertTrue(np.isnan(xpix1[ii]))
                 self.assertTrue(np.isnan(ypix1[ii]))
+
+    def test_ra_dec_from_pixel_coords_lsst(self):
+        """
+        Test that raDecFromPixelCoordsLSST inverts
+        pixelCoordsFromRaDecLSST
+        """
+
+        rng = np.random.RandomState(1811231)
+        n_samples = 500
+        rr = rng.random_sample(n_samples)*2.2
+        theta = rng.random_sample(n_samples)*2.0*np.pi
+        ra = self._obs.pointingRA + rr*np.cos(theta)
+        dec = self._obs.pointingDec + rr*np.sin(theta)
+
+        name_list = [None]
+        for det in lsst_camera():
+            if det.getType() == SCIENCE:
+                name_list.append(det.getName())
+        name_list = np.array(name_list)
+        name_sample = rng.choice(name_list, size=n_samples, replace=True)
+
+        for band in 'ugrizy':
+            xpix, ypix = pixelCoordsFromRaDecLSST(ra, dec,
+                                                  chipName=name_sample,
+                                                  band=band,
+                                                  obs_metadata=self._obs)
+
+            ra1, dec1 = raDecFromPixelCoordsLSST(xpix, ypix, chipName=name_sample,
+                                                 band=band,
+                                                 obs_metadata=self._obs)
+
+            valid = np.where(np.isfinite(ra1))
+            valid_name = np.where(np.char.find(name_sample.astype(str), 'None')<0)
+            np.testing.assert_array_equal(valid[0], valid_name[0])
+
+            invalid = np.where(np.isnan(ra1))
+            invalid_name = np.where(np.char.find(name_sample.astype(str), 'None')==0)
+            np.testing.assert_array_equal(invalid[0], invalid_name[0])
+
+            self.assertGreater(len(invalid[0]), 0)
+            self.assertGreater(len(valid[0]), 0)
+
+            dist = angularSeparation(ra[valid], dec[valid], ra1[valid], dec1[valid])
+            dist *= 3600.0
+            self.assertLess(dist.max(), 1.0e-5)
+
+            # test one at a time
+            for ii in range(len(ra1)):
+                ra2, dec2 = raDecFromPixelCoordsLSST(xpix[ii], ypix[ii],
+                                                     chipName=str(name_sample[ii]),
+                                                     band=band,
+                                                     obs_metadata=self._obs)
+
+                self.assertIsInstance(ra2, numbers.Number)
+                self.assertIsInstance(dec2, numbers.Number)
+
+                if name_sample[ii] is None:
+                    self.assertTrue(np.isnan(ra2))
+                    self.assertTrue(np.isnan(dec2))
+                else:
+                    self.assertEqual(ra2, ra1[ii])
+                    self.assertEqual(dec2, dec1[ii])
+
+
+    def test_ra_dec_from_pixel_coords_lsst_radians(self):
+        """
+        Test that radians version of raDecFromPixelCoordsLSST
+        agrees with degrees version
+        """
+        rng = np.random.RandomState(56123)
+        n_samples = 500
+        name_list = [None]
+        for det in lsst_camera():
+            if det.getType() == SCIENCE:
+                name_list.append(det.getName())
+        name_list = np.array(name_list)
+        name_sample = rng.choice(name_list, size=n_samples, replace=True)
+        invalid = np.where(np.char.find(name_sample.astype(str), 'None')==0)
+        self.assertLess(len(invalid[0]), n_samples//2)
+
+        xpix = rng.random_sample(n_samples)*4000.0
+        ypix = rng.random_sample(n_samples)*4000.0
+        for band in 'ugrizy':
+            ra_deg, dec_deg = raDecFromPixelCoordsLSST(xpix, ypix, chipName=name_sample,
+                                                       obs_metadata=self._obs)
+
+
+            ra_rad, dec_rad = _raDecFromPixelCoordsLSST(xpix, ypix, chipName=name_sample,
+                                                        obs_metadata=self._obs)
+
+
+            valid = np.where(np.isfinite(ra_deg))
+            np.testing.assert_array_equal(np.degrees(ra_rad[valid]), ra_deg[valid])
+            np.testing.assert_array_equal(np.degrees(dec_rad[valid]), dec_deg[valid])
+            self.assertGreater(len(valid[0]), n_samples//2)
+            for ii in invalid[0]:
+                self.assertTrue(np.isnan(ra_rad[ii]))
+                self.assertTrue(np.isnan(dec_rad[ii]))
+            for ii in range(n_samples):
+                ra1, dec1 = _raDecFromPixelCoordsLSST(xpix[ii], ypix[ii],
+                                                      chipName=str(name_sample[ii]),
+                                                      obs_metadata=self._obs)
+
+                self.assertIsInstance(ra1, numbers.Number)
+                self.assertIsInstance(dec1, numbers.Number)
+                if name_sample[ii] is None:
+                    self.assertTrue(np.isnan(ra1))
+                    self.assertTrue(np.isnan(dec1))
+                else:
+                    self.assertEqual(ra1, ra_rad[ii])
+                    self.assertEqual(dec1, dec_rad[ii])
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

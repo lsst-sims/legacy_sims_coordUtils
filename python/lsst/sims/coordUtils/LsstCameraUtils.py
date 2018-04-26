@@ -12,6 +12,7 @@ from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupi
 from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoords
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
+from lsst.sims.utils import _raDecFromPupilCoords
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 from lsst.sims.utils import radiansFromArcsec
@@ -23,7 +24,8 @@ __all__ = ["focalPlaneCoordsFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
            "pixelCoordsFromPupilCoordsLSST",
            "pupilCoordsFromPixelCoordsLSST",
-           "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
+           "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST",
+           "_raDecFromPixelCoordsLSST", "raDecFromPixelCoordsLSST"]
 
 
 def focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band='r'):
@@ -838,3 +840,118 @@ def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_
                                      chipName=chipName, obs_metadata=obs_metadata,
                                      epoch=2000.0, includeDistortion=includeDistortion,
                                      band=band)
+
+
+def _raDecFromPixelCoordsLSST(xPix, yPix, chipName, band='r',
+                              obs_metadata=None, epoch=2000.0,
+                              includeDistortion=True):
+    """
+    Convert pixel coordinates into RA, Dec
+
+    @param [in] xPix is the x pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] yPix is the y pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] chipName is the name of the chip(s) on which the pixel coordinates
+    are defined.  This can be a list (in which case there should be one chip name
+    for each (xPix, yPix) coordinate pair), or a single value (in which case, all
+    of the (xPix, yPix) points will be reckoned on that chip).
+
+    @param [in] band is the filter we are simulating (default=r)
+
+    @param [in] obs_metadata is an ObservationMetaData defining the pointing
+
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system.
+    Default is 2000.
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    expect the true pixel coordinates with optical distortion included.  If False, this
+    method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a 2-D numpy array in which the first row is the RA coordinate
+    and the second row is the Dec coordinate (both in radians; in the International
+    Celestial Reference System)
+
+    WARNING: This method does not account for apparent motion due to parallax.
+    This method is only useful for mapping positions on a theoretical focal plane
+    to positions on the celestial sphere.
+    """
+
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipname([xPix, yPix],
+                                                 ['xPix', 'yPix'],
+                                                 'raDecFromPixelCoords',
+                                                 chipName)
+
+    if epoch is None:
+        raise RuntimeError("You cannot call raDecFromPixelCoords without specifying an epoch")
+
+    if obs_metadata is None:
+        raise RuntimeError("You cannot call raDecFromPixelCoords without an ObservationMetaData")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have an mjd")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
+
+    xPupilList, yPupilList = pupilCoordsFromPixelCoordsLSST(xPix, yPix,
+                                                           chipNameList,
+                                                           band=band,
+                                                           includeDistortion=includeDistortion)
+
+    raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
+                                          obs_metadata=obs_metadata, epoch=epoch)
+
+    return np.array([raOut, decOut])
+
+
+
+def raDecFromPixelCoordsLSST(xPix, yPix, chipName, band='r',
+                             obs_metadata=None, epoch=2000.0,
+                             includeDistortion=True):
+    """
+    Convert pixel coordinates into RA, Dec
+
+    @param [in] xPix is the x pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] yPix is the y pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] chipName is the name of the chip(s) on which the pixel coordinates
+    are defined.  This can be a list (in which case there should be one chip name
+    for each (xPix, yPix) coordinate pair), or a single value (in which case, all
+    of the (xPix, yPix) points will be reckoned on that chip).
+
+    @param [in] band is the filter we are simulating (default=r)
+
+    @param [in] obs_metadata is an ObservationMetaData defining the pointing
+
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system.
+    Default is 2000.
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    expect the true pixel coordinates with optical distortion included.  If False, this
+    method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a 2-D numpy array in which the first row is the RA coordinate
+    and the second row is the Dec coordinate (both in degrees; in the International
+    Celestial Reference System)
+
+    WARNING: This method does not account for apparent motion due to parallax.
+    This method is only useful for mapping positions on a theoretical focal plane
+    to positions on the celestial sphere.
+    """
+    output = _raDecFromPixelCoordsLSST(xPix, yPix, chipName, band=band,
+                                       obs_metadata=obs_metadata,
+                                       epoch=epoch,
+                                       includeDistortion=includeDistortion)
+
+    return np.degrees(output)
