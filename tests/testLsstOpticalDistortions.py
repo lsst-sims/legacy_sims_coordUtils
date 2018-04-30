@@ -686,9 +686,6 @@ class FullTransformationTestCase(unittest.TestCase):
             self.assertGreater(n_new_better, 4*n_old_better)
             dist_arr = np.array(dist_arr)
             dist_arr = np.sort(dist_arr)
-            print('%s %.2e %.2e %.2e %.2e' %
-            (band,dist_arr[len(dist_arr)//4],np.median(dist_arr),
-             dist_arr[3*len(dist_arr)//4],dist_arr.max()))
 
     def test_pixel_coords_from_ra_dec_one_at_a_time(self):
         """
