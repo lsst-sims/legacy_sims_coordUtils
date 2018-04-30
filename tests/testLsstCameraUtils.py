@@ -16,6 +16,7 @@ from lsst.sims.utils import pupilCoordsFromRaDec, radiansFromArcsec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
 
+from lsst.sims.coordUtils import clean_up_lsst_camera
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -31,15 +32,8 @@ class ChipNameTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
-            del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
-
-        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
-            del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
-
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
+        clean_up_lsst_camera()
 
     def test_chip_center(self):
         """
@@ -405,15 +399,8 @@ class MotionTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
-            del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
-
-        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
-            del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
-
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
+        clean_up_lsst_camera()
 
     def set_data(self, seed):
         """
