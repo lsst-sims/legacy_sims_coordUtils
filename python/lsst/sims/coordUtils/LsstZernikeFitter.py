@@ -171,6 +171,8 @@ class LsstZernikeFitter(object):
                                   'FocalPlaneData',
                                   'PhoSimData')
 
+        # the file which contains the input sky positions of the objects
+        # that were given to PhoSim
         catsim_catalog = os.path.join(catsim_dir,'predicted_positions.txt')
 
         with open(catsim_catalog, 'r') as input_file:
@@ -189,10 +191,13 @@ class LsstZernikeFitter(object):
         sorted_dex = np.argsort(catsim_data['id'])
         catsim_data=catsim_data[sorted_dex]
 
+        # convert from RA, Dec to pupil coors/FIELD_ANGLE
         x_field, y_field = _rawPupilCoordsFromObserved(np.radians(catsim_data['raObs']),
                                                        np.radians(catsim_data['decObs']),
                                                        ra0, dec0, rotSkyPos)
 
+        # convert from FIELD_ANGLE to FOCAL_PLANE without attempting to model
+        # the optical distortions in the telescope
         field_to_focal = self._camera.getTransform(FIELD_ANGLE, FOCAL_PLANE)
         catsim_xmm = np.zeros(len(x_field), dtype=float)
         catsim_ymm = np.zeros(len(y_field), dtype=float)
@@ -223,6 +228,9 @@ class LsstZernikeFitter(object):
                 det_name = det.getName()
                 bbox = det.getBBox()
                 det_name_m = det_name.replace(':','').replace(',','').replace(' ','_')
+
+                # read in the actual pixel positions of the sources as realized
+                # by PhoSim
                 centroid_name = 'centroid_lsst_e_2_f%d_%s_E000.txt' % (i_filter, det_name_m)
                 full_name = os.path.join(phosim_dir, centroid_name)
                 phosim_data = np.genfromtxt(full_name, dtype=phosim_dtype, skip_header=1)
@@ -246,12 +254,20 @@ class LsstZernikeFitter(object):
                 phosim_xmm[phosim_data['id']-1] = xmm
                 phosim_ymm[phosim_data['id']-1] = ymm
 
+            # solve for the coefficients of the Zernike expansions
+            # necessary to model the optical transformations and go
+            # from the naive focal plane positions (catsim_xmm, catsim_ymm)
+            # to the PhoSim realized focal plane positions
             alpha_x, alpha_y = self._get_coeffs(catsim_xmm, catsim_ymm,
                                                 phosim_xmm, phosim_ymm)
 
             self._pupil_to_focal[self._int_to_band[i_filter]]['x'] = alpha_x
             self._pupil_to_focal[self._int_to_band[i_filter]]['y'] = alpha_y
 
+            # solve for the coefficients to the Zernike expansions
+            # necessary to go back from the PhoSim realized focal plane
+            # positions to the naive CatSim predicted focal plane
+            # positions
             alpha_x, alpha_y = self._get_coeffs(phosim_xmm, phosim_ymm,
                                                 catsim_xmm, catsim_ymm)
 
