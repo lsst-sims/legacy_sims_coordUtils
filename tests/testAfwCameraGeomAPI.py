@@ -13,6 +13,7 @@ from lsst.sims.coordUtils import pixelCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoords
 
+from lsst.sims.coordUtils import clean_up_lsst_camera
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -53,8 +54,7 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.camera
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
+        clean_up_lsst_camera()
 
     def test_chipName(self):
         """
