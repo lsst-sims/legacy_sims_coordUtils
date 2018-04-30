@@ -356,12 +356,19 @@ class FullTransformationTestCase(unittest.TestCase):
                                             v_rad=self._truth_data['vrad'],
                                             obs_metadata=self._obs)
 
+        (xf_no_optics,
+         yf_no_optics) = focalPlaneCoordsFromPupilCoords(x_pup,
+                                                         y_pup, camera=lsst_camera())
+
         for band in 'ugrizy':
 
             n_check = 0
             d_max = None
             n_old_better = 0
             n_new_better = 0
+
+            (xf_optics,
+             yf_optics) = focalPlaneCoordsFromPupilCoordsLSST(x_pup, y_pup, band)
 
             for det in camera:
                 if det.getType() != SCIENCE:
@@ -375,30 +382,25 @@ class FullTransformationTestCase(unittest.TestCase):
 
                 pixel_to_focal = det.getTransform(PIXELS, FOCAL_PLANE)
 
-                for id_val, xcam, ycam in zip(phosim_data['id'],
-                                              phosim_data['xcam'],
-                                              phosim_data['ycam']):
+                (xdm_arr,
+                 ydm_arr) = pix_transformer.dmPixFromCameraPix(phosim_data['xcam'],
+                                                               phosim_data['ycam'],
+                                                               det_name)
+
+                for id_val, xdm, ydm in zip(phosim_data['id'],xdm_arr, ydm_arr):
 
                     dex = np.where(self._truth_data['id'] == id_val)
-                    xp = x_pup[dex]
-                    yp = y_pup[dex]
-                    xf, yf = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, band)
+                    xf = xf_optics[dex]
+                    yf = yf_optics[dex]
 
-                    (xf_no_optics,
-                     yf_no_optics) = focalPlaneCoordsFromPupilCoords(xp, yp,
-                                                                     camera=lsst_camera())
-
-                    xdm, ydm = pix_transformer.dmPixFromCameraPix(xcam, ycam,
-                                                              det_name)
                     pixel_pt = afwGeom.Point2D(xdm, ydm)
                     focal_pt = pixel_to_focal.applyForward(pixel_pt)
 
                     dist = np.sqrt((xf-focal_pt.getX())**2+(yf-focal_pt.getY())**2)
                     r_center = np.sqrt(focal_pt.getX()**2 + focal_pt.getY()**2)
 
-
-                    old_dist = np.sqrt((xf_no_optics-focal_pt.getX())**2 +
-                                       (yf_no_optics-focal_pt.getY())**2)
+                    old_dist = np.sqrt((xf_no_optics[dex]-focal_pt.getX())**2 +
+                                       (yf_no_optics[dex]-focal_pt.getY())**2)
 
                     msg = '\nObject %d' % id_val
                     msg += '\nchip %s' % det_name
