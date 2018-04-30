@@ -693,6 +693,8 @@ class FullTransformationTestCase(unittest.TestCase):
         scalars
         """
 
+        rng = np.random.RandomState(1845332)
+
         for band in 'ugrizy':
 
             x_pix, y_pix = pixelCoordsFromRaDecLSST(self._truth_data['ra'],
@@ -709,7 +711,9 @@ class FullTransformationTestCase(unittest.TestCase):
 
             n_nan = 0
             n_good = 0
-            for ii in range(len(x_pix)//4):  # only test on a subsample; this is slow
+            subsample = rng.choice(np.arange(len(x_pix), dtype=int),
+                                   size=100, replace=False)
+            for ii in subsample:  # only test on a subsample; this is slow
                 x_pix1, y_pix1 = pixelCoordsFromRaDecLSST(self._truth_data['ra'][ii],
                                                           self._truth_data['dec'][ii],
                                                           pm_ra=self._truth_data['pmra'][ii],
