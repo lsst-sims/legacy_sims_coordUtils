@@ -256,6 +256,7 @@ class FullTransformationTestCase(unittest.TestCase):
         """
         Test that chipNameFromPupilCoordsLSST works on scalars
         """
+        rng = np.random.RandomState(76621)
         x_pup, y_pup = pupilCoordsFromRaDec(self._truth_data['ra'],
                                             self._truth_data['dec'],
                                             pm_ra=self._truth_data['pmra'],
@@ -269,7 +270,9 @@ class FullTransformationTestCase(unittest.TestCase):
             self.assertIsInstance(chip_name_list, np.ndarray)
             n_none = 0
             n_not_none = 0
-            for ii in range(len(chip_name_list)//4):
+            subsample = rng.choice(np.arange(len(chip_name_list), dtype=int),
+                                   size=50, replace=False)
+            for ii in subsample:
                 name = chipNameFromPupilCoordsLSST(x_pup[ii], y_pup[ii], band=band)
                 if name is not None:
                     self.assertIsInstance(name, str)
@@ -486,7 +489,7 @@ class FullTransformationTestCase(unittest.TestCase):
                                                            band=band)
 
             subsample = rng.choice(np.arange(len(x_pup), dtype=int),
-                                   size=100, replace=False)
+                                   size=50, replace=False)
             for ii in subsample:
                 x_f1, y_f1 = focalPlaneCoordsFromPupilCoordsLSST(x_pup[ii],
                                                                  y_pup[ii],
@@ -712,7 +715,7 @@ class FullTransformationTestCase(unittest.TestCase):
             n_nan = 0
             n_good = 0
             subsample = rng.choice(np.arange(len(x_pix), dtype=int),
-                                   size=100, replace=False)
+                                   size=50, replace=False)
             for ii in subsample:  # only test on a subsample; this is slow
                 x_pix1, y_pix1 = pixelCoordsFromRaDecLSST(self._truth_data['ra'][ii],
                                                           self._truth_data['dec'][ii],
@@ -756,6 +759,7 @@ class FullTransformationTestCase(unittest.TestCase):
         """
         Test that pupilCoordsFromFocalPlaneCoordsLSST works on scalars
         """
+        rng = np.random.RandomState(8123412)
         x_f = np.arange(-400.0, 400.0, 20.0)
         y_f = np.arange(-400.0, 400.0, 20.0)
         mesh = np.meshgrid(x_f, y_f)
@@ -766,7 +770,9 @@ class FullTransformationTestCase(unittest.TestCase):
             x_p, y_p = pupilCoordsFromFocalPlaneCoordsLSST(x_f, y_f, band=band)
             self.assertIsInstance(x_p, np.ndarray)
             self.assertIsInstance(y_p, np.ndarray)
-            for ii in range(len(x_p)):
+            subsample = rng.choice(np.arange(len(x_p), dtype=int),
+                                   size=50, replace=False)
+            for ii in subsample:
                 x_p1, y_p1 = pupilCoordsFromFocalPlaneCoordsLSST(x_f[ii], y_f[ii],
                                                                  band=band)
 
@@ -807,6 +813,7 @@ class FullTransformationTestCase(unittest.TestCase):
         """
         Test that chipNameFromRaDecLSST works on scalars
         """
+        rng = np.random.RandomState(65673)
         for band in 'ugrizy':
             chip_name_list = chipNameFromRaDecLSST(self._truth_data['ra'],
                                                    self._truth_data['dec'],
@@ -820,7 +827,9 @@ class FullTransformationTestCase(unittest.TestCase):
             self.assertIsInstance(chip_name_list, np.ndarray)
             n_none = 0
             n_not_none = 0
-            for ii in range(len(chip_name_list)//4):
+            subsample = rng.choice(np.arange(len(chip_name_list), dtype=int),
+                                   size=50, replace=False)
+            for ii in subsample:
                 name = chipNameFromRaDecLSST(self._truth_data['ra'][ii],
                                              self._truth_data['dec'][ii],
                                              pm_ra=self._truth_data['pmra'][ii],
