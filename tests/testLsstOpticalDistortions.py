@@ -466,6 +466,7 @@ class FullTransformationTestCase(unittest.TestCase):
         on numpy arrays gives the same result as acting on
         scalars
         """
+        rng = np.random.RandomState(192312)
         camera = lsst_camera()
         pix_transformer = DMtoCameraPixelTransformer()
 
@@ -482,7 +483,9 @@ class FullTransformationTestCase(unittest.TestCase):
                                                            y_pup,
                                                            band=band)
 
-            for ii in range(len(x_pup)):
+            subsample = rng.choice(np.arange(len(x_pup), dtype=int),
+                                   size=100, replace=False)
+            for ii in subsample:
                 x_f1, y_f1 = focalPlaneCoordsFromPupilCoordsLSST(x_pup[ii],
                                                                  y_pup[ii],
                                                                  band=band)
