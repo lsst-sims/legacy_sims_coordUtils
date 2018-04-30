@@ -124,8 +124,9 @@ class FocalPlaneTestCase(unittest.TestCase):
             distance = np.sqrt((xmm-self._phosim_positions[i_band]['xmm'])**2 +
                                (ymm-self._phosim_positions[i_band]['ymm'])**2)
 
+            # make sure predicted positions are accurate to within
+            # 1 pixel = 0.01 mm
             self.assertLess(distance.max(), 0.01)
-            print(band,distance.max()/0.01)
 
 
 class FullTransformationTestCase(unittest.TestCase):
@@ -281,7 +282,7 @@ class FullTransformationTestCase(unittest.TestCase):
 
     def test_pupil_coords_from_ra_dec(self):
         """
-        Verifythat pupilCoordsFromRaDec gives results consistent
+        Verify that pupilCoordsFromRaDec gives results consistent
         with the naive pupil coordinate method used by the
         Zernike fitter
         """
