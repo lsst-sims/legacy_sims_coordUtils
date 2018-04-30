@@ -115,6 +115,15 @@ class LsstZernikeFitter(object):
         self._build_transformations()
 
     def _get_coeffs(self, x_in, y_in, x_out, y_out):
+        """
+        Get the coefficients of the best fit Zernike Polynomial
+        expansion that transforms from x_in, y_in to x_out, y_out.
+
+        Returns numpy arrays of the Zernike Polynomial expansion
+        coefficients in x and y.  Zernike Polynomials correspond
+        to the radial and angular orders stored in self._n_grida
+        and self._m_grid.
+        """
 
         polynomials ={}
         for n, m in zip(self._n_grid, self._m_grid):
@@ -148,6 +157,12 @@ class LsstZernikeFitter(object):
         return alpha_x, alpha_y
 
     def _build_transformations(self):
+        """
+        Solve for and store the coefficients of the Zernike
+        polynomial expansion of the difference between the
+        naive and the bandpass-dependent optical distortions
+        in the LSST camera.
+        """
         catsim_dir = os.path.join(getPackageDir('sims_data'),
                                   'FocalPlaneData',
                                   'CatSimData')
@@ -281,6 +296,22 @@ class LsstZernikeFitter(object):
 
     def dxdy(self, xmm, ymm, band):
         """
+        Apply the transformation necessary when going from pupil
+        coordinates to focal plane coordinates.
+
+        The recipe to correctly use this method is
+
+        xf0, yf0 = focalPlaneCoordsFromPupilCoords(xpupil, ypupil,
+                                                   camera=lsst_camera())
+
+        dx, dy = LsstZernikeFitter().dxdy(xf0, yf0, band=band)
+
+        xf = xf0 + dx
+        yf = yf0 + dy
+
+        xf and yf are now the actual position in millimeters on the
+        LSST focal plane corresponding to xpupil, ypupil
+
         Parameters
         ----------
         xmm -- the naive x focal plane position in mm
@@ -298,4 +329,33 @@ class LsstZernikeFitter(object):
         return self._apply_transformation(self._pupil_to_focal, xmm, ymm, band)
 
     def dxdy_inverse(self, xmm, ymm, band):
+        """
+        Apply the transformation necessary when going from focal
+        plane coordinates to pupil coordinates.
+
+        The recipe to correctly use this method is
+
+        dx, dy = LsstZernikeFitter().dxdy_inverse(xf, yf, band=band)
+
+        xp, yp = pupilCoordsFromFocalPlaneCoords(xf+dx,
+                                                 yf+dy,
+                                                 camera=lsst_camera()
+
+        xp and yp are now the actual position in radians on the pupil
+        corresponding to the focal plane coordinates xf, yf
+
+        Parameters
+        ----------
+        xmm -- the naive x focal plane position in mm
+
+        ymm -- the naive y focal plane position in mm
+
+        band -- the filter in which we are operating
+
+        Returns
+        -------
+        dx -- the offset in the x focal plane position in mm
+
+        dy -- the offset in the y focal plane position in mm
+        """
         return self._apply_transformation(self._focal_to_pupil, xmm, ymm, band)
