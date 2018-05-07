@@ -78,9 +78,9 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
                                                 obs_metadata=self.obs)
 
         np.testing.assert_array_almost_equal(pix_x, self.pix_data['pixel_x'],
-                                             decimal=4)
+                                             decimal=3)
         np.testing.assert_array_almost_equal(pix_y, self.pix_data['pixel_y'],
-                                             decimal=4)
+                                             decimal=3)
 
 
     def test_focalCoords(self):
