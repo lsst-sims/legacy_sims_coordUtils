@@ -2,64 +2,145 @@ from __future__ import division
 from builtins import zip
 from builtins import range
 import numpy as np
-import lsst.log as lsstLog
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
 from lsst.afw.geom import Box2D
+from lsst.sims.coordUtils import lsst_camera
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
+from lsst.sims.coordUtils import LsstZernikeFitter
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords, pixelCoordsFromPupilCoords
+from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoords
+from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.sims.utils import _pupilCoordsFromRaDec
+from lsst.sims.utils import _raDecFromPupilCoords
 from lsst.sims.coordUtils import getCornerPixels, _validate_inputs_and_chipname
 from lsst.sims.utils.CodeUtilities import _validate_inputs
-from lsst.obs.lsstSim import LsstSimMapper
 from lsst.sims.utils import radiansFromArcsec
 
 
-__all__ = ["lsst_camera", "chipNameFromPupilCoordsLSST",
+__all__ = ["focalPlaneCoordsFromPupilCoordsLSST",
+           "pupilCoordsFromFocalPlaneCoordsLSST",
+           "chipNameFromPupilCoordsLSST",
            "_chipNameFromRaDecLSST", "chipNameFromRaDecLSST",
-           "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST"]
+           "pixelCoordsFromPupilCoordsLSST",
+           "pupilCoordsFromPixelCoordsLSST",
+           "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST",
+           "_raDecFromPixelCoordsLSST", "raDecFromPixelCoordsLSST",
+           "clean_up_lsst_camera"]
 
-
-def lsst_camera():
+def clean_up_lsst_camera():
     """
-    Return a copy of the LSST Camera model as stored in obs_lsstSim.
+    Delete member objects associated with the methods below
     """
-    if not hasattr(lsst_camera, '_lsst_camera'):
-        lsstLog.setLevel('CameraMapper', lsstLog.WARN)
-        lsst_camera._lsst_camera = LsstSimMapper().camera
+    if hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
+        del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
+    if hasattr(pupilCoordsFromFocalPlaneCoordsLSST, '_z_fitter'):
+        del pupilCoordsFromFocalPlaneCoordsLSST._z_fitter
+    if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
+        del chipNameFromPupilCoordsLSST._detector_arr
+    if hasattr(lsst_camera, '_lsst_camera'):
+        del lsst_camera._lsst_camera
 
-    return lsst_camera._lsst_camera
-
-
-def _build_lsst_pupil_coord_map():
+def focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band='r'):
     """
-    Build a map of pupil coordinates on the LSST focal plane.
-    Returns _lsst_pupil_coord_map, which is a dict.
-    _lsst_pupil_coord_map['name'] contains a list of the names of each chip in the lsst camera
-    _lsst_pupil_coord_map['xx'] contains the x pupil coordinate of the center of each chip
-    _lsst_pupil_coord_map['yy'] contains the y pupil coordinate of the center of each chip
-    _lsst_pupil_coord_map['dp'] contains the radius (in pupil coordinates) of the circle containing each chip
+    Get the focal plane coordinates for all objects in the catalog.
+
+    Parameters
+    ----------
+    xPupil -- the x pupil coordinates in radians.
+    Can be a float or a numpy array.
+
+    yPupil -- the y pupil coordinates in radians.
+    Can be a float or a numpy array.
+
+    band -- the filter being simulated (default='r')
+
+    Returns
+    --------
+    a 2-D numpy array in which the first row is the x
+    focal plane coordinate and the second row is the y focal plane
+    coordinate (both in millimeters)
     """
+
+    if not hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
+        focalPlaneCoordsFromPupilCoordsLSST._z_fitter = LsstZernikeFitter()
+
+    z_fitter = focalPlaneCoordsFromPupilCoordsLSST._z_fitter
+    x_f0, y_f0 = focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=lsst_camera())
+    dx, dy = z_fitter.dxdy(x_f0, y_f0, band)
+    return np.array([x_f0+dx, y_f0+dy])
+
+
+def pupilCoordsFromFocalPlaneCoordsLSST(xmm, ymm, band='r'):
+    """
+    Convert mm on the focal plane to radians on the pupil.
+
+    Note: round-tripping through focalPlaneCoordsFromPupilCoordsLSST
+    and pupilCoordsFromFocalPlaneCoordsLSST introduces a residual
+    of up to 2.18e-6 mm that accumulates with each round trip.
+
+    Parameters
+    ----------
+    xmm -- x coordinate in millimeters on the focal plane
+
+    ymm -- y coordinate in millimeters on the focal plane
+
+    band -- the filter we are simulating (default='r')
+
+    Returns
+    -------
+    a 2-D numpy array in which the first row is the x
+    pupil coordinate and the second row is the y pupil
+    coordinate (both in radians)
+    """
+    if not hasattr(pupilCoordsFromFocalPlaneCoordsLSST, '_z_fitter'):
+        pupilCoordsFromFocalPlaneCoordsLSST._z_fitter = LsstZernikeFitter()
+
+    z_fitter = pupilCoordsFromFocalPlaneCoordsLSST._z_fitter
+    dx, dy = z_fitter.dxdy_inverse(xmm, ymm, band)
+    x_f1 = xmm + dx
+    y_f1 = ymm + dy
+    xp, yp = pupilCoordsFromFocalPlaneCoords(x_f1, y_f1, camera=lsst_camera())
+    return np.array([xp, yp])
+
+
+def _build_lsst_focal_coord_map():
+    """
+    Build a map of focal plane coordinates on the LSST focal plane.
+    Returns _lsst_focal_coord_map, which is a dict.
+    _lsst_focal_coord_map['name'] contains a list of the names of each chip in the lsst camera
+    _lsst_focal_coord_map['xx'] contains the x focal plane coordinate of the center of each chip (mm)
+    _lsst_focal_coord_map['yy'] contains the y focal plane coordinate of the center of each chip (mm)
+    _lsst_focal_coord_map['dp'] contains the radius (in mm) of the circle containing each chip
+    """
+
+    camera = lsst_camera()
 
     name_list = []
     x_pix_list = []
     y_pix_list = []
+    x_mm_list = []
+    y_mm_list = []
     n_chips = 0
-    for chip in lsst_camera():
+    for chip in camera:
         chip_name = chip.getName()
+        pixels_to_focal = chip.getTransform(PIXELS, FOCAL_PLANE)
         n_chips += 1
         corner_list = getCornerPixels(chip_name, lsst_camera())
         for corner in corner_list:
             x_pix_list.append(corner[0])
             y_pix_list.append(corner[1])
+            pixel_pt = afwGeom.Point2D(corner[0], corner[1])
+            focal_pt = pixels_to_focal.applyForward(pixel_pt)
+            x_mm_list.append(focal_pt.getX())
+            y_mm_list.append(focal_pt.getY())
             name_list.append(chip_name)
 
     x_pix_list = np.array(x_pix_list)
     y_pix_list = np.array(y_pix_list)
+    x_mm_list = np.array(x_mm_list)
+    y_mm_list = np.array(y_mm_list)
 
-    x_pup_list, y_pup_list = pupilCoordsFromPixelCoords(x_pix_list,
-                                                        y_pix_list,
-                                                        name_list,
-                                                        camera=lsst_camera())
     center_x = np.zeros(n_chips, dtype=float)
     center_y = np.zeros(n_chips, dtype=float)
     extent = np.zeros(n_chips, dtype=float)
@@ -67,14 +148,14 @@ def _build_lsst_pupil_coord_map():
     for ix_ct in range(n_chips):
         ix = ix_ct*4
         chip_name = name_list[ix]
-        xx = 0.25*(x_pup_list[ix] + x_pup_list[ix+1] +
-                   x_pup_list[ix+2] + x_pup_list[ix+3])
+        xx = 0.25*(x_mm_list[ix] + x_mm_list[ix+1] +
+                   x_mm_list[ix+2] + x_mm_list[ix+3])
 
-        yy = 0.25*(y_pup_list[ix] + y_pup_list[ix+1] +
-                   y_pup_list[ix+2] + y_pup_list[ix+3])
+        yy = 0.25*(y_mm_list[ix] + y_mm_list[ix+1] +
+                   y_mm_list[ix+2] + y_mm_list[ix+3])
 
-        dx = 0.25*np.array([np.sqrt(np.power(xx-x_pup_list[ix+ii], 2) +
-                                    np.power(yy-y_pup_list[ix+ii], 2)) for ii in range(4)]).sum()
+        dx = 0.25*np.array([np.sqrt(np.power(xx-x_mm_list[ix+ii], 2) +
+                                    np.power(yy-y_mm_list[ix+ii], 2)) for ii in range(4)]).sum()
 
         center_x[ix_ct] = xx
         center_y[ix_ct] = yy
@@ -83,15 +164,15 @@ def _build_lsst_pupil_coord_map():
 
     final_name = np.array(final_name)
 
-    lsst_pupil_coord_map = {}
-    lsst_pupil_coord_map['name'] = final_name
-    lsst_pupil_coord_map['xx'] = center_x
-    lsst_pupil_coord_map['yy'] = center_y
-    lsst_pupil_coord_map['dp'] = extent
-    return lsst_pupil_coord_map
+    lsst_focal_coord_map = {}
+    lsst_focal_coord_map['name'] = final_name
+    lsst_focal_coord_map['xx'] = center_x
+    lsst_focal_coord_map['yy'] = center_y
+    lsst_focal_coord_map['dp'] = extent
+    return lsst_focal_coord_map
 
 
-def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
+def _findDetectorsListLSST(focalPointList, detectorList, possible_points,
                            allow_multiple_chips=False):
     """!Find the detectors that cover a list of points specified by x and y coordinates in any system
 
@@ -105,12 +186,12 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
        - it will stop looping through detectors one it has found one that is correct (the LSST
          camera does not allow an object to fall on more than one detector)
 
-    @param[in] pupilPointList  a list of points in PUPIL/FIELD_ANGLE coordinates
+    @param[in] focalPointList  a list of points in FOCAL_PLANE coordinates
 
     @param[in] detectorList is a list of the afwCameraGeom detector objects being considered
 
     @param[in] possible_points is a list of lists.  possible_points[ii] is a list of integers
-    corresponding to the indices in pupilPointList of the pupilPoints that may be on detectorList[ii].
+    corresponding to the indices in focalPointList of the pupilPoints that may be on detectorList[ii].
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
     this method will allow objects to be visible on more than one chip.  If it is 'False'
@@ -120,22 +201,19 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
 
     @return outputNameList is a numpy array of the names of the detectors
     """
-
     # transform the points to the native coordinate system
     #
     # The conversion to a numpy array looks a little clunky.
     # The problem, if you do the naive thing (nativePointList = np.array(lsst_camera().....),
     # the conversion to a numpy array gets passed down to the contents of nativePointList
     # and they end up in a form that the afwCameraGeom code does not know how to handle
-    nativePointList = np.zeros(len(pupilPointList), dtype=object)
-    nativePointList_raw = lsst_camera().transform(pupilPointList, FIELD_ANGLE,
-                                                  lsst_camera()._nativeCameraSys)
-    for i_nn in range(len(nativePointList_raw)):
-        nativePointList[i_nn] = nativePointList_raw[i_nn]
+    nativePointList = np.zeros(len(focalPointList), dtype=object)
+    for ii in range(len(focalPointList)):
+        nativePointList[ii] = focalPointList[ii]
 
     # initialize output and some caching lists
-    outputNameList = [None]*len(pupilPointList)
-    chip_has_found = np.array([-1]*len(pupilPointList))
+    outputNameList = [None]*len(focalPointList)
+    chip_has_found = np.array([-1]*len(focalPointList))
     unfound_pts = len(chip_has_found)
 
     # Figure out if any of these (RA, Dec) pairs could be
@@ -145,9 +223,9 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
     # See figure 2 of arXiv:1506.04839v2
     # (This might actually be a bug in obs_lsstSim
     # I opened DM-8075 on 25 October 2016 to investigate)
-    could_be_multiple = [False]*len(pupilPointList)
+    could_be_multiple = [False]*len(focalPointList)
     if allow_multiple_chips:
-        for ipt in range(len(pupilPointList)):
+        for ipt in range(len(focalPointList)):
             for det in detectorList[ipt]:
                 if det.getType() == WAVEFRONT:
                     could_be_multiple[ipt] = True
@@ -208,15 +286,15 @@ def _findDetectorsListLSST(pupilPointList, detectorList, possible_points,
     return np.array(outputNameList)
 
 
-def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
+def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False, band='r'):
     """
     Return the names of LSST detectors that see the object specified by
     either (xPupil, yPupil).
 
-    @param [in] xPupil is the x pupil coordinate in radians.
+    @param [in] xPupil_in is the x pupil coordinate in radians.
     Must be a numpy array.
 
-    @param [in] yPupil is the y pupil coordinate in radians.
+    @param [in] yPupil_in is the y pupil coordinate in radians.
     Must be a numpy array.
 
     @param [in] allow_multiple_chips is a boolean (default False) indicating whether or not
@@ -225,18 +303,20 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     chipNames and warning will be emitted.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
 
+    @param[in] band is the bandpass being simulated (default='r')
+
     @param [out] a numpy array of chip names
 
     """
     if (not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map') or
     not hasattr(chipNameFromPupilCoordsLSST, '_detector_arr') or
     len(chipNameFromPupilCoordsLSST._detector_arr) == 0):
-        pupil_map = _build_lsst_pupil_coord_map()
-        chipNameFromPupilCoordsLSST._pupil_map = pupil_map
+        focal_map = _build_lsst_focal_coord_map()
+        chipNameFromPupilCoordsLSST._focal_map = focal_map
         camera = lsst_camera()
-        detector_arr = np.zeros(len(pupil_map['name']), dtype=object)
-        for ii in range(len(pupil_map['name'])):
-            detector_arr[ii] = camera[pupil_map['name'][ii]]
+        detector_arr = np.zeros(len(focal_map['name']), dtype=object)
+        for ii in range(len(focal_map['name'])):
+            detector_arr[ii] = camera[focal_map['name'][ii]]
 
         chipNameFromPupilCoordsLSST._detector_arr = detector_arr
 
@@ -244,80 +324,82 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
         focal_to_field = camera.getTransformMap().getTransform(FOCAL_PLANE, FIELD_ANGLE)
         focal_bbox = camera.getFpBBox()
         focal_corners = focal_bbox.getCorners()
-        pupil_corners = focal_to_field.applyForward(focal_corners)
         camera_bbox = Box2D()
-        x_pup_max = None
-        x_pup_min = None
-        y_pup_max = None
-        y_pup_min = None
-        for cc in pupil_corners:
+        x_focal_max = None
+        x_focal_min = None
+        y_focal_max = None
+        y_focal_min = None
+        for cc in focal_corners:
             xx = cc.getX()
             yy = cc.getY()
-            if x_pup_max is None or xx > x_pup_max:
-                x_pup_max = xx
-            if x_pup_min is None or xx < x_pup_min:
-                x_pup_min = xx
-            if y_pup_max is None or yy > y_pup_max:
-                y_pup_max = yy
-            if y_pup_min is None or yy < y_pup_min:
-                y_pup_min = yy
+            if x_focal_max is None or xx > x_focal_max:
+                x_focal_max = xx
+            if x_focal_min is None or xx < x_focal_min:
+                x_focal_min = xx
+            if y_focal_max is None or yy > y_focal_max:
+                y_focal_max = yy
+            if y_focal_min is None or yy < y_focal_min:
+                y_focal_min = yy
 
-        chipNameFromPupilCoordsLSST._x_pup_center = 0.5*(x_pup_max+x_pup_min)
-        chipNameFromPupilCoordsLSST._y_pup_center = 0.5*(y_pup_max+y_pup_min)
+        chipNameFromPupilCoordsLSST._x_focal_center = 0.5*(x_focal_max+x_focal_min)
+        chipNameFromPupilCoordsLSST._y_focal_center = 0.5*(y_focal_max+y_focal_min)
 
         radius_sq_max = None
-        for cc in pupil_corners:
+        for cc in focal_corners:
             xx = cc.getX()
             yy = cc.getY()
-            radius_sq = ((xx-chipNameFromPupilCoordsLSST._x_pup_center)**2 +
-                         (yy-chipNameFromPupilCoordsLSST._y_pup_center)**2)
+            radius_sq = ((xx-chipNameFromPupilCoordsLSST._x_focal_center)**2 +
+                         (yy-chipNameFromPupilCoordsLSST._y_focal_center)**2)
             if radius_sq_max is None or radius_sq > radius_sq_max:
                 radius_sq_max = radius_sq
 
-        chipNameFromPupilCoordsLSST._camera_pup_radius_sq = radius_sq_max*1.1
+        chipNameFromPupilCoordsLSST._camera_focal_radius_sq = radius_sq_max*1.1
 
-    are_arrays = _validate_inputs([xPupil, yPupil], ['xPupil', 'yPupil'], "chipNameFromPupilCoordsLSST")
+    are_arrays = _validate_inputs([xPupil_in, yPupil_in], ['xPupil_in', 'yPupil_in'],
+                                  "chipNameFromPupilCoordsLSST")
 
     if not are_arrays:
-        xPupil = np.array([xPupil])
-        yPupil = np.array([yPupil])
+        xPupil_in = np.array([xPupil_in])
+        yPupil_in = np.array([yPupil_in])
 
-    radius_sq_list = ((xPupil-chipNameFromPupilCoordsLSST._x_pup_center)**2 +
-                      (yPupil-chipNameFromPupilCoordsLSST._y_pup_center)**2)
+    xFocal, yFocal = focalPlaneCoordsFromPupilCoordsLSST(xPupil_in, yPupil_in, band=band)
 
-    good_radii = np.where(radius_sq_list<chipNameFromPupilCoordsLSST._camera_pup_radius_sq)
+    radius_sq_list = ((xFocal-chipNameFromPupilCoordsLSST._x_focal_center)**2 +
+                      (yFocal-chipNameFromPupilCoordsLSST._y_focal_center)**2)
+
+    good_radii = np.where(radius_sq_list<chipNameFromPupilCoordsLSST._camera_focal_radius_sq)
 
     if len(good_radii[0]) == 0:
-        return np.array([None]*len(xPupil))
+        return np.array([None]*len(xPupil_in))
 
-    xPupil_good = xPupil[good_radii]
-    yPupil_good = yPupil[good_radii]
+    xFocal_good = xFocal[good_radii]
+    yFocal_good = yFocal[good_radii]
 
     ############################################################
     # in the code below, we will only consider those points which
     # passed the 'good_radii' test above; the other points will
     # be added in with chipName == None at the end
     #
-    pupilPointList = [afwGeom.Point2D(xPupil[i_pt], yPupil[i_pt])
+    focalPointList = [afwGeom.Point2D(xFocal[i_pt], yFocal[i_pt])
                       for i_pt in good_radii[0]]
 
     # Loop through every detector on the camera.  For each detector, assemble a list of points
     # whose centers are within 1.1 detector radii of the center of the detector.
 
-    x_cam_list = chipNameFromPupilCoordsLSST._pupil_map['xx']
-    y_cam_list = chipNameFromPupilCoordsLSST._pupil_map['yy']
-    rrsq_lim_list = (1.1*chipNameFromPupilCoordsLSST._pupil_map['dp'])**2
+    x_cam_list = chipNameFromPupilCoordsLSST._focal_map['xx']
+    y_cam_list = chipNameFromPupilCoordsLSST._focal_map['yy']
+    rrsq_lim_list = (1.1*chipNameFromPupilCoordsLSST._focal_map['dp'])**2
 
     possible_points = []
     for i_chip, (x_cam, y_cam, rrsq_lim) in \
     enumerate(zip(x_cam_list, y_cam_list, rrsq_lim_list)):
 
-        local_possible_pts = np.where(((xPupil_good - x_cam)**2 +
-                                       (yPupil_good - y_cam)**2) < rrsq_lim)[0]
+        local_possible_pts = np.where(((xFocal_good - x_cam)**2 +
+                                       (yFocal_good - y_cam)**2) < rrsq_lim)[0]
 
         possible_points.append(local_possible_pts)
 
-    nameList_good = _findDetectorsListLSST(pupilPointList,
+    nameList_good = _findDetectorsListLSST(focalPointList,
                                            chipNameFromPupilCoordsLSST._detector_arr,
                                            possible_points,
                                            allow_multiple_chips=allow_multiple_chips)
@@ -325,15 +407,19 @@ def chipNameFromPupilCoordsLSST(xPupil, yPupil, allow_multiple_chips=False):
     ####################################################################
     # initialize output as an array of Nones, effectively adding back in
     # the points which failed the initial radius cut
-    nameList = np.array([None]*len(xPupil))
+    nameList = np.array([None]*len(xPupil_in))
 
     nameList[good_radii] = nameList_good
+
+    if not are_arrays:
+        return nameList[0]
 
     return nameList
 
 
 def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
-                           obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
+                           obs_metadata=None, epoch=2000.0, allow_multiple_chips=False,
+                           band='r'):
     """
     Return the names of detectors on the LSST camera that see the object specified by
     (RA, Dec) in radians.
@@ -367,6 +453,8 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
     chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
 
+    @param [in] band is the filter we are simulating (Default=r)
+
     @param [out] the name(s) of the chips on which ra, dec fall (will be a numpy
     array if more than one)
     """
@@ -390,15 +478,13 @@ def _chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_ra
                                    parallax=parallax, v_rad=v_rad,
                                    obs_metadata=obs_metadata, epoch=epoch)
 
-    ans = chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips)
-
-    if not are_arrays:
-        return ans[0]
-    return ans
+    return chipNameFromPupilCoordsLSST(xp, yp, allow_multiple_chips=allow_multiple_chips,
+                                       band=band)
 
 
 def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
-                          obs_metadata=None, epoch=2000.0, allow_multiple_chips=False):
+                          obs_metadata=None, epoch=2000.0, allow_multiple_chips=False,
+                          band='r'):
     """
     Return the names of detectors on the LSST camera that see the object specified by
     (RA, Dec) in degrees.
@@ -432,6 +518,8 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
     chipNames but NO WARNING WILL BE EMITTED.  If it is 'True' and an object falls on more than one
     chip, a list of chipNames will appear for that object.
 
+    @param [in] band is the filter that we are simulating (Default=r)
+
     @param [out] the name(s) of the chips on which ra, dec fall (will be a numpy
     array if more than one)
     """
@@ -454,13 +542,215 @@ def chipNameFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad
                                   pm_ra=pm_ra_out, pm_dec=pm_dec_out,
                                   parallax=parallax_out, v_rad=v_rad,
                                   obs_metadata=obs_metadata, epoch=epoch,
-                                  allow_multiple_chips=allow_multiple_chips)
+                                  allow_multiple_chips=allow_multiple_chips,
+                                  band=band)
+
+
+def pupilCoordsFromPixelCoordsLSST(xPix, yPix, chipName=None, band="r",
+                                   includeDistortion=True):
+    """
+    Convert pixel coordinates into radians on the pupil
+
+    Parameters
+    ----------
+    xPix -- the x pixel coordinate
+
+    yPix -- the y pixel coordinate
+
+    chipName -- the name(s) of the chips on which xPix, yPix are reckoned
+
+    band -- the filter we are simulating (default=r)
+
+    includeDistortion -- a boolean which turns on or off optical
+    distortions (default=True)
+
+    Returns
+    -------
+    a 2-D numpy array in which the first row is the x
+    pupil coordinate and the second row is the y pupil
+    coordinate (both in radians)
+    """
+
+    if not includeDistortion:
+        return pupilCoordsFromPixelCoords(xPix, yPix, chipName=chipName,
+                                          camera=lsst_camera(),
+                                          includeDistortion=includeDistortion)
+
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipname([xPix, yPix], ['xPix', 'yPix'],
+                                                 "pupilCoordsFromPixelCoords",
+                                                 chipName,
+                                                 chipname_can_be_none=False)
+
+    pixel_to_focal_dict = {}
+    camera = lsst_camera()
+    name_to_int = {}
+    name_to_int[None] = 0
+    name_to_int['None'] = 0
+    ii = 1
+
+    if are_arrays:
+        chip_name_int = np.zeros(len(xPix), dtype=int)
+
+    have_transform = set()
+    for i_obj, name in enumerate(chipNameList):
+        if name not in have_transform and name is not None and name != 'None':
+            pixel_to_focal_dict[name] = camera[name].getTransform(PIXELS, FOCAL_PLANE)
+            name_to_int[name] = ii
+            have_transform.add(name)
+            ii += 1
+
+        if are_arrays:
+            chip_name_int[i_obj] = name_to_int[name]
+
+    if are_arrays:
+        x_f = np.zeros(len(xPix), dtype=float)
+        y_f = np.zeros(len(yPix), dtype=float)
+
+        for name in name_to_int:
+            local_int = name_to_int[name]
+            local_valid = np.where(chip_name_int==local_int)
+            if len(local_valid[0]) == 0:
+                continue
+
+            if name is None or name == 'None':
+                x_f[local_valid] = np.NaN
+                y_f[local_valid] = np.NaN
+                continue
+
+            pixel_pt_arr = [afwGeom.Point2D(xPix[ii], yPix[ii])
+                            for ii in local_valid[0]]
+
+            focal_pt_arr = pixel_to_focal_dict[name].applyForward(pixel_pt_arr)
+            focal_coord_arr = np.array([[pt.getX(), pt.getY()]
+                                        for pt in focal_pt_arr]).transpose()
+            x_f[local_valid] = focal_coord_arr[0]
+            y_f[local_valid] = focal_coord_arr[1]
+
+    else:
+        if chipNameList[0] is None or chipNameList[0] == 'None':
+            x_f = np.NaN
+            y_f = np.NaN
+        else:
+            pixel_pt = afwGeom.Point2D(xPix, yPix)
+            focal_pt = pixel_to_focal_dict[chipNameList[0]].applyForward(pixel_pt)
+            x_f = focal_pt.getX()
+            y_f = focal_pt.getY()
+
+    return pupilCoordsFromFocalPlaneCoordsLSST(x_f, y_f, band=band)
+
+
+def pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=None, band="r",
+                                   includeDistortion=True):
+    """
+    Convert radians on the pupil into pixel coordinates.
+
+    Parameters
+    ----------
+    xPupil -- is the x coordinate on the pupil in radians
+
+    yPupil -- is the y coordinate on the pupil in radians
+
+    chipName -- designates the names of the chips on which the pixel
+    coordinates will be reckoned.  Can be either single value, an array, or None.
+    If an array, there must be as many chipNames as there are (xPupil, yPupil) pairs.
+    If a single value, all of the pixel coordinates will be reckoned on the same
+    chip.  If None, this method will calculate which chip each(xPupil, yPupil) pair
+    actually falls on, and return pixel coordinates for each (xPupil, yPupil) pair on
+    the appropriate chip.  Default is None.
+
+    band -- the filter we are simulating (default=r)
+
+    includeDistortion -- a boolean which turns on and off optical distortions
+    (default=True)
+
+    Returns
+    -------
+    a 2-D numpy array in which the first row is the x pixel coordinate
+    and the second row is the y pixel coordinate
+    """
+
+    if not includeDistortion:
+        return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipName,
+                                          camera=lsst_camera(),
+                                          includeDistortion=includeDistortion)
+
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipname([xPupil, yPupil],
+                                                 ['xPupil', 'yPupil'],
+                                                 'pixelCoordsFromPupilCoordsLSST',
+                                                 chipName)
+
+    if chipNameList is None:
+        chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
+        if not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array([chipNameList])
+    else:
+        if not isinstance(chipNameList, list) and not isinstance(chipNameList, np.ndarray):
+            chipNameList = np.array([chipNameList])
+        elif isinstance(chipNameList, list):
+            chipNameList = np.array(chipNameList)
+
+    x_f, y_f = focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band=band)
+
+    if are_arrays:
+
+        has_transform = set()
+        focal_to_pixel_dict = {}
+        chip_name_int = np.zeros(len(x_f), dtype=int)
+        name_to_int = {}
+        name_to_int[None] = 0
+        name_to_int['None'] = 0
+        ii = 1
+        for i_obj, chip_name in enumerate(chipNameList):
+            if chip_name not in has_transform and chip_name is not None and chip_name != 'None':
+                has_transform.add(chip_name)
+                focal_to_pixel_dict[chip_name] = lsst_camera()[chip_name].getTransform(FOCAL_PLANE, PIXELS)
+                name_to_int[chip_name] = ii
+                ii += 1
+
+            chip_name_int[i_obj] = name_to_int[chip_name]
+
+        x_pix = np.NaN*np.ones(len(x_f), dtype=float)
+        y_pix = np.NaN*np.ones(len(x_f), dtype=float)
+
+        for chip_name in has_transform:
+            if chip_name == 'None' or chip_name is None:
+                continue
+
+            local_int = name_to_int[chip_name]
+            local_valid = np.where(chip_name_int == local_int)
+            if len(local_valid[0]) == 0:
+                continue
+            focal_pt_arr = [afwGeom.Point2D(x_f[ii], y_f[ii])
+                            for ii in local_valid[0]]
+            pixel_pt_arr = focal_to_pixel_dict[chip_name].applyForward(focal_pt_arr)
+            pixel_coord_arr = np.array([[pp.getX(), pp.getY()]
+                                        for pp in pixel_pt_arr]).transpose()
+
+            x_pix[local_valid] = pixel_coord_arr[0]
+            y_pix[local_valid] = pixel_coord_arr[1]
+    else:
+        chip_name = chipNameList[0]
+        if chip_name is None:
+            x_pix = np.NaN
+            y_pix = np.NaN
+        else:
+            det = lsst_camera()[chip_name]
+            focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
+            focal_pt = afwGeom.Point2D(x_f, y_f)
+            pixel_pt = focal_to_pixels.applyForward(focal_pt)
+            x_pix= pixel_pt.getX()
+            y_pix = pixel_pt.getY()
+
+    return np.array([x_pix, y_pix])
 
 
 def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
                               obs_metadata=None,
                               chipName=None, camera=None,
-                              epoch=2000.0, includeDistortion=True):
+                              epoch=2000.0, includeDistortion=True,
+                              band='r'):
     """
     Get the pixel positions on the LSST camera (or nan if not on a chip) for objects based
     on their RA, and Dec (in radians)
@@ -506,14 +796,11 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
+    @param [in] band is the filter we are simulating ('u', 'g', 'r', etc.) Default='r'
+
     @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
     and the second row is the y pixel coordinate
     """
-
-    are_arrays, \
-    chipNameList = _validate_inputs_and_chipname([ra, dec], ['ra', 'dec'],
-                                                 'pixelCoordsFromRaDecLSST',
-                                                 chipName)
 
     if epoch is None:
         raise RuntimeError("You need to pass an epoch into pixelCoordsFromRaDec")
@@ -534,16 +821,14 @@ def _pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v
                                            parallax=parallax, v_rad=v_rad,
                                            obs_metadata=obs_metadata, epoch=epoch)
 
-    if chipNameList is None:
-        chipNameList = chipNameFromPupilCoordsLSST(xPupil, yPupil)
-
-    return pixelCoordsFromPupilCoords(xPupil, yPupil, chipName=chipNameList, camera=lsst_camera(),
-                                      includeDistortion=includeDistortion)
+    return pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=chipName, band=band,
+                                          includeDistortion=includeDistortion)
 
 
 def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=None,
                              obs_metadata=None, chipName=None,
-                             epoch=2000.0, includeDistortion=True):
+                             epoch=2000.0, includeDistortion=True,
+                             band='r'):
     """
     Get the pixel positions on the LSST camera (or nan if not on a chip) for objects based
     on their RA, and Dec (in degrees)
@@ -586,6 +871,8 @@ def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_
     estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
     details.
 
+    @param [in] band is the filter we are simulating ('u', 'g', 'r', etc.) Default='r'
+
     @param [out] a 2-D numpy array in which the first row is the x pixel coordinate
     and the second row is the y pixel coordinate
     """
@@ -609,4 +896,121 @@ def pixelCoordsFromRaDecLSST(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_
                                      pm_ra=pm_ra_out, pm_dec=pm_dec_out,
                                      parallax=parallax_out, v_rad=v_rad,
                                      chipName=chipName, obs_metadata=obs_metadata,
-                                     epoch=2000.0, includeDistortion=includeDistortion)
+                                     epoch=2000.0, includeDistortion=includeDistortion,
+                                     band=band)
+
+
+def _raDecFromPixelCoordsLSST(xPix, yPix, chipName, band='r',
+                              obs_metadata=None, epoch=2000.0,
+                              includeDistortion=True):
+    """
+    Convert pixel coordinates into RA, Dec
+
+    @param [in] xPix is the x pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] yPix is the y pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] chipName is the name of the chip(s) on which the pixel coordinates
+    are defined.  This can be a list (in which case there should be one chip name
+    for each (xPix, yPix) coordinate pair), or a single value (in which case, all
+    of the (xPix, yPix) points will be reckoned on that chip).
+
+    @param [in] band is the filter we are simulating (default=r)
+
+    @param [in] obs_metadata is an ObservationMetaData defining the pointing
+
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system.
+    Default is 2000.
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    expect the true pixel coordinates with optical distortion included.  If False, this
+    method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a 2-D numpy array in which the first row is the RA coordinate
+    and the second row is the Dec coordinate (both in radians; in the International
+    Celestial Reference System)
+
+    WARNING: This method does not account for apparent motion due to parallax.
+    This method is only useful for mapping positions on a theoretical focal plane
+    to positions on the celestial sphere.
+    """
+
+    are_arrays, \
+    chipNameList = _validate_inputs_and_chipname([xPix, yPix],
+                                                 ['xPix', 'yPix'],
+                                                 'raDecFromPixelCoords',
+                                                 chipName,
+                                                 chipname_can_be_none=False)
+
+    if epoch is None:
+        raise RuntimeError("You cannot call raDecFromPixelCoords without specifying an epoch")
+
+    if obs_metadata is None:
+        raise RuntimeError("You cannot call raDecFromPixelCoords without an ObservationMetaData")
+
+    if obs_metadata.mjd is None:
+        raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have an mjd")
+
+    if obs_metadata.rotSkyPos is None:
+        raise RuntimeError("The ObservationMetaData in raDecFromPixelCoords must have a rotSkyPos")
+
+    xPupilList, yPupilList = pupilCoordsFromPixelCoordsLSST(xPix, yPix,
+                                                           chipNameList,
+                                                           band=band,
+                                                           includeDistortion=includeDistortion)
+
+    raOut, decOut = _raDecFromPupilCoords(xPupilList, yPupilList,
+                                          obs_metadata=obs_metadata, epoch=epoch)
+
+    return np.array([raOut, decOut])
+
+
+
+def raDecFromPixelCoordsLSST(xPix, yPix, chipName, band='r',
+                             obs_metadata=None, epoch=2000.0,
+                             includeDistortion=True):
+    """
+    Convert pixel coordinates into RA, Dec
+
+    @param [in] xPix is the x pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] yPix is the y pixel coordinate.  It can be either
+    a float or a numpy array.
+
+    @param [in] chipName is the name of the chip(s) on which the pixel coordinates
+    are defined.  This can be a list (in which case there should be one chip name
+    for each (xPix, yPix) coordinate pair), or a single value (in which case, all
+    of the (xPix, yPix) points will be reckoned on that chip).
+
+    @param [in] band is the filter we are simulating (default=r)
+
+    @param [in] obs_metadata is an ObservationMetaData defining the pointing
+
+    @param [in] epoch is the mean epoch in years of the celestial coordinate system.
+    Default is 2000.
+
+    @param [in] includeDistortion is a boolean.  If True (default), then this method will
+    expect the true pixel coordinates with optical distortion included.  If False, this
+    method will expect TAN_PIXEL coordinates, which are the pixel coordinates with
+    estimated optical distortion removed.  See the documentation in afw.cameraGeom for more
+    details.
+
+    @param [out] a 2-D numpy array in which the first row is the RA coordinate
+    and the second row is the Dec coordinate (both in degrees; in the International
+    Celestial Reference System)
+
+    WARNING: This method does not account for apparent motion due to parallax.
+    This method is only useful for mapping positions on a theoretical focal plane
+    to positions on the celestial sphere.
+    """
+    output = _raDecFromPixelCoordsLSST(xPix, yPix, chipName, band=band,
+                                       obs_metadata=obs_metadata,
+                                       epoch=epoch,
+                                       includeDistortion=includeDistortion)
+
+    return np.degrees(output)

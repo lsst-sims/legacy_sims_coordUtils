@@ -1461,6 +1461,40 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
         del lsst_camera._lsst_camera
 
+    def test_pupilCoordsFromFocalPlaneCoordsNaNs(self):
+        """
+        Test that pupilCoordsFromFocalPlaneCoords handles NaNs correctly
+        """
+        xp, yp = pupilCoordsFromFocalPlaneCoords(1.0, 2.0, camera=lsst_camera())
+        self.assertFalse(np.isnan(xp))
+        self.assertFalse(np.isnan(yp))
+        xp, yp = pupilCoordsFromFocalPlaneCoords(np.NaN, 2.0, camera=lsst_camera())
+        self.assertTrue(np.isnan(xp))
+        self.assertTrue(np.isnan(yp))
+        xp, yp = pupilCoordsFromFocalPlaneCoords(1.0, np.NaN, camera=lsst_camera())
+        self.assertTrue(np.isnan(xp))
+        self.assertTrue(np.isnan(yp))
+
+        x = np.array([1,2,3,4])
+        y = np.array([5,6,7,8])
+        xp, yp = pupilCoordsFromFocalPlaneCoords(x, y, camera=lsst_camera())
+        for xx, yy in zip(xp, yp):
+            self.assertFalse(np.isnan(xx))
+            self.assertFalse(np.isnan(yy))
+
+        x = np.array([np.NaN,2,3,4])
+        y = np.array([5,np.NaN,7,8])
+        xp, yp = pupilCoordsFromFocalPlaneCoords(x, y, camera=lsst_camera())
+        self.assertTrue(np.isnan(xp[0]))
+        self.assertTrue(np.isnan(yp[0]))
+        self.assertTrue(np.isnan(xp[1]))
+        self.assertTrue(np.isnan(yp[1]))
+        for ii in range(2,4):
+            self.assertFalse(np.isnan(xp[ii]))
+            self.assertFalse(np.isnan(yp[ii]))
+
+        del lsst_camera._lsst_camera
+
 
 class ConversionFromPixelTest(unittest.TestCase):
 

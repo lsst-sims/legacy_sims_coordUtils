@@ -11,10 +11,12 @@ from lsst.sims.coordUtils import (chipNameFromPupilCoords,
                                   _pixelCoordsFromRaDecLSST, pixelCoordsFromRaDecLSST,
                                   pixelCoordsFromPupilCoords)
 from lsst.sims.coordUtils import lsst_camera
+from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.utils import pupilCoordsFromRaDec, radiansFromArcsec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
 
+from lsst.sims.coordUtils import clean_up_lsst_camera
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -30,12 +32,8 @@ class ChipNameTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
-            del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
-
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
+        clean_up_lsst_camera()
 
     def test_chip_center(self):
         """
@@ -77,39 +75,6 @@ class ChipNameTestCase(unittest.TestCase):
         self.assertGreater(is_none, 0)
         self.assertLess(is_none, (3*len(ra_list))//4)
 
-    def test_chip_name_from_pupil_coords(self):
-        """
-        Test that chipNameFromPupilCoordsLSST returns the same
-        results as chipNameFromPupilCoords
-        """
-
-        dummy_name_list = chipNameFromPupilCoordsLSST(0,0)
-        radius = np.sqrt(chipNameFromPupilCoordsLSST._camera_pup_radius_sq)
-        x_center = chipNameFromPupilCoordsLSST._x_pup_center
-        y_center = chipNameFromPupilCoordsLSST._y_pup_center
-        rr, theta = np.meshgrid(np.arange(-1.5*radius, 1.5*radius, 0.005*radius),
-                                np.arange(0.0, 2.0*np.pi, 0.01*np.pi))
-
-        rr = rr.flatten()
-        theta = theta.flatten()
-        x_pup = x_center + rr*np.cos(theta)
-        y_pup = y_center + rr*np.sin(theta)
-
-        n_obj = len(x_pup)
-
-        control_name_list = chipNameFromPupilCoords(x_pup, y_pup, camera=self.camera)
-        test_name_list = chipNameFromPupilCoordsLSST(x_pup, y_pup)
-        for i_pt, (control_name, test_name) in enumerate(zip(control_name_list, test_name_list)):
-            rrsq = ((chipNameFromPupilCoordsLSST._x_pup_center-x_pup[i_pt])**2 +
-                    (chipNameFromPupilCoordsLSST._y_pup_center-y_pup[i_pt])**2)
-            self.assertEqual(control_name, test_name, msg='rrsq is %e\n%d' % (rrsq,i_pt))
-
-        # make sure we didn't accidentally get a lot of positions that don't land on chips
-        # (or a lot positions, none of which result in chipName == None)
-        chips_on_none = np.where(np.char.find(test_name_list.astype(str), 'None') == 0)[0]
-        self.assertLessEqual(len(chips_on_none), 0.6*n_obj)
-        self.assertGreater(len(chips_on_none), n_obj/4)
-
     def test_chip_name_from_ra_dec_radians(self):
         """
         test that _chipNameFromRaDecLSST agrees with _chipNameFromRaDec
@@ -133,7 +98,19 @@ class ChipNameTestCase(unittest.TestCase):
         test_name_list = _chipNameFromRaDecLSST(ra_list, dec_list,
                                                 obs_metadata=obs)
 
-        np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
+        try:
+            np.testing.assert_array_equal(control_name_list.astype(str),
+                                          test_name_list.astype(str))
+        except AssertionError:
+            n_problematic = 0
+            for ii, (c_n, t_n) in enumerate(zip(control_name_list.astype(str), test_name_list.astype(str))):
+                if c_n != t_n:
+                    x_pix, y_pix = pixelCoordsFromRaDecLSST(ra_list[ii], dec_list[ii], obs_metadata=obs)
+                    if c_n != 'None':
+                        n_problematic += 1
+            if n_problematic > 0:
+                raise
+
         self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None') >= 0)[0]),
                              n_obj/10)
 
@@ -181,7 +158,19 @@ class ChipNameTestCase(unittest.TestCase):
         test_name_list = chipNameFromRaDecLSST(ra_list, dec_list,
                                                obs_metadata=obs)
 
-        np.testing.assert_array_equal(control_name_list.astype(str), test_name_list.astype(str))
+        try:
+            np.testing.assert_array_equal(control_name_list.astype(str),
+                                          test_name_list.astype(str))
+        except AssertionError:
+            n_problematic = 0
+            for ii, (c_n, t_n) in enumerate(zip(control_name_list.astype(str), test_name_list.astype(str))):
+                if c_n != t_n:
+                    x_pix, y_pix = pixelCoordsFromRaDecLSST(ra_list[ii], dec_list[ii], obs_metadata=obs)
+                    if c_n != 'None':
+                        n_problematic += 1
+            if n_problematic > 0:
+                raise
+
         self.assertLessEqual(len(np.where(np.char.rfind(test_name_list.astype(str), 'None') >= 0)[0]),
                              n_obj/10)
 
@@ -221,22 +210,40 @@ class ChipNameTestCase(unittest.TestCase):
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = np.radians(raP + rr*np.cos(theta))
         dec_list = np.radians(decP + rr*np.sin(theta))
-        x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
+
+        x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
+                                             includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
-        x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        np.testing.assert_array_equal(x_pix, x_pix_test)
-        np.testing.assert_array_equal(y_pix, y_pix_test)
+        x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
+                                                           includeDistortion=False)
+
+        try:
+            np.testing.assert_array_equal(x_pix, x_pix_test)
+            np.testing.assert_array_equal(y_pix, y_pix_test)
+        except AssertionError:
+            n_problematic = 0
+            for xx, yy, xt, yt in zip(x_pix, y_pix, x_pix_test, y_pix_test):
+                if xx!=xt or yy!=yt:
+                    if (not np.isnan(xx) and not np.isnan(xt) and
+                        not np.isnan(yy) and not np.isnan(yt)):
+                        print(xx,yy,xt,yt)
+
+                        n_problematic += 1
+            if n_problematic>0:
+                raise
 
         # test when we force a chipName
         x_pix, y_pix = _pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                             obs_metadata=obs, camera=self.camera)
+                                             obs_metadata=obs, camera=self.camera,
+                                             includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                                           obs_metadata=obs)
+                                                           obs_metadata=obs,
+                                                           includeDistortion=False)
         np.testing.assert_array_equal(x_pix, x_pix_test)
         np.testing.assert_array_equal(y_pix, y_pix_test)
 
@@ -248,8 +255,21 @@ class ChipNameTestCase(unittest.TestCase):
 
         x_pix_test, y_pix_test = _pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
                                                            includeDistortion=False)
-        np.testing.assert_array_equal(x_pix, x_pix_test)
-        np.testing.assert_array_equal(y_pix, y_pix_test)
+        try:
+            np.testing.assert_array_equal(x_pix, x_pix_test)
+            np.testing.assert_array_equal(y_pix, y_pix_test)
+        except AssertionError:
+            n_problematic = 0
+            for xx, yy, xt, yt in zip(x_pix, y_pix, x_pix_test, y_pix_test):
+                if xx!=xt or yy!=yt:
+                    if (not np.isnan(xx) and not np.isnan(xt) and
+                        not np.isnan(yy) and not np.isnan(yt)):
+                        print(xx,yy,xt,yt)
+
+                        n_problematic += 1
+            if n_problematic>0:
+                raise
+
 
         # test that exceptions are raised when incomplete ObservationMetaData are used
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
@@ -270,7 +290,7 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             _pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
+        self.assertIn("same length", context.exception.args[0])
 
     def test_pixel_coords_from_ra_dec_degrees(self):
         """
@@ -287,22 +307,39 @@ class ChipNameTestCase(unittest.TestCase):
         theta = rng.random_sample(n_obj)*2.0*np.pi
         ra_list = raP + rr*np.cos(theta)
         dec_list = decP + rr*np.sin(theta)
-        x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera)
+
+        x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, obs_metadata=obs, camera=self.camera,
+                                            includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
-        x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs)
-        np.testing.assert_array_equal(x_pix, x_pix_test)
-        np.testing.assert_array_equal(y_pix, y_pix_test)
+        x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
+                                                          includeDistortion=False)
+        try:
+            np.testing.assert_array_equal(x_pix, x_pix_test)
+            np.testing.assert_array_equal(y_pix, y_pix_test)
+        except AssertionError:
+            n_problematic = 0
+            for xx, yy, xt, yt in zip(x_pix, y_pix, x_pix_test, y_pix_test):
+                if xx!=xt or yy!=yt:
+                    if (not np.isnan(xx) and not np.isnan(xt) and
+                        not np.isnan(yy) and not np.isnan(yt)):
+                        print(xx,yy,xt,yt)
+
+                        n_problematic += 1
+            if n_problematic>0:
+                raise
 
         # test when we force a chipName
         x_pix, y_pix = pixelCoordsFromRaDec(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                            obs_metadata=obs, camera=self.camera)
+                                            obs_metadata=obs, camera=self.camera,
+                                            includeDistortion=False)
         self.assertLessEqual(len(np.where(np.isnan(x_pix))[0]), n_obj/10)
         self.assertLessEqual(len(np.where(np.isnan(y_pix))[0]), n_obj/10)
 
         x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, chipName=['R:2,2 S:1,1'],
-                                                          obs_metadata=obs)
+                                                          obs_metadata=obs,
+                                                          includeDistortion=False)
         np.testing.assert_array_equal(x_pix, x_pix_test)
         np.testing.assert_array_equal(y_pix, y_pix_test)
 
@@ -314,8 +351,20 @@ class ChipNameTestCase(unittest.TestCase):
 
         x_pix_test, y_pix_test = pixelCoordsFromRaDecLSST(ra_list, dec_list, obs_metadata=obs,
                                                           includeDistortion=False)
-        np.testing.assert_array_equal(x_pix, x_pix_test)
-        np.testing.assert_array_equal(y_pix, y_pix_test)
+        try:
+            np.testing.assert_array_equal(x_pix, x_pix_test)
+            np.testing.assert_array_equal(y_pix, y_pix_test)
+        except AssertionError:
+            n_problematic = 0
+            for xx, yy, xt, yt in zip(x_pix, y_pix, x_pix_test, y_pix_test):
+                if xx!=xt or yy!=yt:
+                    if (not np.isnan(xx) and not np.isnan(xt) and
+                        not np.isnan(yy) and not np.isnan(yt)):
+                        print(xx,yy,xt,yt)
+
+                        n_problematic += 1
+            if n_problematic>0:
+                raise
 
         # test that exceptions are raised when incomplete ObservationMetaData are used
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, mjd=59580.0)
@@ -336,7 +385,7 @@ class ChipNameTestCase(unittest.TestCase):
         obs = ObservationMetaData(pointingRA=raP, pointingDec=decP, rotSkyPos=24.0, mjd=43000.0)
         with self.assertRaises(RuntimeError) as context:
             pixelCoordsFromRaDecLSST(ra_list, dec_list[:5], obs_metadata=obs)
-        self.assertIn("pixelCoordsFromRaDecLSST", context.exception.args[0])
+        self.assertIn("same length", context.exception.args[0])
 
 
 class MotionTestCase(unittest.TestCase):
@@ -350,12 +399,8 @@ class MotionTestCase(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
-            del chipNameFromPupilCoordsLSST._detector_arr
         del cls.camera
-
-        if hasattr(lsst_camera, '_lsst_camera'):
-            del lsst_camera._lsst_camera
+        clean_up_lsst_camera()
 
     def set_data(self, seed):
         """
@@ -460,18 +505,21 @@ class MotionTestCase(unittest.TestCase):
                                           parallax=parallax, v_rad=v_rad,
                                           obs_metadata=obs)
 
-            xpx_control, ypx_control = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera)
+            xpx_control, ypx_control = pixelCoordsFromPupilCoords(xp, yp, camera=self.camera,
+                                                                  includeDistortion=False)
 
             xpx_test, ypx_test = pixelCoordsFromRaDecLSST(ra_list, dec_list,
                                                           pm_ra=pm_ra, pm_dec=pm_dec,
                                                           parallax=parallax, v_rad=v_rad,
-                                                          obs_metadata=obs)
+                                                          obs_metadata=obs,
+                                                          includeDistortion=False)
 
             xpx_radians, ypx_radians = _pixelCoordsFromRaDecLSST(np.radians(ra_list), np.radians(dec_list),
                                                                  pm_ra=radiansFromArcsec(pm_ra),
                                                                  pm_dec=radiansFromArcsec(pm_dec),
                                                                  parallax=radiansFromArcsec(parallax),
-                                                                 v_rad=v_rad, obs_metadata=obs)
+                                                                 v_rad=v_rad, obs_metadata=obs,
+                                                                 includeDistortion=False)
 
             np.testing.assert_array_equal(xpx_control, xpx_test)
             np.testing.assert_array_equal(ypx_control, ypx_test)
