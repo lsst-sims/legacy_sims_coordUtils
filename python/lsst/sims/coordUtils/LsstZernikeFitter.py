@@ -376,7 +376,7 @@ class LsstZernikeFitter(object):
 
         xp, yp = pupilCoordsFromFocalPlaneCoords(xf+dx,
                                                  yf+dy,
-                                                 camera=lsst_camera()
+                                                 camera=lsst_camera())
 
         xp and yp are now the actual position in radians on the pupil
         corresponding to the focal plane coordinates xf, yf
