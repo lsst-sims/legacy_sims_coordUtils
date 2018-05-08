@@ -299,6 +299,7 @@ class LsstZernikeFitter(object):
         ymm -- the input y position in mm
 
         band -- the filter in which we are operating
+        (can be either a string or an int; 0=u, 1=g, 2=r, etc.)
 
         Returns
         -------
@@ -356,6 +357,7 @@ class LsstZernikeFitter(object):
         ymm -- the naive y focal plane position in mm
 
         band -- the filter in which we are operating
+        (can be either a string or an int; 0=u, 1=g, 2=r, etc.)
 
         Returns
         -------
@@ -388,6 +390,7 @@ class LsstZernikeFitter(object):
         ymm -- the naive y focal plane position in mm
 
         band -- the filter in which we are operating
+        (can be either a string or an int; 0=u, 1=g, 2=r, etc.)
 
         Returns
         -------
