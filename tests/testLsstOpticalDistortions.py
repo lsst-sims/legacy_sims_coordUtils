@@ -739,8 +739,8 @@ class FullTransformationTestCase(unittest.TestCase):
         Test that pupilCoordsFromFocalPlaneCoordsLSST inverts
         focalPlaneCoordsFromPupilCoordsLSST
         """
-        x_f = np.arange(-400.0, 400.0, 20.0)
-        y_f = np.arange(-400.0, 400.0, 20.0)
+        x_f = np.arange(-317.0, 317.0, 20.0)
+        y_f = np.arange(-317.0, 317.0, 20.0)
         mesh = np.meshgrid(x_f, y_f)
         x_f = mesh[0].flatten()
         y_f = mesh[1].flatten()
@@ -757,8 +757,8 @@ class FullTransformationTestCase(unittest.TestCase):
         Test that pupilCoordsFromFocalPlaneCoordsLSST works on scalars
         """
         rng = np.random.RandomState(8123412)
-        x_f = np.arange(-400.0, 400.0, 20.0)
-        y_f = np.arange(-400.0, 400.0, 20.0)
+        x_f = np.arange(-317.0, 317.0, 20.0)
+        y_f = np.arange(-317.0, 317.0, 20.0)
         mesh = np.meshgrid(x_f, y_f)
         x_f = mesh[0].flatten()
         y_f = mesh[1].flatten()
