@@ -750,7 +750,7 @@ class FullTransformationTestCase(unittest.TestCase):
                                                              band=band)
 
             dd = np.sqrt((x_f-x_f1)**2 + (y_f-y_f1)**2)
-            self.assertLess(dd.max(), 1.0e-5)
+            self.assertLess(dd.max(), 3.0e-6)
 
     def test_pupil_coords_from_focal_plane_coords_LSST_one_at_a_time(self):
         """
