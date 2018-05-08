@@ -110,6 +110,11 @@ class LsstZernikeFitter(object):
 
         self._n_grid = []
         self._m_grid = []
+
+        # 2018 May 8
+        # During development, I found that there was negligible
+        # improvement in the fit when allowing n>4, so I am
+        # hard-coding the limit of n=4 here.
         for n in range(4):
             for m in range(-n, n+1, 2):
                 self._n_grid.append(n)
