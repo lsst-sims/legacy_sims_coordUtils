@@ -124,7 +124,7 @@ class LsstZernikeFitter(object):
 
         Returns numpy arrays of the Zernike Polynomial expansion
         coefficients in x and y.  Zernike Polynomials correspond
-        to the radial and angular orders stored in self._n_grida
+        to the radial and angular orders stored in self._n_grid
         and self._m_grid.
         """
 
