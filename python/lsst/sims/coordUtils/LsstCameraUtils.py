@@ -73,7 +73,7 @@ def focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band='r'):
 
 def pupilCoordsFromFocalPlaneCoordsLSST(xmm, ymm, band='r'):
     """
-    Convert radians on the pupil into mm on the focal plane.
+    Convert mm on the focal plane to radians on the pupil.
 
     Note: round-tripping through focalPlaneCoordsFromPupilCoordsLSST
     and pupilCoordsFromFocalPlaneCoordsLSST introduces a residual
