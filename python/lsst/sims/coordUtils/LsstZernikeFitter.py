@@ -128,7 +128,7 @@ class LsstZernikeFitter(object):
         and self._m_grid.
         """
 
-        polynomials ={}
+        polynomials = {}
         for n, m in zip(self._n_grid, self._m_grid):
             try:
                 values = self._z_gen.evaluate_xy(x_in/self._rr, y_in/self._rr, n, m)
