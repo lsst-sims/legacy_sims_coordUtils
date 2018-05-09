@@ -1079,6 +1079,10 @@ class FullTransformationTestCase(unittest.TestCase):
                                                     chipName='R:2,2 S:1,1',
                                                     band='g')
 
+        ra, dec = raDecFromPixelCoordsLSST(xpix, ypix, 'R:2,2 S:1,1',
+                                           obs_metadata=self._obs,
+                                           band='g')
+
         xpix2, ypix2 = pixelCoordsFromPupilCoordsLSST(xp, yp,
                                                       band='g')
         invalid = np.where(rr>500.0)[0]
@@ -1093,11 +1097,15 @@ class FullTransformationTestCase(unittest.TestCase):
                 self.assertTrue(np.isnan(ypix[ii]))
                 self.assertTrue(np.isnan(xpix2[ii]))
                 self.assertTrue(np.isnan(ypix2[ii]))
+                self.assertTrue(np.isnan(ra[ii]))
+                self.assertTrue(np.isnan(dec[ii]))
             else:
                 self.assertFalse(np.isnan(xp[ii]))
                 self.assertFalse(np.isnan(yp[ii]))
                 self.assertFalse(np.isnan(xpix[ii]))
                 self.assertFalse(np.isnan(ypix[ii]))
+                self.assertFalse(np.isnan(ra[ii]))
+                self.assertFalse(np.isnan(dec[ii]))
                 if not np.isnan(xpix2[ii]) and not np.isnan(ypix2[ii]):
                     non_nan_pix += 1
 
@@ -1110,6 +1118,11 @@ class FullTransformationTestCase(unittest.TestCase):
         xf2, yf2 = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, band='i')
         xpix, ypix = pixelCoordsFromPupilCoordsLSST(xp, yp, chipName='R:2,2 S:1,1',
                                                     band='i')
+
+        ra, dec = raDecFromPixelCoordsLSST(xpix, ypix, 'R:2,2 S:1,1',
+                                           obs_metadata=self._obs,
+                                           band='i')
+
         xpix2, ypix2 = pixelCoordsFromPupilCoordsLSST(xp, yp,
                                                       band='g')
 
@@ -1125,11 +1138,15 @@ class FullTransformationTestCase(unittest.TestCase):
                 self.assertTrue(np.isnan(ypix[ii]))
                 self.assertTrue(np.isnan(xpix2[ii]))
                 self.assertTrue(np.isnan(ypix2[ii]))
+                self.assertTrue(np.isnan(ra[ii]))
+                self.assertTrue(np.isnan(dec[ii]))
             else:
                 self.assertFalse(np.isnan(xf2[ii]))
                 self.assertFalse(np.isnan(yf2[ii]))
                 self.assertFalse(np.isnan(xpix[ii]))
                 self.assertFalse(np.isnan(ypix[ii]))
+                self.assertFalse(np.isnan(ra[ii]))
+                self.assertFalse(np.isnan(dec[ii]))
                 if not np.isnan(xpix2[ii]) and not np.isnan(ypix2[ii]):
                     non_nan_pix += 1
 
