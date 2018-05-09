@@ -1075,6 +1075,9 @@ class FullTransformationTestCase(unittest.TestCase):
         xf = rr*np.cos(theta)
         yf = rr*np.sin(theta)
         xp, yp = pupilCoordsFromFocalPlaneCoordsLSST(xf, yf, band='g')
+        xpix, ypix = pixelCoordsFromPupilCoordsLSST(xp, yp,
+                                                    chipName='R:2,2 S:1,1',
+                                                    band='g')
         invalid = np.where(rr>500.0)[0]
         self.assertGreater(len(invalid), 0)
         self.assertLess(len(invalid), n_samples)
@@ -1082,15 +1085,21 @@ class FullTransformationTestCase(unittest.TestCase):
             if ii in invalid:
                 self.assertTrue(np.isnan(xp[ii]))
                 self.assertTrue(np.isnan(yp[ii]))
+                self.assertTrue(np.isnan(xpix[ii]))
+                self.assertTrue(np.isnan(ypix[ii]))
             else:
                 self.assertFalse(np.isnan(xp[ii]))
                 self.assertFalse(np.isnan(yp[ii]))
+                self.assertFalse(np.isnan(xpix[ii]))
+                self.assertFalse(np.isnan(ypix[ii]))
 
         rr = rng.random_sample(n_samples)*0.05
         xp = rr*np.cos(theta)
         yp = rr*np.sin(theta)
 
         xf2, yf2 = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, band='i')
+        xpix, ypix = pixelCoordsFromPupilCoordsLSST(xp, yp, chipName='R:2,2 S:1,1',
+                                                    band='i')
         invalid = np.where(rr>0.04841)[0]
         self.assertGreater(len(invalid), 0)
         self.assertLess(len(invalid), n_samples)
@@ -1098,9 +1107,53 @@ class FullTransformationTestCase(unittest.TestCase):
             if ii in invalid:
                 self.assertTrue(np.isnan(xf2[ii]))
                 self.assertTrue(np.isnan(yf2[ii]))
+                self.assertTrue(np.isnan(xpix[ii]))
+                self.assertTrue(np.isnan(ypix[ii]))
             else:
                 self.assertFalse(np.isnan(xf2[ii]))
                 self.assertFalse(np.isnan(yf2[ii]))
+                self.assertFalse(np.isnan(xpix[ii]))
+                self.assertFalse(np.isnan(ypix[ii]))
+
+        xf = np.array([1.1, 2.1, np.NaN, 4.5])
+        yf = np.array([2.1, np.NaN, 1.2, 3.0])
+        xp, yp = pupilCoordsFromFocalPlaneCoordsLSST(xf, yf, band='r')
+        self.assertTrue(np.isnan(xp[2]))
+        self.assertTrue(np.isnan(yp[2]))
+        self.assertTrue(np.isnan(xp[1]))
+        self.assertTrue(np.isnan(yp[1]))
+        self.assertFalse(np.isnan(xp[0]))
+        self.assertFalse(np.isnan(yp[0]))
+        self.assertFalse(np.isnan(xp[3]))
+        self.assertFalse(np.isnan(yp[3]))
+
+        xp, yp = pupilCoordsFromFocalPlaneCoordsLSST(np.NaN, 1.0, band='g')
+        self.assertTrue(np.isnan(xp))
+        self.assertTrue(np.isnan(yp))
+
+        xp, yp = pupilCoordsFromFocalPlaneCoordsLSST(2.1, np.NaN, band='g')
+        self.assertTrue(np.isnan(xp))
+        self.assertTrue(np.isnan(yp))
+
+        xp = np.array([0.0011, 0.0021, np.NaN, 0.0045])
+        yp = np.array([0.0021, np.NaN, 0.0012, 0.0030])
+        xf, yf = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, band='r')
+        self.assertTrue(np.isnan(xf[2]))
+        self.assertTrue(np.isnan(yf[2]))
+        self.assertTrue(np.isnan(xf[1]))
+        self.assertTrue(np.isnan(yf[1]))
+        self.assertFalse(np.isnan(xf[0]))
+        self.assertFalse(np.isnan(yf[0]))
+        self.assertFalse(np.isnan(xf[3]))
+        self.assertFalse(np.isnan(yf[3]))
+
+        xf, yf = focalPlaneCoordsFromPupilCoordsLSST(np.NaN, 0.001, band='g')
+        self.assertTrue(np.isnan(xf))
+        self.assertTrue(np.isnan(yf))
+
+        xf, yf = pupilCoordsFromFocalPlaneCoordsLSST(0.002, np.NaN, band='g')
+        self.assertTrue(np.isnan(xf))
+        self.assertTrue(np.isnan(yf))
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):

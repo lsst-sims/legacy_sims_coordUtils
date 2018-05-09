@@ -2,6 +2,7 @@ from __future__ import division
 from builtins import zip
 from builtins import range
 import numpy as np
+import numbers
 import lsst.afw.geom as afwGeom
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
 from lsst.afw.geom import Box2D
@@ -65,9 +66,19 @@ def focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band='r'):
     if not hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
         focalPlaneCoordsFromPupilCoordsLSST._z_fitter = LsstZernikeFitter()
 
+    if isinstance(xPupil, numbers.Number):
+        if np.isnan(xPupil) or np.isnan(yPupil):
+            return np.array([np.NaN, np.NaN])
+
     z_fitter = focalPlaneCoordsFromPupilCoordsLSST._z_fitter
     x_f0, y_f0 = focalPlaneCoordsFromPupilCoords(xPupil, yPupil, camera=lsst_camera())
     dx, dy = z_fitter.dxdy(x_f0, y_f0, band)
+
+    if not isinstance(xPupil, numbers.Number):
+        nan_dex = np.where(np.logical_or(np.isnan(xPupil), np.isnan(yPupil)))
+        x_f0[nan_dex] = np.NaN
+        y_f0[nan_dex] = np.NaN
+
     return np.array([x_f0+dx, y_f0+dy])
 
 
@@ -96,11 +107,21 @@ def pupilCoordsFromFocalPlaneCoordsLSST(xmm, ymm, band='r'):
     if not hasattr(pupilCoordsFromFocalPlaneCoordsLSST, '_z_fitter'):
         pupilCoordsFromFocalPlaneCoordsLSST._z_fitter = LsstZernikeFitter()
 
+    if isinstance(xmm, numbers.Number):
+        if np.isnan(xmm) or np.isnan(ymm):
+            return np.array([np.NaN, np.NaN])
+
     z_fitter = pupilCoordsFromFocalPlaneCoordsLSST._z_fitter
     dx, dy = z_fitter.dxdy_inverse(xmm, ymm, band)
     x_f1 = xmm + dx
     y_f1 = ymm + dy
     xp, yp = pupilCoordsFromFocalPlaneCoords(x_f1, y_f1, camera=lsst_camera())
+
+    if not isinstance(xmm, numbers.Number):
+        nan_dex = np.where(np.logical_or(np.isnan(xmm), np.isnan(ymm)))
+        xp[nan_dex] = np.NaN
+        yp[nan_dex] = np.NaN
+
     return np.array([xp, yp])
 
 
