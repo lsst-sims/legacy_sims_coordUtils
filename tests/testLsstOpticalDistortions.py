@@ -1078,20 +1078,30 @@ class FullTransformationTestCase(unittest.TestCase):
         xpix, ypix = pixelCoordsFromPupilCoordsLSST(xp, yp,
                                                     chipName='R:2,2 S:1,1',
                                                     band='g')
+
+        xpix2, ypix2 = pixelCoordsFromPupilCoordsLSST(xp, yp,
+                                                      band='g')
         invalid = np.where(rr>500.0)[0]
         self.assertGreater(len(invalid), 0)
         self.assertLess(len(invalid), n_samples)
+        non_nan_pix = 0
         for ii in range(n_samples):
             if ii in invalid:
                 self.assertTrue(np.isnan(xp[ii]))
                 self.assertTrue(np.isnan(yp[ii]))
                 self.assertTrue(np.isnan(xpix[ii]))
                 self.assertTrue(np.isnan(ypix[ii]))
+                self.assertTrue(np.isnan(xpix2[ii]))
+                self.assertTrue(np.isnan(ypix2[ii]))
             else:
                 self.assertFalse(np.isnan(xp[ii]))
                 self.assertFalse(np.isnan(yp[ii]))
                 self.assertFalse(np.isnan(xpix[ii]))
                 self.assertFalse(np.isnan(ypix[ii]))
+                if not np.isnan(xpix2[ii]) and not np.isnan(ypix2[ii]):
+                    non_nan_pix += 1
+
+        self.assertGreater(non_nan_pix, 0)
 
         rr = rng.random_sample(n_samples)*0.05
         xp = rr*np.cos(theta)
@@ -1100,20 +1110,30 @@ class FullTransformationTestCase(unittest.TestCase):
         xf2, yf2 = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, band='i')
         xpix, ypix = pixelCoordsFromPupilCoordsLSST(xp, yp, chipName='R:2,2 S:1,1',
                                                     band='i')
+        xpix2, ypix2 = pixelCoordsFromPupilCoordsLSST(xp, yp,
+                                                      band='g')
+
         invalid = np.where(rr>0.04841)[0]
         self.assertGreater(len(invalid), 0)
         self.assertLess(len(invalid), n_samples)
+        non_nan_pix = 0
         for ii in range(n_samples):
             if ii in invalid:
                 self.assertTrue(np.isnan(xf2[ii]))
                 self.assertTrue(np.isnan(yf2[ii]))
                 self.assertTrue(np.isnan(xpix[ii]))
                 self.assertTrue(np.isnan(ypix[ii]))
+                self.assertTrue(np.isnan(xpix2[ii]))
+                self.assertTrue(np.isnan(ypix2[ii]))
             else:
                 self.assertFalse(np.isnan(xf2[ii]))
                 self.assertFalse(np.isnan(yf2[ii]))
                 self.assertFalse(np.isnan(xpix[ii]))
                 self.assertFalse(np.isnan(ypix[ii]))
+                if not np.isnan(xpix2[ii]) and not np.isnan(ypix2[ii]):
+                    non_nan_pix += 1
+
+        self.assertGreater(non_nan_pix, 0)
 
         xf = np.array([1.1, 2.1, np.NaN, 4.5])
         yf = np.array([2.1, np.NaN, 1.2, 3.0])
