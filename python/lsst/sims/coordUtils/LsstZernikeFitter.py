@@ -95,7 +95,12 @@ class LsstZernikeFitter(object):
         self._pixel_transformer = DMtoCameraPixelTransformer()
         self._z_gen = ZernikePolynomialGenerator()
 
-        self._rr = 450.0  # radius in mm of circle containing LSST focal plane
+        self._rr = 500.0  # radius in mm of circle containing LSST focal plane;
+                          # make it a little bigger to accommodate any slop in
+                          # the conversion from focal plane coordinates back to
+                          # pupil coordinates (in case the optical distortions
+                          # cause points to cross over the actual boundary of
+                          # the focal plane)
 
         self._band_to_int = {}
         self._band_to_int['u'] = 0
