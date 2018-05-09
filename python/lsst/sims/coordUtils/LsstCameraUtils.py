@@ -367,7 +367,8 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
     radius_sq_list = ((xFocal-chipNameFromPupilCoordsLSST._x_focal_center)**2 +
                       (yFocal-chipNameFromPupilCoordsLSST._y_focal_center)**2)
 
-    good_radii = np.where(radius_sq_list<chipNameFromPupilCoordsLSST._camera_focal_radius_sq)
+    with np.errstate(invalid='ignore'):
+        good_radii = np.where(radius_sq_list<chipNameFromPupilCoordsLSST._camera_focal_radius_sq)
 
     if len(good_radii[0]) == 0:
         return np.array([None]*len(xPupil_in))
