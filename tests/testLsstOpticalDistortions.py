@@ -1062,6 +1062,46 @@ class FullTransformationTestCase(unittest.TestCase):
                     self.assertEqual(ra1, ra_rad[ii])
                     self.assertEqual(dec1, dec_rad[ii])
 
+    def test_nans(self):
+        """
+        Test that points outside the focal plane get NaNs for pupil
+        and focal plane coords
+        """
+        rng = np.random.RandomState(66)
+        n_samples = 100
+        rr = rng.random_sample(n_samples)*600.0
+        theta = rng.random_sample(n_samples)*2.0*np.pi
+        self.assertGreater(rr.max(), 500.0)
+        xf = rr*np.cos(theta)
+        yf = rr*np.sin(theta)
+        xp, yp = pupilCoordsFromFocalPlaneCoordsLSST(xf, yf, band='g')
+        invalid = np.where(rr>500.0)[0]
+        self.assertGreater(len(invalid), 0)
+        self.assertLess(len(invalid), n_samples)
+        for ii in range(n_samples):
+            if ii in invalid:
+                self.assertTrue(np.isnan(xp[ii]))
+                self.assertTrue(np.isnan(yp[ii]))
+            else:
+                self.assertFalse(np.isnan(xp[ii]))
+                self.assertFalse(np.isnan(yp[ii]))
+
+        rr = rng.random_sample(n_samples)*0.05
+        xp = rr*np.cos(theta)
+        yp = rr*np.sin(theta)
+
+        xf2, yf2 = focalPlaneCoordsFromPupilCoordsLSST(xp, yp, band='i')
+        invalid = np.where(rr>0.04841)[0]
+        self.assertGreater(len(invalid), 0)
+        self.assertLess(len(invalid), n_samples)
+        for ii in range(n_samples):
+            if ii in invalid:
+                self.assertTrue(np.isnan(xf2[ii]))
+                self.assertTrue(np.isnan(yf2[ii]))
+            else:
+                self.assertFalse(np.isnan(xf2[ii]))
+                self.assertFalse(np.isnan(yf2[ii]))
+
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
     pass
