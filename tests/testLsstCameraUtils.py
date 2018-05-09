@@ -15,6 +15,7 @@ from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.utils import pupilCoordsFromRaDec, radiansFromArcsec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
+from lsst.sims.utils import angularSeparation
 
 from lsst.sims.coordUtils import clean_up_lsst_camera
 
@@ -54,6 +55,15 @@ class ChipNameTestCase(unittest.TestCase):
         chip_name_list = chipNameFromRaDecLSST(ra_vec, dec_vec,
                                                obs_metadata=obs,
                                                band='u')
+
+        rr = angularSeparation(ra, dec, ra_vec, dec_vec)
+
+        ct_none = 0
+        for rr, name in zip(rr, chip_name_list):
+            if rr > 2.0:
+                self.assertIsNone(name)
+                ct_none += 1
+        self.assertGreater(ct_none, 0)
 
     def test_chip_center(self):
         """
