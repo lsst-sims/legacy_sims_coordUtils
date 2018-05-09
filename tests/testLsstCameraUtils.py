@@ -35,6 +35,26 @@ class ChipNameTestCase(unittest.TestCase):
         del cls.camera
         clean_up_lsst_camera()
 
+    def test_outside_radius(self):
+        """
+        Test that methods can gracefully handle points
+        outside of the focal plane
+        """
+        rng = np.random.RandomState(7123)
+        ra = 145.0
+        dec = -25.0
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  mjd=59580.0, rotSkyPos=113.0)
+
+        rr = rng.random_sample(100)*5.0
+        self.assertGreater(rr.max(), 4.5)
+        theta = rng.random_sample(100)*2.0*np.pi
+        ra_vec = ra + rr*np.cos(theta)
+        dec_vec = dec + rr*np.sin(theta)
+        chip_name_list = chipNameFromRaDecLSST(ra_vec, dec_vec,
+                                               obs_metadata=obs,
+                                               band='u')
+
     def test_chip_center(self):
         """
         Test that, if we ask for the chip at the bore site,
