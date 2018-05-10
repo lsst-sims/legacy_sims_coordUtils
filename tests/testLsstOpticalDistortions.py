@@ -1075,6 +1075,7 @@ class FullTransformationTestCase(unittest.TestCase):
         xf = rr*np.cos(theta)
         yf = rr*np.sin(theta)
         xp, yp = pupilCoordsFromFocalPlaneCoordsLSST(xf, yf, band='g')
+        name_list = chipNameFromPupilCoordsLSST(xp, yp, band='g')
         xpix, ypix = pixelCoordsFromPupilCoordsLSST(xp, yp,
                                                     chipName='R:2,2 S:1,1',
                                                     band='g')
@@ -1089,6 +1090,7 @@ class FullTransformationTestCase(unittest.TestCase):
         self.assertGreater(len(invalid), 0)
         self.assertLess(len(invalid), n_samples)
         non_nan_pix = 0
+        non_none_name = 0
         for ii in range(n_samples):
             if ii in invalid:
                 self.assertTrue(np.isnan(xp[ii]))
@@ -1099,6 +1101,7 @@ class FullTransformationTestCase(unittest.TestCase):
                 self.assertTrue(np.isnan(ypix2[ii]))
                 self.assertTrue(np.isnan(ra[ii]))
                 self.assertTrue(np.isnan(dec[ii]))
+                self.assertIsNone(name_list[ii])
             else:
                 self.assertFalse(np.isnan(xp[ii]))
                 self.assertFalse(np.isnan(yp[ii]))
@@ -1108,8 +1111,11 @@ class FullTransformationTestCase(unittest.TestCase):
                 self.assertFalse(np.isnan(dec[ii]))
                 if not np.isnan(xpix2[ii]) and not np.isnan(ypix2[ii]):
                     non_nan_pix += 1
+                if name_list[ii] is not None:
+                    non_none_name += 1
 
         self.assertGreater(non_nan_pix, 0)
+        self.assertGreater(non_none_name, 0)
 
         rr = rng.random_sample(n_samples)*0.05
         xp = rr*np.cos(theta)
