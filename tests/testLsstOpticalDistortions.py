@@ -1109,6 +1109,11 @@ class FullTransformationTestCase(unittest.TestCase):
                 self.assertFalse(np.isnan(ypix[ii]))
                 self.assertFalse(np.isnan(ra[ii]))
                 self.assertFalse(np.isnan(dec[ii]))
+
+                # this test is because, even if an object
+                # has finite pupil or focal plane coordinates,
+                # it could still land in a chip gap, causing
+                # chip_name=None, xpix=ypix=NaN
                 if not np.isnan(xpix2[ii]) and not np.isnan(ypix2[ii]):
                     non_nan_pix += 1
                 if name_list[ii] is not None:
@@ -1153,6 +1158,11 @@ class FullTransformationTestCase(unittest.TestCase):
                 self.assertFalse(np.isnan(ypix[ii]))
                 self.assertFalse(np.isnan(ra[ii]))
                 self.assertFalse(np.isnan(dec[ii]))
+
+                # this test is because, even if an object
+                # has finite pupil or focal plane coordinates,
+                # it could still land in a chip gap, causing
+                # chip_name=None, xpix=ypix=NaN
                 if not np.isnan(xpix2[ii]) and not np.isnan(ypix2[ii]):
                     non_nan_pix += 1
 
