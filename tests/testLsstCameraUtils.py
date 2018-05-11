@@ -15,6 +15,7 @@ from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.utils import pupilCoordsFromRaDec, radiansFromArcsec
 from lsst.sims.utils import ObservationMetaData
 from lsst.obs.lsstSim import LsstSimMapper
+from lsst.sims.utils import angularSeparation
 
 from lsst.sims.coordUtils import clean_up_lsst_camera
 
@@ -34,6 +35,35 @@ class ChipNameTestCase(unittest.TestCase):
     def tearDownClass(cls):
         del cls.camera
         clean_up_lsst_camera()
+
+    def test_outside_radius(self):
+        """
+        Test that methods can gracefully handle points
+        outside of the focal plane
+        """
+        rng = np.random.RandomState(7123)
+        ra = 145.0
+        dec = -25.0
+        obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
+                                  mjd=59580.0, rotSkyPos=113.0)
+
+        rr = rng.random_sample(100)*5.0
+        self.assertGreater(rr.max(), 4.5)
+        theta = rng.random_sample(100)*2.0*np.pi
+        ra_vec = ra + rr*np.cos(theta)
+        dec_vec = dec + rr*np.sin(theta)
+        chip_name_list = chipNameFromRaDecLSST(ra_vec, dec_vec,
+                                               obs_metadata=obs,
+                                               band='u')
+
+        rr = angularSeparation(ra, dec, ra_vec, dec_vec)
+
+        ct_none = 0
+        for rr, name in zip(rr, chip_name_list):
+            if rr > 2.0:
+                self.assertIsNone(name)
+                ct_none += 1
+        self.assertGreater(ct_none, 0)
 
     def test_chip_center(self):
         """

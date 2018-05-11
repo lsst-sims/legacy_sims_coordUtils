@@ -5,7 +5,6 @@ import palpy
 
 from lsst.utils import getPackageDir
 from lsst.sims.utils import ZernikePolynomialGenerator
-from lsst.sims.utils import ZernikeRadialError
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
 from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, FIELD_ANGLE, SCIENCE
@@ -96,7 +95,12 @@ class LsstZernikeFitter(object):
         self._pixel_transformer = DMtoCameraPixelTransformer()
         self._z_gen = ZernikePolynomialGenerator()
 
-        self._rr = 450.0  # radius in mm of circle containing LSST focal plane
+        self._rr = 500.0  # radius in mm of circle containing LSST focal plane;
+                          # make it a little bigger to accommodate any slop in
+                          # the conversion from focal plane coordinates back to
+                          # pupil coordinates (in case the optical distortions
+                          # cause points to cross over the actual boundary of
+                          # the focal plane)
 
         self._band_to_int = {}
         self._band_to_int['u'] = 0
@@ -135,15 +139,7 @@ class LsstZernikeFitter(object):
 
         polynomials = {}
         for n, m in zip(self._n_grid, self._m_grid):
-            try:
-                values = self._z_gen.evaluate_xy(x_in/self._rr, y_in/self._rr, n, m)
-            except ZernikeRadialError:
-                msg = "Some of the data you are fitting to in LsstZernikeFitter is outside "
-                msg += "the r = %e mm circle circumscribing the LSST focal plane. " % self._rr
-                msg += "The Zernike polynomials we are fitting to are not defined "
-                msg += "outside of that circle."
-                raise RuntimeError(msg)
-
+            values = self._z_gen.evaluate_xy(x_in/self._rr, y_in/self._rr, n, m)
             polynomials[(n,m)] = values
 
         poly_keys = list(polynomials.keys())
@@ -318,15 +314,7 @@ class LsstZernikeFitter(object):
             dy = np.zeros(len(ymm), dtype=float)
 
         for kk in self._pupil_to_focal[band]['x']:
-            try:
-                values = self._z_gen.evaluate_xy(xmm/self._rr, ymm/self._rr, kk[0], kk[1])
-            except ZernikeRadialError:
-                msg = "Some of the points you are transforming in LsstZernikeFitter are outside "
-                msg += "the r = %e mm circle circumscribing the LSST focal plane. " % self._rr
-                msg += "The Zernike polynomials we are fitting to are not defined "
-                msg += "outside of that circle."
-                raise RuntimeError(msg)
-
+            values = self._z_gen.evaluate_xy(xmm/self._rr, ymm/self._rr, kk[0], kk[1])
             dx += transformation_dict[band]['x'][kk]*values
             dy += transformation_dict[band]['y'][kk]*values
 
