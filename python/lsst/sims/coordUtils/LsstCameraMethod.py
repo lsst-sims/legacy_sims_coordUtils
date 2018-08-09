@@ -1,4 +1,4 @@
-from lsst.obs.lsstSim import LsstSimMapper
+from lsst.obs.lsstCam import lsstCamMapper
 import lsst.log as lsstLog
 
 
@@ -11,6 +11,6 @@ def lsst_camera():
     """
     if not hasattr(lsst_camera, '_lsst_camera'):
         lsstLog.setLevel('CameraMapper', lsstLog.WARN)
-        lsst_camera._lsst_camera = LsstSimMapper().camera
+        lsst_camera._lsst_camera = lsstCamMapper().camera
 
     return lsst_camera._lsst_camera
