@@ -329,7 +329,7 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
     @param [out] a numpy array of chip names
 
     """
-    if (not hasattr(chipNameFromPupilCoordsLSST, '_pupil_map') or
+    if (not hasattr(chipNameFromPupilCoordsLSST, '_focal_map') or
     not hasattr(chipNameFromPupilCoordsLSST, '_detector_arr') or
     len(chipNameFromPupilCoordsLSST._detector_arr) == 0):
         focal_map = _build_lsst_focal_coord_map()
