@@ -3,9 +3,8 @@ from builtins import zip
 from builtins import range
 import numpy as np
 import numbers
-import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
-from lsst.afw.geom import Box2D
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
 from lsst.sims.coordUtils import LsstZernikeFitter
@@ -151,7 +150,7 @@ def _build_lsst_focal_coord_map():
         for corner in corner_list:
             x_pix_list.append(corner[0])
             y_pix_list.append(corner[1])
-            pixel_pt = afwGeom.Point2D(corner[0], corner[1])
+            pixel_pt = geom.Point2D(corner[0], corner[1])
             focal_pt = pixels_to_focal.applyForward(pixel_pt)
             x_mm_list.append(focal_pt.getX())
             y_mm_list.append(focal_pt.getY())
@@ -274,7 +273,7 @@ def _findDetectorsListLSST(focalPointList, detectorList, possible_points,
             transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
             detectorPointList = transform.applyForward(valid_pt_list)
 
-            box = afwGeom.Box2D(detector.getBBox())
+            box = geom.Box2D(detector.getBBox())
             for ix, pt in zip(valid_pt_dexes, detectorPointList):
                 if box.contains(pt):
                     if not could_be_multiple[ix]:
@@ -345,7 +344,7 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
         focal_to_field = camera.getTransformMap().getTransform(FOCAL_PLANE, FIELD_ANGLE)
         focal_bbox = camera.getFpBBox()
         focal_corners = focal_bbox.getCorners()
-        camera_bbox = Box2D()
+        camera_bbox = geom.Box2D()
         x_focal_max = None
         x_focal_min = None
         y_focal_max = None
@@ -402,7 +401,7 @@ def chipNameFromPupilCoordsLSST(xPupil_in, yPupil_in, allow_multiple_chips=False
     # passed the 'good_radii' test above; the other points will
     # be added in with chipName == None at the end
     #
-    focalPointList = [afwGeom.Point2D(xFocal[i_pt], yFocal[i_pt])
+    focalPointList = [geom.Point2D(xFocal[i_pt], yFocal[i_pt])
                       for i_pt in good_radii[0]]
 
     # Loop through every detector on the camera.  For each detector, assemble a list of points
@@ -640,7 +639,7 @@ def pupilCoordsFromPixelCoordsLSST(xPix, yPix, chipName=None, band="r",
                 y_f[local_valid] = np.NaN
                 continue
 
-            pixel_pt_arr = [afwGeom.Point2D(xPix[ii], yPix[ii])
+            pixel_pt_arr = [geom.Point2D(xPix[ii], yPix[ii])
                             for ii in local_valid[0]]
 
             focal_pt_arr = pixel_to_focal_dict[name].applyForward(pixel_pt_arr)
@@ -654,7 +653,7 @@ def pupilCoordsFromPixelCoordsLSST(xPix, yPix, chipName=None, band="r",
             x_f = np.NaN
             y_f = np.NaN
         else:
-            pixel_pt = afwGeom.Point2D(xPix, yPix)
+            pixel_pt = geom.Point2D(xPix, yPix)
             focal_pt = pixel_to_focal_dict[chipNameList[0]].applyForward(pixel_pt)
             x_f = focal_pt.getX()
             y_f = focal_pt.getY()
@@ -744,7 +743,7 @@ def pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=None, band="r",
             local_valid = np.where(chip_name_int == local_int)
             if len(local_valid[0]) == 0:
                 continue
-            focal_pt_arr = [afwGeom.Point2D(x_f[ii], y_f[ii])
+            focal_pt_arr = [geom.Point2D(x_f[ii], y_f[ii])
                             for ii in local_valid[0]]
             pixel_pt_arr = focal_to_pixel_dict[chip_name].applyForward(focal_pt_arr)
             pixel_coord_arr = np.array([[pp.getX(), pp.getY()]
@@ -760,7 +759,7 @@ def pixelCoordsFromPupilCoordsLSST(xPupil, yPupil, chipName=None, band="r",
         else:
             det = lsst_camera()[chip_name]
             focal_to_pixels = det.getTransform(FOCAL_PLANE, PIXELS)
-            focal_pt = afwGeom.Point2D(x_f, y_f)
+            focal_pt = geom.Point2D(x_f, y_f)
             pixel_pt = focal_to_pixels.applyForward(focal_pt)
             x_pix= pixel_pt.getX()
             y_pix = pixel_pt.getY()

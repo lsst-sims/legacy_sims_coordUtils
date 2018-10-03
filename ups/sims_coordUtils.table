@@ -1,6 +1,9 @@
 setupRequired(base)
 setupRequired(python)
 setupRequired(utils)
+# For coordinates
+setupRequired(geom)
+# For cameraGeom
 setupRequired(afw)
 setupRequired(sims_utils)
 setupRequired(obs_lsstSim)

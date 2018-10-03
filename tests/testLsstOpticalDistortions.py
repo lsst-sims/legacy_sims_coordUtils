@@ -6,7 +6,7 @@ import lsst.utils.tests
 
 from lsst.utils import getPackageDir
 from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, SCIENCE
-import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
@@ -72,7 +72,7 @@ class FocalPlaneTestCase(unittest.TestCase):
                 x_mm = np.zeros(len(dm_x))
                 y_mm = np.zeros(len(dm_y))
                 for ii in range(len(x_mm)):
-                    pix_pt = afwGeom.Point2D(dm_x[ii], dm_y[ii])
+                    pix_pt = geom.Point2D(dm_x[ii], dm_y[ii])
                     focal_pt = pix_to_focal.applyForward(pix_pt)
                     x_mm[ii] = focal_pt.getX()
                     y_mm[ii] = focal_pt.getY()
@@ -396,7 +396,7 @@ class FullTransformationTestCase(unittest.TestCase):
                     xf = xf_optics[dex]
                     yf = yf_optics[dex]
 
-                    pixel_pt = afwGeom.Point2D(xdm, ydm)
+                    pixel_pt = geom.Point2D(xdm, ydm)
                     focal_pt = pixel_to_focal.applyForward(pixel_pt)
 
                     dist = np.sqrt((xf-focal_pt.getX())**2+(yf-focal_pt.getY())**2)
