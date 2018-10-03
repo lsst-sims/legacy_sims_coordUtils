@@ -14,6 +14,7 @@ import re
 import shutil
 
 import lsst.geom as geom
+import lsst.afw.geom as afwGeom
 import lsst.afw.cameraGeom as afwCameraGeom
 import lsst.afw.table as afwTable
 from lsst.afw.cameraGeom import SCIENCE
@@ -252,9 +253,9 @@ def ReturnCamera(baseDir):
     # Don't have this yet ticket/3155
     #camConfig.boresiteOffset_x = 0.
     #camConfig.boresiteOffset_y = 0.
-    tConfig = geom.TransformConfig()
+    tConfig = afwGeom.TransformConfig()
     tConfig.transform.name = 'inverted'
-    radialClass = geom.transformRegistry['radial']
+    radialClass = afwGeom.transformRegistry['radial']
     tConfig.transform.active.transform.retarget(radialClass)
     # According to Dave M. the simulated LSST transform is well approximated (1/3 pix)
     # by a scale and a pincusion.
