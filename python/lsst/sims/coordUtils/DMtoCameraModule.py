@@ -1,5 +1,5 @@
 import numpy as np
-import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 from lsst.afw.cameraGeom import FOCAL_PLANE, PIXELS, TAN_PIXELS
 from lsst.afw.cameraGeom import FIELD_ANGLE
 from lsst.sims.coordUtils import lsst_camera
@@ -24,8 +24,8 @@ class DMtoCameraPixelTransformer(object):
             dm_bbox = self._camera[detector_name].getBBox()
             dm_min = dm_bbox.getMin()
             dm_max = dm_bbox.getMax()
-            cam_bbox = afwGeom.Box2I(minimum=afwGeom.coordinates.Point2I(dm_min[1], dm_min[0]),
-                                     maximum=afwGeom.coordinates.Point2I(dm_max[1], dm_max[0]))
+            cam_bbox = geom.Box2I(minimum=geom.Point2I(dm_min[1], dm_min[0]),
+                                  maximum=geom.Point2I(dm_max[1], dm_max[0]))
 
             self._bbox_cache[detector_name] = cam_bbox
 
@@ -41,7 +41,7 @@ class DMtoCameraPixelTransformer(object):
          if detector_name not in self._center_pixel_cache:
              centerPoint = self._camera[detector_name].getCenter(FOCAL_PLANE)
              centerPixel_dm = self._camera[detector_name].getTransform(FOCAL_PLANE, PIXELS).applyForward(centerPoint)
-             centerPixel_cam = afwGeom.coordinates.Point2D(centerPixel_dm.getY(), centerPixel_dm.getX())
+             centerPixel_cam = geom.Point2D(centerPixel_dm.getY(), centerPixel_dm.getX())
              self._center_pixel_cache[detector_name] = centerPixel_cam
 
          return self._center_pixel_cache[detector_name]

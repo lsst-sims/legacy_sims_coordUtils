@@ -8,7 +8,7 @@ from lsst.sims.utils import ZernikePolynomialGenerator
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
 from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, FIELD_ANGLE, SCIENCE
-import lsst.afw.geom as afwGeom
+import lsst.geom as geom
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 
 
@@ -214,7 +214,7 @@ class LsstZernikeFitter(object):
         catsim_xmm = np.zeros(len(x_field), dtype=float)
         catsim_ymm = np.zeros(len(y_field), dtype=float)
         for ii, (xx, yy) in enumerate(zip(x_field, y_field)):
-            focal_pt = field_to_focal.applyForward(afwGeom.Point2D(xx, yy))
+            focal_pt = field_to_focal.applyForward(geom.Point2D(xx, yy))
             catsim_xmm[ii] = focal_pt.getX()
             catsim_ymm[ii] = focal_pt.getY()
 
@@ -257,7 +257,7 @@ class LsstZernikeFitter(object):
                 xmm = np.zeros(len(xpix), dtype=float)
                 ymm = np.zeros(len(ypix), dtype=float)
                 for ii in range(len(xpix)):
-                    focal_pt = pixels_to_focal.applyForward(afwGeom.Point2D(xpix[ii], ypix[ii]))
+                    focal_pt = pixels_to_focal.applyForward(geom.Point2D(xpix[ii], ypix[ii]))
                     xmm[ii] = focal_pt.getX()
                     ymm[ii] = focal_pt.getY()
                 phosim_xmm[phosim_data['id']-1] = xmm

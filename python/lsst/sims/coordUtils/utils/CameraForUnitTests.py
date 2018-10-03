@@ -13,6 +13,7 @@ import os
 import re
 import shutil
 
+import lsst.geom as geom
 import lsst.afw.geom as afwGeom
 import lsst.afw.cameraGeom as afwCameraGeom
 import lsst.afw.table as afwTable
@@ -97,7 +98,7 @@ def makeAmpTables(segmentsFile, gainFile):
                 saturation = 65535
                 gain = float(els[7])
             readnoise = float(els[11])
-            bbox = afwGeom.Box2I(afwGeom.Point2I(x0, y0), afwGeom.Point2I(x1, y1))
+            bbox = geom.Box2I(geom.Point2I(x0, y0), geom.Point2I(x1, y1))
 
             if int(els[5]) == -1:
                 flipx = False
@@ -119,11 +120,11 @@ def makeAmpTables(segmentsFile, gainFile):
             hoverscan = 0
             extended = 4
             voverscan = 0
-            rawBBox = afwGeom.Box2I(afwGeom.Point2I(0,0), afwGeom.Extent2I(extended+ndatax+hoverscan, prescan+ndatay+voverscan))
-            rawDataBBox = afwGeom.Box2I(afwGeom.Point2I(extended, prescan), afwGeom.Extent2I(ndatax, ndatay))
-            rawHorizontalOverscanBBox = afwGeom.Box2I(afwGeom.Point2I(0, prescan), afwGeom.Extent2I(extended, ndatay))
-            rawVerticalOverscanBBox = afwGeom.Box2I(afwGeom.Point2I(extended, prescan+ndatay), afwGeom.Extent2I(ndatax, voverscan))
-            rawPrescanBBox = afwGeom.Box2I(afwGeom.Point2I(extended, 0), afwGeom.Extent2I(ndatax, prescan))
+            rawBBox = geom.Box2I(geom.Point2I(0,0), geom.Extent2I(extended+ndatax+hoverscan, prescan+ndatay+voverscan))
+            rawDataBBox = geom.Box2I(geom.Point2I(extended, prescan), geom.Extent2I(ndatax, ndatay))
+            rawHorizontalOverscanBBox = geom.Box2I(geom.Point2I(0, prescan), geom.Extent2I(extended, ndatay))
+            rawVerticalOverscanBBox = geom.Box2I(geom.Point2I(extended, prescan+ndatay), geom.Extent2I(ndatax, voverscan))
+            rawPrescanBBox = geom.Box2I(geom.Point2I(extended, 0), geom.Extent2I(ndatax, prescan))
 
             extraRawX = extended + hoverscan
             extraRawY = prescan + voverscan
@@ -142,7 +143,7 @@ def makeAmpTables(segmentsFile, gainFile):
             record.setRawFlipX(flipx)
             record.setRawFlipY(flipy)
             record.setRawBBox(rawBBox)
-            record.setRawXYOffset(afwGeom.Extent2I(rawx0, rawy0))
+            record.setRawXYOffset(geom.Extent2I(rawx0, rawy0))
             record.setRawDataBBox(rawDataBBox)
             record.setRawHorizontalOverscanBBox(rawHorizontalOverscanBBox)
             record.setRawVerticalOverscanBBox(rawVerticalOverscanBBox)
@@ -247,7 +248,7 @@ def ReturnCamera(baseDir):
     camConfig.detectorList = dict([(i,detectorConfigList[i]) for i in range(len(detectorConfigList))])
     camConfig.name = 'LSST'
     camConfig.plateScale = 2.0 #arcsec per mm
-    pScaleRad = afwGeom.arcsecToRad(camConfig.plateScale)
+    pScaleRad = geom.arcsecToRad(camConfig.plateScale)
     pincushion = 0.925
     # Don't have this yet ticket/3155
     #camConfig.boresiteOffset_x = 0.
