@@ -1593,7 +1593,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0
 
         chipDexList = self.rng.randint(0, len(self.camera), nStars)
-        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        camera_detector_keys = list([det.getName() for det in self.camera])
+        self.assertGreater(len(camera_detector_keys), 0)
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         # test that an error is raised if you do not pass in a camera
@@ -1726,7 +1727,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0
 
         chipDexList = self.rng.randint(0, len(self.camera), nStars)
-        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        camera_detector_keys = list([det.getName() for det in self.camera])
+        self.assertGreater(len(camera_detector_keys), 0)
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
@@ -1790,7 +1792,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
         chipDexList = self.rng.randint(0, len(self.camera), nStars)
-        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        camera_detector_keys = list([det.getName() for det in self.camera])
+        self.assertGreater(len(camera_detector_keys), 0)
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         for includeDistortion in [True, False]:
@@ -1839,7 +1842,8 @@ class ConversionFromPixelTest(unittest.TestCase):
         yPixList = self.rng.random_sample(nStars)*4000.0 + 4000.0
 
         chipDexList = self.rng.randint(0, len(self.camera), nStars)
-        camera_detector_keys = list(self.camera._nameDetectorDict.keys())
+        camera_detector_keys = list([det.getName() for det in self.camera])
+        self.assertGreater(len(camera_detector_keys), 0)
         chipNameList = [self.camera[camera_detector_keys[ii]].getName() for ii in chipDexList]
 
         xu, yu = pupilCoordsFromPixelCoords(xPixList, yPixList, chipNameList, camera=self.camera,
