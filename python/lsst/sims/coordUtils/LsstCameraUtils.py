@@ -270,7 +270,7 @@ def _findDetectorsListLSST(focalPointList, detectorList, possible_points,
 
         if len(valid_pt_dexes) > 0:
             valid_pt_list = nativePointList[valid_pt_dexes]
-            transform = detector.getTransform(lsst_camera()._nativeCameraSys, PIXELS)
+            transform = detector.getTransform(FOCAL_PLANE, PIXELS)
             detectorPointList = transform.applyForward(valid_pt_list)
 
             box = geom.Box2D(detector.getBBox())
