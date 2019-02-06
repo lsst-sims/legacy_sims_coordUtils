@@ -14,7 +14,7 @@ from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
 from lsst.sims.utils import pupilCoordsFromRaDec, radiansFromArcsec
 from lsst.sims.utils import ObservationMetaData
-from lsst.obs.lsstSim import LsstSimMapper
+from lsst.obs.lsst.phosim import PhosimMapper
 from lsst.sims.utils import angularSeparation
 
 from lsst.sims.coordUtils import clean_up_lsst_camera
@@ -29,7 +29,7 @@ class ChipNameTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.camera = LsstSimMapper().camera
+        cls.camera = PhosimMapper().camera
 
     @classmethod
     def tearDownClass(cls):
@@ -425,7 +425,7 @@ class MotionTestCase(unittest.TestCase):
     """
     @classmethod
     def setUpClass(cls):
-        cls.camera = LsstSimMapper().camera
+        cls.camera = PhosimMapper().camera
 
     @classmethod
     def tearDownClass(cls):
