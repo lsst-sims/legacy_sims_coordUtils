@@ -78,7 +78,7 @@ class DMtoCameraPixelTransformer(object):
             cam_xPix = np.zeros(len(dm_xPix))
             for ix, (det_name, yy) in enumerate(zip(chipName, dm_yPix)):
                 cam_center_pix = self.getCenterPixel(det_name)
-                cam_xPix[ix] = 2.0*cam_center_pix.getX() - dm_yPix
+                cam_xPix[ix] = 2.0*cam_center_pix.getX() - yy
         else:
             cam_center_pix = self.getCenterPixel(chipName)
             cam_xPix = 2.0*cam_center_pix.getX() - dm_yPix
