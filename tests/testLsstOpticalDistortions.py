@@ -340,7 +340,8 @@ class FullTransformationTestCase(unittest.TestCase):
         distance = np.sqrt((x_pup-x_pup_test)**2 +
                            (y_pup-y_pup_test)**2)
 
-        self.assertLess(distance.max(), 1.0e-12)
+        tenth_milli_arcsec = np.radians(0.0001/3600.0)
+        self.assertLess(distance.max(), tenth_milli_arcsec)
 
     def test_focal_coords_from_pupil_coords(self):
         """
