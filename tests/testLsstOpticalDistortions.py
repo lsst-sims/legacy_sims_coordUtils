@@ -1011,8 +1011,8 @@ class FullTransformationTestCase(unittest.TestCase):
                     self.assertTrue(np.isnan(ra2))
                     self.assertTrue(np.isnan(dec2))
                 else:
-                    self.assertEqual(ra2, ra1[ii])
-                    self.assertEqual(dec2, dec1[ii])
+                    self.assertAlmostEqual(ra2, ra1[ii], 10)
+                    self.assertAlmostEqual(dec2, dec1[ii], 10)
 
 
     def test_ra_dec_from_pixel_coords_lsst_radians(self):
@@ -1060,8 +1060,8 @@ class FullTransformationTestCase(unittest.TestCase):
                     self.assertTrue(np.isnan(ra1))
                     self.assertTrue(np.isnan(dec1))
                 else:
-                    self.assertEqual(ra1, ra_rad[ii])
-                    self.assertEqual(dec1, dec_rad[ii])
+                    self.assertAlmostEqual(ra1, ra_rad[ii], 10)
+                    self.assertAlmostEqual(dec1, dec_rad[ii], 10)
 
     def test_nans(self):
         """
