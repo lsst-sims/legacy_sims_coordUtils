@@ -1,17 +1,18 @@
 """
 DM-12447 changed the API for afwCameraGeom.  In order to make sure that
 we correctly update sims_coordUtils, I am going to generate a catalog
-of RA, Dec -> pixel coordinates as transformed using the w.2017.50 version
-of afw.  I will then add a unit test to make sure that the same results
-come out.  We should expect this test to break if obs_lsstSim ever changes
+of RA, Dec -> pixel coordinates as transformed using afw circa October 2019.
+I will then add a unit test to make sure that the same results
+come out.  We should expect this test to break if obs_lsst ever changes
 in a physically meaningful way.  Hopefully, in that case, we will be
 expecting it and we can re-run this script to generate a new test catalog.
 """
 
 import numpy as np
 
+import lsst.obs.lsst.phosim as obs_lsst_phosim
+
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import getCornerRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromRaDec
 from lsst.sims.coordUtils import pixelCoordsFromRaDec
@@ -27,7 +28,7 @@ if __name__ == "__main__":
     header_msg += '# physically meaningful way, this catalog will need to be\n'
     header_msg += '# regenerated.\n#\n'
 
-    camera = lsst_camera()
+    camera = obs_lsst_phosim.PhosimMapper().camera
     ra = 25.0
     dec = -62.0
     obs = ObservationMetaData(pointingRA=ra, pointingDec=dec,
