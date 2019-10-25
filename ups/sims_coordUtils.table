@@ -5,6 +5,7 @@ setupRequired(utils)
 setupRequired(geom)
 # For cameraGeom
 setupRequired(afw)
+setupRequired(obs_lsst)
 setupRequired(sims_utils)
 
 envPrepend(PYTHONPATH, ${PRODUCT_DIR}/python)
