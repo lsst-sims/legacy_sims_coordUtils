@@ -7,6 +7,8 @@ import unittest
 import lsst.utils.tests
 from lsst.utils import getPackageDir
 
+import lsst.obs.lsst.phosim as obs_lsst_phosim
+
 from lsst.sims.utils import ObservationMetaData, radiansFromArcsec, arcsecFromRadians
 from lsst.sims.utils import haversine
 from lsst.obs.lsstSim import LsstSimMapper
@@ -29,7 +31,6 @@ from lsst.sims.coordUtils import raDecFromPixelCoords, _raDecFromPixelCoords
 from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDec
 
 from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoords
-from lsst.sims.coordUtils import lsst_camera
 
 from lsst.geom import Point2D
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE
@@ -1108,11 +1109,15 @@ class FocalPlaneCoordTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.camera =  LsstSimMapper().camera
+        cameraDir = getPackageDir('sims_coordUtils')
+        cameraDir = os.path.join(cameraDir, 'tests', 'cameraData')
+        cls.camera = ReturnCamera(cameraDir)
+        cls.lsst_camera = obs_lsst_phosim.PhosimMapper().camera
 
     @classmethod
     def tearDownClass(cls):
         del cls.camera
+        del cls.lsst_camera
 
     def setUp(self):
         self.rng = np.random.RandomState(8374522)
@@ -1436,10 +1441,10 @@ class FocalPlaneCoordTest(unittest.TestCase):
         y_pup = rng.random_sample(n_pts)*0.05-0.025
 
         x_f, y_f = focalPlaneCoordsFromPupilCoords(x_pup, y_pup,
-                                                   camera=lsst_camera())
+                                                   camera=self.lsst_camera)
 
         x_p_test, y_p_test = pupilCoordsFromFocalPlaneCoords(x_f, y_f,
-                                                             camera=lsst_camera())
+                                                             camera=self.lsst_camera)
 
         np.testing.assert_array_almost_equal(arcsecFromRadians(x_pup),
                                              arcsecFromRadians(x_p_test),
@@ -1453,7 +1458,7 @@ class FocalPlaneCoordTest(unittest.TestCase):
         for ii in range(len(x_pup)):
             (x_p_test,
              y_p_test) = pupilCoordsFromFocalPlaneCoords(x_f[ii], y_f[ii],
-                                                         camera=lsst_camera())
+                                                         camera=self.lsst_camera)
 
             self.assertAlmostEqual(arcsecFromRadians(x_pup[ii]),
                                    arcsecFromRadians(x_p_test),
@@ -1463,32 +1468,31 @@ class FocalPlaneCoordTest(unittest.TestCase):
                                    arcsecFromRadians(y_p_test),
                                    6)
 
-        del lsst_camera._lsst_camera
 
     def test_pupilCoordsFromFocalPlaneCoordsNaNs(self):
         """
         Test that pupilCoordsFromFocalPlaneCoords handles NaNs correctly
         """
-        xp, yp = pupilCoordsFromFocalPlaneCoords(1.0, 2.0, camera=lsst_camera())
+        xp, yp = pupilCoordsFromFocalPlaneCoords(1.0, 2.0, camera=self.lsst_camera)
         self.assertFalse(np.isnan(xp))
         self.assertFalse(np.isnan(yp))
-        xp, yp = pupilCoordsFromFocalPlaneCoords(np.NaN, 2.0, camera=lsst_camera())
+        xp, yp = pupilCoordsFromFocalPlaneCoords(np.NaN, 2.0, camera=self.lsst_camera)
         self.assertTrue(np.isnan(xp))
         self.assertTrue(np.isnan(yp))
-        xp, yp = pupilCoordsFromFocalPlaneCoords(1.0, np.NaN, camera=lsst_camera())
+        xp, yp = pupilCoordsFromFocalPlaneCoords(1.0, np.NaN, camera=self.lsst_camera)
         self.assertTrue(np.isnan(xp))
         self.assertTrue(np.isnan(yp))
 
         x = np.array([1,2,3,4])
         y = np.array([5,6,7,8])
-        xp, yp = pupilCoordsFromFocalPlaneCoords(x, y, camera=lsst_camera())
+        xp, yp = pupilCoordsFromFocalPlaneCoords(x, y, camera=self.lsst_camera)
         for xx, yy in zip(xp, yp):
             self.assertFalse(np.isnan(xx))
             self.assertFalse(np.isnan(yy))
 
         x = np.array([np.NaN,2,3,4])
         y = np.array([5,np.NaN,7,8])
-        xp, yp = pupilCoordsFromFocalPlaneCoords(x, y, camera=lsst_camera())
+        xp, yp = pupilCoordsFromFocalPlaneCoords(x, y, camera=self.lsst_camera)
         self.assertTrue(np.isnan(xp[0]))
         self.assertTrue(np.isnan(yp[0]))
         self.assertTrue(np.isnan(xp[1]))
@@ -1496,8 +1500,6 @@ class FocalPlaneCoordTest(unittest.TestCase):
         for ii in range(2,4):
             self.assertFalse(np.isnan(xp[ii]))
             self.assertFalse(np.isnan(yp[ii]))
-
-        del lsst_camera._lsst_camera
 
 
 class ConversionFromPixelTest(unittest.TestCase):
