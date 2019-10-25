@@ -1,8 +1,10 @@
 import numpy as np
 import lsst.geom as geom
+
+import lsst.obs.lsst.phosim as obs_lsst_phosim
+
 from lsst.afw.cameraGeom import FOCAL_PLANE, PIXELS, TAN_PIXELS
 from lsst.afw.cameraGeom import FIELD_ANGLE
-from lsst.sims.coordUtils import lsst_camera
 
 
 __all__ = ["DMtoCameraPixelTransformer"]
@@ -11,7 +13,7 @@ __all__ = ["DMtoCameraPixelTransformer"]
 class DMtoCameraPixelTransformer(object):
 
     def __init__(self):
-        self._camera = lsst_camera()
+        self._camera = obs_lsst_phosim.PhosimMapper().camera
 
     def getBBox(self, detector_name):
         """
