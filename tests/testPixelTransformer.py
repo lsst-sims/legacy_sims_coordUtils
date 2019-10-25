@@ -2,8 +2,8 @@ import unittest
 import numpy as np
 
 import lsst.utils.tests
+import lsst.obs.lsst.phosim as obs_lsst_phosim
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
-from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import pupilCoordsFromPixelCoords
 from lsst.afw.cameraGeom import FOCAL_PLANE, PIXELS
 
@@ -29,7 +29,7 @@ class PixelTransformerTestCase(unittest.TestCase):
         """
         camera_wrapper = DMtoCameraPixelTransformer()
         rng = np.random.RandomState()
-        camera = lsst_camera()
+        camera = obs_lsst_phosim.PhosimMapper().camera
         npts = 200
         for det in camera:
             det_name = det.getName()
@@ -56,7 +56,7 @@ class PixelTransformerTestCase(unittest.TestCase):
                                        atol=1.0e-10, rtol=0.0)
 
         del camera_wrapper
-        del lsst_camera._lsst_camera
+        del camera
 
 
 class MemoryTestClass(lsst.utils.tests.MemoryTestCase):
