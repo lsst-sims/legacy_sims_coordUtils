@@ -7,7 +7,8 @@ from lsst.utils import getPackageDir
 from lsst.sims.utils import ZernikePolynomialGenerator
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import DMtoCameraPixelTransformer
-from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, FIELD_ANGLE, SCIENCE
+from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, FIELD_ANGLE
+from lsst.afw.cameraGeom import DetectorType
 import lsst.geom as geom
 from lsst.sims.utils.CodeUtilities import _validate_inputs
 
@@ -231,7 +232,7 @@ class LsstZernikeFitter(object):
             phosim_ymm = np.zeros(len(catsim_data['ypup']), dtype=float)
 
             for det in self._camera:
-                if det.getType() != SCIENCE:
+                if det.getType() != DetectorType.SCIENCE:
                     continue
                 pixels_to_focal = det.getTransform(PIXELS, FOCAL_PLANE)
                 det_name = det.getName()

@@ -1,59 +1,103 @@
+#!/usr/bin/env python
+#
+# LSST Data Management System
+# Copyright 2014-2016 LSST Corporation.
+#
+# This product includes software developed by the
+# LSST Project (http://www.lsst.org/).
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the LSST License Statement and
+# the GNU General Public License along with this program.  If not,
+# see <http://www.lsstcorp.org/LegalNotices/>.
+#
 """
-This file is just makeLsstCameraRepository.py from obs_lsstSim/bin/
+Produce the camera description FITS files from phosim text files.
 
-the method ReturnCamera() is the __main__ method from that script
-modified so that it just returns a camera, rather than writing out a
-repository of camera data
+Scons should have automatically run this when building obs_lsstSim. To produce
+the same files that scons would have, run with no arguments.
 """
-
-from __future__ import absolute_import, division
-from builtins import range
 import argparse
 import os
 import re
 import shutil
 
-import lsst.geom as geom
+import lsst.utils
 import lsst.afw.geom as afwGeom
-import lsst.afw.cameraGeom as afwCameraGeom
 import lsst.afw.table as afwTable
-from lsst.afw.cameraGeom import SCIENCE
-from lsst.afw.cameraGeom import (DetectorConfig, CameraConfig, makeCameraFromCatalogs,
-                                 FIELD_ANGLE, FOCAL_PLANE, PIXELS)
+from lsst.afw.cameraGeom import DetectorConfig, CameraConfig, \
+    TransformMapConfig, FIELD_ANGLE, FOCAL_PLANE, PIXELS, NullLinearityType, \
+    ReadoutCorner, Amplifier
+import lsst.geom as geom
+from lsst.obs.lsstSim import LsstSimMapper
 
-__all__ = ["ReturnCamera"]
+
+__all__ = ['ReturnCamera']
 
 def expandDetectorName(abbrevName):
-    return abbrevName
+    """Convert a detector name of the form Rxy_Sxy[_Ci] to canonical form: R:x,y S:x,y[,c]
+
+    C0 -> A, C1 -> B
+    """
+    m = re.match(r"R(\d)(\d)_S(\d)(\d)(?:_C([0,1]))?$", abbrevName)
+    if m is None:
+        raise RuntimeError("Cannot parse abbreviated name %r" % (abbrevName,))
+    fullName = "R:%s,%s S:%s,%s" % tuple(m.groups()[0:4])
+    subSensor = m.groups()[4]
+    if subSensor is not None:
+        fullName = fullName + "," + {"0": "A", "1": "B"}[subSensor]
+    return fullName
+
 
 def detectorIdFromAbbrevName(abbrevName):
     """Compute detector ID from an abbreviated detector name of the form Rxy_Sxy_Ci
 
     value = digits in this order: ci+1 rx ry sx sy
     """
-    idNum=int(abbrevName[-2:])
-    return idNum
+    m = re.match(r"R(\d)(\d)_S(\d)(\d)(?:_C([0,1]))?$", abbrevName)
+    if m is None:
+        raise RuntimeError("Cannot parse abbreviated name %r" % (abbrevName,))
+    detectorId = int("".join(m.groups()[0:4]))
+    if m.group(5) is not None:
+        detectorId += 10000 * (1 + int(m.group(5)))
+    return detectorId
+
 
 def makeAmpTables(segmentsFile, gainFile):
     """
     Read the segments file from a PhoSim release and produce the appropriate AmpInfo
-    @param segmentsFile -- String indicating where the file is located
+
+    @param segmentsFile (str) full path to the segmentation file.
+    @param gainFile (str) full path to the gain/saturation file.
+
+    @return (dict) per amp dictionary of ampCatalogs
     """
     gainDict = {}
-    """
     with open(gainFile) as fh:
         for l in fh:
             els = l.rstrip().split()
-            gainDict[els[0]] = {'gain':float(els[1]), 'saturation':int(els[2])}
-    """
+            gainDict[els[0]] = {'gain': float(els[1]), 'saturation': int(els[2])}
     returnDict = {}
-    #TODO currently there is no linearity provided, but we should identify
-    #how to get this information.
-    linearityCoeffs = (0.,1.,0.,0.)
-    linearityType = "Polynomial"
-    readoutMap = {'LL':afwTable.LL, 'LR':afwTable.LR, 'UR':afwTable.UR, 'UL':afwTable.UL}
-    ampCatalog = None
-    detectorName = [] # set to a value that is an invalid dict key, to catch bugs
+    # TODO currently there is no linearity provided, but we should identify
+    # how to get this information.
+    linearityCoeffs = (0., 1., 0., 0.)
+    linearityType = NullLinearityType
+    readoutMap = {'LL': ReadoutCorner.LL,
+                  'LR': ReadoutCorner.LR,
+                  'UR': ReadoutCorner.UR,
+                  'UL': ReadoutCorner.UL}
+
+    ampCatalog = []
+    detectorName = []  # set to a value that is an invalid dict key, to catch bugs
     correctY0 = False
     with open(segmentsFile) as fh:
         for l in fh:
@@ -62,28 +106,28 @@ def makeAmpTables(segmentsFile, gainFile):
 
             els = l.rstrip().split()
             if len(els) == 4:
-                if ampCatalog is not None:
+                if len(ampCatalog) != 0:
                     returnDict[detectorName] = ampCatalog
                 detectorName = expandDetectorName(els[0])
                 numy = int(els[2])
-                schema = afwTable.AmpInfoTable.makeMinimalSchema()
-                ampCatalog = afwTable.AmpInfoCatalog(schema)
-                if len(els[0].split('_')) == 3:   #wavefront sensor
+
+                ampCatalog = []
+                if len(els[0].split('_')) == 3:  # wavefront sensor
                     correctY0 = True
                 else:
                     correctY0 = False
                 continue
-            record = ampCatalog.addNew()
+            amplifier = Amplifier.Builder()
             name = els[0].split("_")[-1]
             name = '%s,%s'%(name[1], name[2])
-            #Because of the camera coordinate system, we choose an
-            #image coordinate system that requires a -90 rotation to get
-            #the correct pixel positions from the
-            #phosim segments file
+            # Because of the camera coordinate system, we choose an
+            # image coordinate system that requires a -90 rotation to get
+            # the correct pixel positions from the
+            # phosim segments file
             y0 = numy - 1 - int(els[2])
             y1 = numy - 1 - int(els[1])
-            #Another quirk of the phosim file is that one of the wavefront sensor
-            #chips has an offset of 2000 pix in y.  It's always the 'C1' chip.
+            # Another quirk of the phosim file is that one of the wavefront sensor
+            # chips has an offset of 2000 pix in y.  It's always the 'C1' chip.
             if correctY0:
                 if y0 > 0:
                     y1 -= y0
@@ -109,47 +153,54 @@ def makeAmpTables(segmentsFile, gainFile):
             else:
                 flipy = True
 
-            #Since the amps are stored in amp coordinates, the readout is the same
-            #for all amps
+            # Since the amps are stored in amp coordinates, the readout is the same
+            # for all amps
             readCorner = readoutMap['LL']
 
             ndatax = x1 - x0 + 1
             ndatay = y1 - y0 + 1
-            #Because in versions v3.3.2 and earlier there was no overscan, we use the extended register as the overscan region
+            # Because in versions v3.3.2 and earlier there was no overscan, we use the extended register
+            # as the overscan region
             prescan = 1
             hoverscan = 0
             extended = 4
             voverscan = 0
-            rawBBox = geom.Box2I(geom.Point2I(0,0), geom.Extent2I(extended+ndatax+hoverscan, prescan+ndatay+voverscan))
+            rawBBox = geom.Box2I(geom.Point2I(0, 0),
+                                 geom.Extent2I(extended+ndatax+hoverscan, prescan+ndatay+voverscan))
             rawDataBBox = geom.Box2I(geom.Point2I(extended, prescan), geom.Extent2I(ndatax, ndatay))
-            rawHorizontalOverscanBBox = geom.Box2I(geom.Point2I(0, prescan), geom.Extent2I(extended, ndatay))
-            rawVerticalOverscanBBox = geom.Box2I(geom.Point2I(extended, prescan+ndatay), geom.Extent2I(ndatax, voverscan))
+            rawHorizontalOverscanBBox = geom.Box2I(geom.Point2I(0, prescan),
+                                                   geom.Extent2I(extended, ndatay))
+            rawVerticalOverscanBBox = geom.Box2I(geom.Point2I(extended, prescan+ndatay),
+                                                 geom.Extent2I(ndatax, voverscan))
             rawPrescanBBox = geom.Box2I(geom.Point2I(extended, 0), geom.Extent2I(ndatax, prescan))
 
             extraRawX = extended + hoverscan
             extraRawY = prescan + voverscan
             rawx0 = x0 + extraRawX*(x0//ndatax)
             rawy0 = y0 + extraRawY*(y0//ndatay)
-            #Set the elements of the record for this amp
-            record.setBBox(bbox)
-            record.setName(name)
-            record.setReadoutCorner(readCorner)
-            record.setGain(gain)
-            record.setSaturation(saturation)
-            record.setReadNoise(readnoise)
-            record.setLinearityCoeffs(linearityCoeffs)
-            record.setLinearityType(linearityType)
-            record.setHasRawInfo(True)
-            record.setRawFlipX(flipx)
-            record.setRawFlipY(flipy)
-            record.setRawBBox(rawBBox)
-            record.setRawXYOffset(geom.Extent2I(rawx0, rawy0))
-            record.setRawDataBBox(rawDataBBox)
-            record.setRawHorizontalOverscanBBox(rawHorizontalOverscanBBox)
-            record.setRawVerticalOverscanBBox(rawVerticalOverscanBBox)
-            record.setRawPrescanBBox(rawPrescanBBox)
+            # Set the elements of the amplifier for this amp
+            amplifier.setBBox(bbox)
+            amplifier.setName(name)
+            amplifier.setReadoutCorner(readCorner)
+            amplifier.setGain(gain)
+            amplifier.setSaturation(saturation)
+            amplifier.setSuspectLevel(float("nan"))
+            amplifier.setReadNoise(readnoise)
+            amplifier.setLinearityCoeffs(linearityCoeffs)
+            amplifier.setLinearityType(linearityType)
+            #            amplifier.setHasRawInfo(True)
+            amplifier.setRawFlipX(flipx)
+            amplifier.setRawFlipY(flipy)
+            amplifier.setRawBBox(rawBBox)
+            amplifier.setRawXYOffset(geom.Extent2I(rawx0, rawy0))
+            amplifier.setRawDataBBox(rawDataBBox)
+            amplifier.setRawHorizontalOverscanBBox(rawHorizontalOverscanBBox)
+            amplifier.setRawVerticalOverscanBBox(rawVerticalOverscanBBox)
+            amplifier.setRawPrescanBBox(rawPrescanBBox)
+            ampCatalog.append(amplifier)
     returnDict[detectorName] = ampCatalog
     return returnDict
+
 
 def makeLongName(shortName):
     """
@@ -160,12 +211,13 @@ def makeLongName(shortName):
     if len(parts) == 2:
         return " ".join(["%s:%s"%(el[0], ",".join(el[1:])) for el in parts])
     elif len(parts) == 3:
-        #This must be a wavefront sensor
-        wsPartMap = {'S':{'C0':'A', 'C1':'B'},
-                     'R':{'C0':'', 'C1':''}}
+        # This must be a wavefront sensor
+        wsPartMap = {'S': {'C0': 'A', 'C1': 'B'},
+                     'R': {'C0': '', 'C1': ''}}
         return " ".join(["%s:%s"%(el[0], ",".join(el[1:]+wsPartMap[el[0]][parts[-1]])) for el in parts[:-1]])
     else:
         raise ValueError("Could not parse %s: has %i parts"%(shortName, len(parts)))
+
 
 def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
     """
@@ -177,8 +229,8 @@ def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
     * deal with the extra orientation angles (not that they really matter)
     """
     detectorConfigs = []
-    detType = int(SCIENCE)
-    #We know we need to rotate 3 times and also apply the yaw perturbation
+    detTypeMap = {"Group2": 2, "Group1": 3, "Group0": 0}
+    # We know we need to rotate 3 times and also apply the yaw perturbation
     nQuarter = 1
     with open(detectorLayoutFile) as fh:
         for l in fh:
@@ -192,7 +244,7 @@ def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
             detConfig.bbox_y0 = 0
             detConfig.bbox_x1 = int(els[5]) - 1
             detConfig.bbox_y1 = int(els[4]) - 1
-            detConfig.detectorType = detType
+            detConfig.detectorType = detTypeMap[els[8]]
             detConfig.serial = els[0]+"_"+phosimVersion
 
             # Convert from microns to mm.
@@ -216,17 +268,20 @@ def makeDetectorConfigs(detectorLayoutFile, phosimVersion):
             detectorConfigs.append(detConfig)
     return detectorConfigs
 
+
+def getPhosimVersion(defaultDataDir):
+    """Return the phosim version from data/phosim_version.txt"""
+    with open(os.path.join(defaultDataDir, 'phosim_version.txt')) as infile:
+        return infile.read().strip()
+
+
 def ReturnCamera(baseDir):
     """
     This method reads in the files
-
     baseDir/focalplanelayout.txt
     baseDir/segmentation.txt
-
     and returns an afw.cameraGeom object
-
     Below is the original documentation of the function this code was copied from:
-
     Create the configs for building a camera.  This runs on the files distributed with PhoSim.  Currently gain and
     saturation need to be supplied as well.  The file should have three columns: on disk amp id (R22_S11_C00), gain, saturation.
     For example:
@@ -234,44 +289,40 @@ def ReturnCamera(baseDir):
     SegmentsFile -- https://dev.lsstcorp.org/cgit/LSST/sims/phosim.git/plain/data/lsst/segmentation.txt?h=dev
     """
     defaultOutDir = 'scratch'
+    defaultDataDir = baseDir
+    #defaultDataDir = os.path.join(os.path.normpath(baseDir), "description")
 
-    DetectorLayoutFile = os.path.join(baseDir, 'focalplanelayout.txt')
-    SegmentsFile = os.path.join(baseDir, 'segmentation.txt')
+    DetectorLayoutFile = os.path.join(defaultDataDir, 'focalplanelayout.txt')
+    SegmentsFile = os.path.join(defaultDataDir, 'segmentation.txt')
     GainFile = None
     phosimVersion='1.0'
 
     ampTableDict = makeAmpTables(SegmentsFile, GainFile)
     detectorConfigList = makeDetectorConfigs(DetectorLayoutFile, phosimVersion)
 
-    #Build the camera config.
+    # Build the camera config.
     camConfig = CameraConfig()
-    camConfig.detectorList = dict([(i,detectorConfigList[i]) for i in range(len(detectorConfigList))])
+    camConfig.detectorList = dict([(i, detectorConfigList[i]) for i in range(len(detectorConfigList))])
     camConfig.name = 'LSST'
-    camConfig.plateScale = 2.0 #arcsec per mm
+    camConfig.plateScale = 20.0
     pScaleRad = geom.arcsecToRad(camConfig.plateScale)
     pincushion = 0.925
     # Don't have this yet ticket/3155
-    #camConfig.boresiteOffset_x = 0.
-    #camConfig.boresiteOffset_y = 0.
+    # camConfig.boresiteOffset_x = 0.
+    # camConfig.boresiteOffset_y = 0.
     tConfig = afwGeom.TransformConfig()
     tConfig.transform.name = 'inverted'
     radialClass = afwGeom.transformRegistry['radial']
     tConfig.transform.active.transform.retarget(radialClass)
     # According to Dave M. the simulated LSST transform is well approximated (1/3 pix)
     # by a scale and a pincusion.
-
-    #this is ultimately used to convert from focal plane coordinates to pupil coordinates
-    #see the asgnment below to tmc.transforms
     tConfig.transform.active.transform.coeffs = [0., 1./pScaleRad, 0., pincushion/pScaleRad]
-
-    #tConfig.transform.active.boresiteOffset_x = camConfig.boresiteOffset_x
-    #tConfig.transform.active.boresiteOffset_y = camConfig.boresiteOffset_y
-    tmc = afwCameraGeom.transformConfig.TransformMapConfig()
+    # tConfig.transform.active.boresiteOffset_x = camConfig.boresiteOffset_x
+    # tConfig.transform.active.boresiteOffset_y = camConfig.boresiteOffset_y
+    tmc = TransformMapConfig()
     tmc.nativeSys = FOCAL_PLANE.getSysName()
-    tmc.transforms = {FIELD_ANGLE.getSysName():tConfig}
+    tmc.transforms = {FIELD_ANGLE.getSysName(): tConfig}
     camConfig.transformDict = tmc
 
     myCamera = makeCameraFromCatalogs(camConfig, ampTableDict)
     return myCamera
-
-

@@ -4,7 +4,8 @@ from builtins import range
 import numpy as np
 import numbers
 import lsst.geom as geom
-from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS, WAVEFRONT
+from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE, PIXELS
+from lsst.afw.cameraGeom import DetectorType
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoords
 from lsst.sims.coordUtils import LsstZernikeFitter
@@ -247,7 +248,7 @@ def _findDetectorsListLSST(focalPointList, detectorList, possible_points,
     if allow_multiple_chips:
         for ipt in range(len(focalPointList)):
             for det in detectorList[ipt]:
-                if det.getType() == WAVEFRONT:
+                if det.getType() == DetectorType.WAVEFRONT:
                     could_be_multiple[ipt] = True
 
     # t_assemble_list = 0.0
