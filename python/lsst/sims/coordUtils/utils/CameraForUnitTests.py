@@ -32,6 +32,7 @@ import re
 import shutil
 
 import lsst.utils
+from lsst.utils import getPackageDir
 import lsst.afw.geom as afwGeom
 import lsst.afw.table as afwTable
 from lsst.afw.cameraGeom import DetectorConfig, CameraConfig, \
@@ -44,7 +45,7 @@ from lsst.obs.lsstSim import LsstSimMapper
 __all__ = ['ReturnCamera']
 
 def expandDetectorName(abbrevName):
-    """Convert a detector name of the form Rxy_Sxy[_Ci] to canonical form: R:x,y S:x,y[,c]
+       """Convert a detector name of the form Rxy_Sxy[_Ci] to canonical form: R:x,y S:x,y[,c]
 
     C0 -> A, C1 -> B
     """
@@ -289,12 +290,12 @@ def ReturnCamera(baseDir):
     SegmentsFile -- https://dev.lsstcorp.org/cgit/LSST/sims/phosim.git/plain/data/lsst/segmentation.txt?h=dev
     """
     defaultOutDir = 'scratch'
-    defaultDataDir = baseDir
+    #defaultDataDir = baseDir
     #defaultDataDir = os.path.join(os.path.normpath(baseDir), "description")
-
+    defaultDataDir = os.path.join(getPackageDir('obs_lsstSim'), 'description')
     DetectorLayoutFile = os.path.join(defaultDataDir, 'focalplanelayout.txt')
     SegmentsFile = os.path.join(defaultDataDir, 'segmentation.txt')
-    GainFile = None
+    GainFile = os.path.join(defaultDataDir, 'gain_saturation.txt')
     phosimVersion='1.0'
 
     ampTableDict = makeAmpTables(SegmentsFile, GainFile)
