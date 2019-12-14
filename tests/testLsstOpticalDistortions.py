@@ -5,7 +5,8 @@ import numbers
 import lsst.utils.tests
 
 from lsst.utils import getPackageDir
-from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE, SCIENCE
+from lsst.afw.cameraGeom import PIXELS, FOCAL_PLANE
+from lsst.afw.cameraGeom import DetectorType
 import lsst.geom as geom
 from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import focalPlaneCoordsFromPupilCoordsLSST
@@ -55,7 +56,7 @@ class FocalPlaneTestCase(unittest.TestCase):
             x_arr = None
             y_arr = None
             for det in camera:
-                if det.getType() != SCIENCE:
+                if det.getType() != DetectorType.SCIENCE:
                     continue
                 det_name = det.getName()
                 name = det_name.replace(':','').replace(',','')
@@ -242,7 +243,7 @@ class FullTransformationTestCase(unittest.TestCase):
                     continue
 
                 det = camera[chip_name]
-                if det.getType() != SCIENCE:
+                if det.getType() != DetectorType.SCIENCE:
                     continue
                 n_checked += 1
                 chip_name = chip_name.replace(':','').replace(',','')
@@ -375,7 +376,7 @@ class FullTransformationTestCase(unittest.TestCase):
              yf_optics) = focalPlaneCoordsFromPupilCoordsLSST(x_pup, y_pup, band)
 
             for det in camera:
-                if det.getType() != SCIENCE:
+                if det.getType() != DetectorType.SCIENCE:
                     continue
                 det_name = det.getName()
                 name = det_name.replace(':','').replace(',','').replace(' ','_')
@@ -549,7 +550,7 @@ class FullTransformationTestCase(unittest.TestCase):
             dist_arr = []
 
             for det in lsst_camera():
-                if det.getType() != SCIENCE:
+                if det.getType() != DetectorType.SCIENCE:
                     continue
                 det_name = det.getName()
                 name = det_name.replace(':','').replace(',','').replace(' ','_')
@@ -911,7 +912,7 @@ class FullTransformationTestCase(unittest.TestCase):
 
         chip_name_list = ['None']
         for det in lsst_camera():
-            if det.getType() == SCIENCE:
+            if det.getType() == DetectorType.SCIENCE:
                 chip_name_list.append(det.getName())
         chip_name_list = np.array(chip_name_list)
         rng = np.random.RandomState(81231)
@@ -967,7 +968,7 @@ class FullTransformationTestCase(unittest.TestCase):
 
         name_list = [None]
         for det in lsst_camera():
-            if det.getType() == SCIENCE:
+            if det.getType() == DetectorType.SCIENCE:
                 name_list.append(det.getName())
         name_list = np.array(name_list)
         name_sample = rng.choice(name_list, size=n_samples, replace=True)
@@ -1024,7 +1025,7 @@ class FullTransformationTestCase(unittest.TestCase):
         n_samples = 500
         name_list = [None]
         for det in lsst_camera():
-            if det.getType() == SCIENCE:
+            if det.getType() == DetectorType.SCIENCE:
                 name_list.append(det.getName())
         name_list = np.array(name_list)
         name_sample = rng.choice(name_list, size=n_samples, replace=True)
