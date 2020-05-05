@@ -31,7 +31,7 @@ from lsst.sims.coordUtils import getCornerPixels, _getCornerRaDec, getCornerRaDe
 from lsst.sims.coordUtils import pupilCoordsFromFocalPlaneCoords
 from lsst.sims.coordUtils import lsst_camera
 
-from lsst.afw.geom import Point2D
+from lsst.geom import Point2D
 from lsst.afw.cameraGeom import FIELD_ANGLE, FOCAL_PLANE
 
 def setup_module(module):
