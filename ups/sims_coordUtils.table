@@ -1,5 +1,4 @@
 setupRequired(base)
-setupRequired(python)
 setupRequired(utils)
 # For coordinates
 setupRequired(geom)
