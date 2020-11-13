@@ -312,18 +312,12 @@ def _chipNameFromRaDec(ra, dec, pm_ra=None, pm_dec=None, parallax=None, v_rad=No
     if obs_metadata.rotSkyPos is None:
         raise RuntimeError("You need to pass an ObservationMetaData with a rotSkyPos into chipName")
 
-    if not are_arrays:
-        ra = np.array([ra])
-        dec = np.array([dec])
-
     xp, yp = _pupilCoordsFromRaDec(ra, dec,
                                    pm_ra=pm_ra, pm_dec=pm_dec, parallax=parallax, v_rad=v_rad,
                                    obs_metadata=obs_metadata, epoch=epoch)
 
     ans = chipNameFromPupilCoords(xp, yp, camera=camera, allow_multiple_chips=allow_multiple_chips)
 
-    if not are_arrays:
-        return ans[0]
     return ans
 
 def chipNameFromPupilCoords(xPupil, yPupil, camera=None, allow_multiple_chips=False):

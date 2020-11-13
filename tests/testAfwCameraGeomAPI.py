@@ -5,15 +5,15 @@ from lsst.utils import getPackageDir
 import numpy as np
 import os
 
+import lsst.obs.lsst.phosim as obs_lsst_phosim
+
 from lsst.sims.utils import ObservationMetaData
-from lsst.sims.coordUtils import lsst_camera
 from lsst.sims.coordUtils import getCornerRaDec
 from lsst.sims.coordUtils import focalPlaneCoordsFromRaDec
 from lsst.sims.coordUtils import pixelCoordsFromRaDec
 from lsst.sims.coordUtils import chipNameFromRaDec
 from lsst.sims.coordUtils import chipNameFromPupilCoords
 
-from lsst.sims.coordUtils import clean_up_lsst_camera
 
 def setup_module(module):
     lsst.utils.tests.init()
@@ -24,7 +24,7 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
     This test case is meant to verify that we have correctly incorporated
     any API changes in afwCameraGeom by verifying RA, Dec to pixel results
     against identical results generated from the w.2017.50 version of
-    afw.  If obs_lsstSim ever changes in a physically meaningful way, these
+    afw.  If obs_lsst ever changes in a physically meaningful way, these
     tests will break, but hopefully we will be aware that that happened and
     we will be able to regenerate the underlying test data with
 
@@ -33,7 +33,7 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.camera = lsst_camera()
+        cls.camera = obs_lsst_phosim.PhosimMapper().camera
         cls.data_dir = os.path.join(getPackageDir('sims_coordUtils'),
                                    'tests', 'lsstCameraData')
 
@@ -54,11 +54,10 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.camera
-        clean_up_lsst_camera()
 
     def test_chipName(self):
         """
-        Verify that chipNameFromRaDecLSST has not changed.
+        Verify that chipNameFromRaDec has not changed.
         """
         chip_name_arr = chipNameFromRaDec(self.pix_data['ra'],
                                           self.pix_data['dec'],
@@ -69,7 +68,7 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
 
     def test_pixelCoords(self):
         """
-        Verify that pixelCoordsFromRaDecLSST has not changed
+        Verify that pixelCoordsFromRaDec has not changed
         """
         pix_x, pix_y = pixelCoordsFromRaDec(self.pix_data['ra'],
                                             self.pix_data['dec'],
