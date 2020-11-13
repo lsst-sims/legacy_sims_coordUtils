@@ -25,7 +25,8 @@ __all__ = ["focalPlaneCoordsFromPupilCoordsLSST",
            "pixelCoordsFromPupilCoordsLSST",
            "pupilCoordsFromPixelCoordsLSST",
            "_pixelCoordsFromRaDecLSST", "pixelCoordsFromRaDecLSST",
-           "_raDecFromPixelCoordsLSST", "raDecFromPixelCoordsLSST"]
+           "_raDecFromPixelCoordsLSST", "raDecFromPixelCoordsLSST",
+           "clean_up_lsst_camera"]
 
 def _lsstCoordUtilsError():
     msg = "\n\n"
@@ -44,6 +45,19 @@ def _lsstCoordUtilsError():
 
     raise RuntimeError(msg)
 
+
+def clean_up_lsst_camera():
+    """
+    Delete member objects associated with the methods below
+    """
+    if hasattr(focalPlaneCoordsFromPupilCoordsLSST, '_z_fitter'):
+        del focalPlaneCoordsFromPupilCoordsLSST._z_fitter
+    if hasattr(pupilCoordsFromFocalPlaneCoordsLSST, '_z_fitter'):
+        del pupilCoordsFromFocalPlaneCoordsLSST._z_fitter
+    if hasattr(chipNameFromPupilCoordsLSST, '_detector_arr'):
+        del chipNameFromPupilCoordsLSST._detector_arr
+    if hasattr(lsst_camera, '_lsst_camera'):
+        del lsst_camera._lsst_camera
 
 def focalPlaneCoordsFromPupilCoordsLSST(xPupil, yPupil, band='r'):
     """
