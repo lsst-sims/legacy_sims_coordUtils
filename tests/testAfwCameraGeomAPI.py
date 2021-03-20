@@ -76,9 +76,10 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
                                             camera=self.camera)
 
         np.testing.assert_array_almost_equal(pix_x, self.pix_data['pixel_x'],
-                                             decimal=3)
+                                             decimal=2)
         np.testing.assert_array_almost_equal(pix_y, self.pix_data['pixel_y'],
-                                             decimal=3)
+                                             decimal=2)
+
 
 
     def test_focalCoords(self):
@@ -91,9 +92,9 @@ class AfwCameraGeomAPITestCase(unittest.TestCase):
                                                  obs_metadata=self.obs)
 
         np.testing.assert_array_almost_equal(foc_x, self.pix_data['focal_x'],
-                                             decimal=5)
+                                             decimal=4)
         np.testing.assert_array_almost_equal(foc_y, self.pix_data['focal_y'],
-                                             decimal=5)
+                                             decimal=4)
 
     def test_cornerRaDec(self):
         """
